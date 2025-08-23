@@ -3,6 +3,9 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
+// Para testar com outro terminal, usar "nc localhost 8080"
+// Com esse teste, podemos ler o que o client manda para o servidor.
+
 int main() {
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd == -1) {
@@ -38,6 +41,7 @@ int main() {
     while (true) {
         //int clientFd = accept(sockfd, (struct sockaddr *)&address, sizeof(address));
         int clientFd = accept(sockfd, NULL, NULL);
+        char buf[1000];
 
         if (clientFd == -1) {
             std::cerr << "Erro ao aceitar a conexão." << std::endl;
@@ -47,7 +51,11 @@ int main() {
             write(clientFd, "Oie!\n", 5);
             //close(clientFd);
         }
-
+        for (;;) {
+            int bytes = read(clientFd, buf, 10);
+            std::cout << bytes << std::endl;
+            std::cout << buf << std::endl;
+        }
     }
 
     return (0);
