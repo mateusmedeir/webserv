@@ -7,6 +7,7 @@
 # include <fcntl.h>
 # include <sys/epoll.h>
 # include <cerrno>
+# include <exception>
 
 # define MAX_EVENTS 10
 

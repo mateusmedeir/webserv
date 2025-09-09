@@ -68,6 +68,7 @@ void RunTime::setServerAddrStruct(int socketDomain, int serverPort, int serverAd
 void RunTime::initServerSocket(int socketDomain, int socketType) {
     this->_serverFd = socket(socketDomain, socketType, 0);
     if (getServerFd() == -1) {
+        throw(RunTime::CannotInitServerSocket());
         //trow alguma exception??
         //erro ao criar o socket principal do servidor
         //dar close nos FDs abertos
@@ -77,6 +78,7 @@ void RunTime::initServerSocket(int socketDomain, int socketType) {
 // void bindServerSocket();
 void RunTime::bindServerSocket(void) {
     if (bind(getServerFd(), (struct sockaddr *)&getServerAddr(), sizeof(getServerAddr())) == -1) {
+        throw(RunTime::CannotBindServerSocket());
         //trow alguma exception?
         //erro ao bindar o socket a uma porta/endereco
         //dar close nos FDs abertos
@@ -86,6 +88,7 @@ void RunTime::bindServerSocket(void) {
 // void updateToNonBlocking();
 void RunTime::updateToNonBlocking(void) {
     if (set_nonblocking(getServerFd()) == -1) {
+        throw(RunTime::CannotUpdateServerToNonBlocking());
         //trow alguma exception?
         //erro ao por o servidor em modo nao bloqueante
         //dar close nos FDs abertos
@@ -101,35 +104,14 @@ void RunTime::listenServerSocket(void) {
     }
 }
 
-// const char * Bureaucrat::GradeTooHighException::what() const throw()
-// {
-//     return ("Grade is too high");
-// }
-
-
-// class CannotInitServerSocket : public std::exception {
-//     public:
-//         virtual const char *what() const throw();
-// };
-
-// class CannotBindServerSocket : public std::exception {
-//     public:
-//         virtual const char *what() const throw();
-// };
-
-// class CannotUpdateServerToNonBlocking : public std::exception {
-//     public:
-//         virtual const char *what() const throw();
-// };
-
 const char * RunTime::CannotInitServerSocket::what() const throw() {
     return ("Error: error in creating socket with socket().");
 }
 
 const char * RunTime::CannotBindServerSocket::what() const throw() {
-    return ("Error: error in binding server socket with bind().")
+    return ("Error: error in binding server socket with bind().");
 }
 
 const char * RunTime::CannotUpdateServerToNonBlocking::what() const throw() {
-    return ("Error: error when trying to set the non-blocking behavior.");
+    return ("Error: error in trying to set the non-blocking behavior.");
 }
