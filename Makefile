@@ -6,7 +6,10 @@ FLAGS = -Wall -Werror -Wextra
 
 CPP_FLAGS = -std=c++98
 
-SRC = main.cpp
+SRC = 	main.cpp \
+		RunTime.cpp \
+		Utils.cpp \
+		EpollInstance.cpp
 
 OBJ = $(SRC:.cpp=.o)
 

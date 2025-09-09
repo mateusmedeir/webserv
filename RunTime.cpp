@@ -1,7 +1,10 @@
 #include "RunTime.hpp"
+#include "WebservHeader.hpp"
 
 // RunTime(void);
-RunTime::RunTime(void) {}
+RunTime::RunTime(void) {
+    std::cout << "Instance of RunTime was created!" << std::endl;
+}
 
 // ~RunTime(void);
 RunTime::~RunTime(void) {
@@ -17,6 +20,7 @@ RunTime &RunTime::operator=(const RunTime &src) {
     if (this != &src) {
         this->_serverFd = src._serverFd;
         this->_serverAddr = src._serverAddr;
+        this->_epollInstance = src._epollInstance;
         // this->_epollInstance = src._epollInstance;
         // this->_configEpollEvents = src._configEpollEvents;
     }
@@ -77,7 +81,7 @@ void RunTime::initServerSocket(int socketDomain, int socketType) {
 
 // void bindServerSocket();
 void RunTime::bindServerSocket(void) {
-    if (bind(getServerFd(), (struct sockaddr *)&getServerAddr(), sizeof(getServerAddr())) == -1) {
+    if (bind(getServerFd(), (struct sockaddr *)&this->_serverAddr, sizeof(getServerAddr())) == -1) {
         throw(RunTime::CannotBindServerSocket());
         //trow alguma exception?
         //erro ao bindar o socket a uma porta/endereco
@@ -98,6 +102,7 @@ void RunTime::updateToNonBlocking(void) {
 // void listenServerSocket();
 void RunTime::listenServerSocket(void) {
     if (listen(getServerFd(), MAX_EVENTS) == -1) {
+        throw(RunTime::CannotSetServerToListen());
         //trow alguma exception?
         //erro ao colocar o servidor em modo passivo
         //dar close nos FDs abertos
@@ -114,4 +119,8 @@ const char * RunTime::CannotBindServerSocket::what() const throw() {
 
 const char * RunTime::CannotUpdateServerToNonBlocking::what() const throw() {
     return ("Error: error in trying to set the non-blocking behavior.");
+}
+
+const char * RunTime::CannotSetServerToListen::what() const throw() {
+    return ("Error: error in setting the server to listen with listen().");
 }

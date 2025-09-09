@@ -1,10 +1,14 @@
 #pragma once
 
-# include "WebservHeader.hpp"
+#include "WebservHeader.hpp"
+#include "EpollInstance.hpp"
+
+// class EpollInstance;
 
 class RunTime {
     private:
         int                 _serverFd;
+        EpollInstance       _epollInstance;
         // int                 _epollInstance; //Precisamos criar a classe do epoll antes.
         struct sockaddr_in  _serverAddr;
         // struct epoll_event  _configEpollEvents; //Vamos usar na classe da instancia de Epoll
@@ -39,6 +43,11 @@ class RunTime {
         };
 
         class CannotUpdateServerToNonBlocking : public std::exception {
+            public:
+                virtual const char *what() const throw();
+        };
+
+        class CannotSetServerToListen : public std::exception {
             public:
                 virtual const char *what() const throw();
         };
