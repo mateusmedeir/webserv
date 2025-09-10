@@ -1,9 +1,9 @@
 #pragma once
 
 #include "WebservHeader.hpp"
-#include "EpollInstance.hpp"
+// #include "EpollInstance.hpp"
 
-// class EpollInstance;
+class EpollInstance;
 
 class RunTime {
     private:
