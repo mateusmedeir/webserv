@@ -5,10 +5,10 @@
 
 class EpollInstance;
 
-class RunTime {
+class RunTime : public EpollInstance{
     private:
         int                 _serverFd;
-        EpollInstance       _epollInstance;
+        // EpollInstance       _epollInstance;
         // int                 _epollInstance; //Precisamos criar a classe do epoll antes.
         struct sockaddr_in  _serverAddr;
         // struct epoll_event  _configEpollEvents; //Vamos usar na classe da instancia de Epoll
@@ -31,6 +31,10 @@ class RunTime {
         void bindServerSocket(void);
         void updateToNonBlocking(void);
         void listenServerSocket(void);
+
+        // virtual void initEpollInstance(void) const;
+        virtual void manipulateEpollInstance(int operation, uint32_t events, int socketFd) const;
+
 
         class CannotInitServerSocket : public std::exception {
             public:

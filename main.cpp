@@ -2,9 +2,14 @@
 #include "RunTime.hpp"
 
 int main(void) {
-    EpollInstance teste;
-    // RunTime runtime = RunTime();
+    RunTime runtime;
 
+    runtime.initServerSocket(AF_INET, SOCK_STREAM);
+
+    // RunTime *teste;
+
+    // teste->initServerSocket(AF_INET, SOCK_STREAM);
+    std::cout << "Teste ok!" << std::endl;
 
     return (0);
 }

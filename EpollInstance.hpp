@@ -20,9 +20,12 @@ class EpollInstance {
         virtual ~EpollInstance(void);
 
         int getEpollFd(void) const;
+        void initEpollInstance(void);
 
-        virtual void manipulateEpollInstance(int operation, int socketFd) const = 0;
-        virtual void initEpollInstance(void) const = 0;
+        void setConfigEpollEvents(uint32_t events, int socketFd);
+
+        virtual void manipulateEpollInstance(int operation, uint32_t events, int socketFd) const = 0;
+        // virtual void initEpollInstance(void) const = 0;
 
         class CannotInitEpollInstance : public std::exception {
             public:

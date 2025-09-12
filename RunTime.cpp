@@ -3,7 +3,7 @@
 // #include "WebservHeader.hpp"
 
 // RunTime(void);
-RunTime::RunTime(void) {
+RunTime::RunTime(void) : EpollInstance() {
     std::cout << "Instance of RunTime was created!" << std::endl;
 }
 
@@ -21,7 +21,12 @@ RunTime &RunTime::operator=(const RunTime &src) {
     if (this != &src) {
         this->_serverFd = src._serverFd;
         this->_serverAddr = src._serverAddr;
-        this->_epollInstance = src._epollInstance;
+        this->_epollFd = src._epollFd;
+        this->_configEpollEvents = src._configEpollEvents;
+        for (int i = 0; i < MAX_EVENTS; i++) {
+            this->_readyList[i].data.fd = src._readyList[i].data.fd;
+            this->_readyList[i].events = src._readyList[i].events;
+        }
         // this->_epollInstance = src._epollInstance;
         // this->_configEpollEvents = src._configEpollEvents;
     }
@@ -107,6 +112,25 @@ void RunTime::listenServerSocket(void) {
         //trow alguma exception?
         //erro ao colocar o servidor em modo passivo
         //dar close nos FDs abertos
+    }
+}
+
+// virtual void initEpollInstance(void) const;
+// void RunTime::initEpollInstance(void) const {
+//     this->_epollFd = epoll_create(1);
+//     if (this->_epollFd == -1) {
+//         throw(EpollInstance::CannotInitEpollInstance());
+//     }
+// }
+
+
+// virtual void manipulateEpollInstance(int operation, uint32_t events, int socketFd) const;
+void RunTime::manipulateEpollInstance(int operation, uint32_t events, int socketFd) const {
+    if (operation != EPOLL_CTL_ADD && operation != EPOLL_CTL_MOD && operation != EPOLL_CTL_DEL) {
+        throw(EpollInstance::CannotManipulateEpollInstance());
+    }
+    if (epoll_ctl(getEpollFd(), operation, socketFd, &this->_configEpollEvents) == -1) {
+        throw(EpollInstance::CannotManipulateEpollInstance());
     }
 }
 
