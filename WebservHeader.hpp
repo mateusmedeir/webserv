@@ -12,6 +12,7 @@
 # include <exception>
 
 # include "EpollInstance.hpp"
+# include "NewEpollInstance.hpp"
 // # include "RunTime.hpp"
 
 
