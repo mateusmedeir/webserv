@@ -1,10 +1,10 @@
 #include "WebservHeader.hpp"
-#include "RunTime.hpp"
 
 int main(void) {
-    RunTime runtime;
+    NewRunTime runtime;
 
-    runtime.initServerSocket(AF_INET, SOCK_STREAM);
+    
+    runtime.manipInterestList(EPOLL_CTL_ADD, EPOLLIN, runtime.getServerFd());
 
     // RunTime *teste;
 

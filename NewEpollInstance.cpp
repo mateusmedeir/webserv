@@ -4,7 +4,15 @@
 NewEpollInstance::NewEpollInstance() {
     //chamar metodo que via criar o epoll com o epollCreate()
     std::cout << "New instance of epoll got created." << std::endl;
-    initEpollInstance();
+    try
+    {
+        initEpollInstance();
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+    }
+    
 }
 
 // NewEpollInstance(const NewEpollInstance &src);
@@ -27,17 +35,42 @@ NewEpollInstance &NewEpollInstance::operator=(const NewEpollInstance &src) {
 
 // ~NewEpollInstance(void);
 NewEpollInstance::~NewEpollInstance(void) {
-
+    close(this->_epollFd);
 }
 
 // void initEpollInstance(void);
 void NewEpollInstance::initEpollInstance(void) {
     this->_epollFd = epoll_create(1);
     if (this->_epollFd == -1) {
-        //throw()
+        throw(NewEpollInstance::CannotInitEpollInstance());
     }
+    std::cout << "Epoll created!" << std::endl;
 }
 
-const char * EpollInstance::CannotInitEpollInstance::what() const throw() {
+// int getEpollFd(void) const;
+int NewEpollInstance::getEpollFd(void) const {
+    return (this->_epollFd);
+}
+
+// struct epoll_event getConfigEpollEvents(void) const;
+struct epoll_event NewEpollInstance::getConfigEpollEvents(void) const {
+    return (this->_configEpollEvents);
+}
+
+// struct epoll_event getReadyList(void) const;
+struct epoll_event &NewEpollInstance::getReadyList(void) {
+    return (*this->_readyList);
+}
+
+void NewEpollInstance::setConfigEpollEvents(int socketFd, uint32_t events) {
+    this->_configEpollEvents.data.fd = socketFd;
+    this->_configEpollEvents.events = events;
+}
+
+const char * NewEpollInstance::CannotInitEpollInstance::what() const throw() {
     return ("Error: error in creating epoll instance with epoll_create().");
+}
+
+const char * NewEpollInstance::CannotManipulateEpollInstance::what() const throw() {
+    return ("Error: error in controling the epoll instance with epoll_ctl().");
 }
