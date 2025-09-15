@@ -1,10 +1,23 @@
 #include "WebservHeader.hpp"
 
 int main(void) {
-    NewRunTime runtime;
+    NewRunTime runtime(AF_INET, SOCK_STREAM);
 
     
-    runtime.manipInterestList(EPOLL_CTL_ADD, EPOLLIN, runtime.getServerFd());
+    
+    try
+    {
+        runtime.setServerAddr(AF_INET, 8080, INADDR_ANY);
+        runtime.bindServerSocket();
+        runtime.updateToNonBlocking();
+        runtime.listenServerSocket();
+        runtime.manipInterestList(EPOLL_CTL_ADD, EPOLLIN, runtime.getServerFd());
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+    }
+    
 
     // RunTime *teste;
 
