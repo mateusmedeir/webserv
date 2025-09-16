@@ -63,6 +63,13 @@ void NewRunTime::manipInterestList(int operation, uint32_t events, int socketFd)
     std::cout << "Manipulacao feita com sucesso!" << std::endl;
 }
 
+// virtual int manipEpollWait(void)
+int NewRunTime::manipEpollWait(void) {
+    int numberOfReadyFds = 0;
+    numberOfReadyFds = epoll_wait(this->_epollFd, this->_readyList, MAX_EVENTS, 0);
+    return (numberOfReadyFds);
+}
+
 // void initServerSocket(int socketDomain, int socketType);
 void NewRunTime::initServerSocket(int socketDomain, int socketType) {
     this->_serverFd = socket(socketDomain, socketType, 0);

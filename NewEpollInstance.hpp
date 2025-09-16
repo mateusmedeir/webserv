@@ -12,7 +12,7 @@ class NewEpollInstance {
         NewEpollInstance(const NewEpollInstance &src);
         NewEpollInstance &operator=(const NewEpollInstance &src);
 
-        ~NewEpollInstance(void);
+        virtual ~NewEpollInstance(void);
 
         void initEpollInstance(void);
 
@@ -22,7 +22,10 @@ class NewEpollInstance {
 
         void setConfigEpollEvents(int socketFd, uint32_t events);
 
+        struct epoll_event &getElementFromReadyList(int index);
+
         virtual void manipInterestList(int operation, uint32_t events, int socketFd) = 0;
+        virtual int manipEpollWait(void) = 0;
 
         class CannotInitEpollInstance : public std::exception {
             public:

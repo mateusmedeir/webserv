@@ -17,6 +17,7 @@ class NewRunTime : public NewEpollInstance {
         ~NewRunTime(void);
 
         virtual void manipInterestList(int operation, uint32_t events, int socketFd);
+        virtual int manipEpollWait(void);
 
         int getServerFd(void) const;
 

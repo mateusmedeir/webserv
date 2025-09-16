@@ -1,9 +1,38 @@
 #include "WebservHeader.hpp"
 
+void epollReadyListLoop(NewRunTime *runtime, int numberOfReadyFds) {
+    for (int i = 0; i < numberOfReadyFds; i++) {
+        struct epoll_event &element = runtime->getElementFromReadyList(i); // pega apenas um indice por vez
+        // struct epoll_event &readyList = runtime->getReadyList(); // pega a readyList inteira
+        if (element.data.fd == runtime->getServerFd()) {
+            // nova conexao foi feita no socket do servidor
+            std::cout << "Server FD esta pronto!" << std::endl;
+        }
+        else {
+            // outro FD, que nao e o servidor, esta pronto para ser processado
+            std::cout << "Cliente esta pronto!" << std::endl;
+        }
+    }
+}
+
+void serverMainLoop(NewRunTime *runtime) {
+    if (!runtime) {
+        return;
+    }
+    while (true) {
+        int numberOfReadyFds = runtime->manipEpollWait();
+        if (numberOfReadyFds == -1) {
+            std::cerr << "Error: erro ao manipular o epoll_wait()." << std::endl;
+            break;
+        }
+        else if (numberOfReadyFds) {
+            epollReadyListLoop(runtime, numberOfReadyFds);
+        }
+    }
+}
+
 int main(void) {
     NewRunTime runtime(AF_INET, SOCK_STREAM);
-
-    
     
     try
     {
@@ -17,6 +46,21 @@ int main(void) {
     {
         std::cerr << e.what() << '\n';
     }
+
+    serverMainLoop(&runtime);
+
+    // Loops para a execucao do runtime:
+    // loop principal do servidor
+    //  -> Feito para pegarmos o retorno do epoll_wait()
+    //  -> Caso de erro, sair do loop
+    //  loop para percorrer a ready_list[]
+    //      -> Feito para que possamos processar os FDs prontos para serem processados
+    //      -> Precisamos diferenciar o FD do socket dos demais FDs
+    //          -> Caso seja o FD do servidor, significa que temos novas conexoes para aceitar
+    //          loop para aceitar todas as conexoes
+    //              -> Precisamos dar o accept(), setar como non blocking e por na interest list
+    //          -> Caso seja outro FD, precisamos ler o conteudo da requisicao
+    //          loop para ler o conteudo
     
 
     // RunTime *teste;

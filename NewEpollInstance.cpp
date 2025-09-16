@@ -67,6 +67,14 @@ void NewEpollInstance::setConfigEpollEvents(int socketFd, uint32_t events) {
     this->_configEpollEvents.events = events;
 }
 
+// struct epoll_event &getElementFromReadyList(int index);
+struct epoll_event &NewEpollInstance::getElementFromReadyList(int index) {
+    // if (index < 0 || index > (MAX_EVENTS - 1)) {
+    //     return ;
+    // }
+    return (this->_readyList[index]);
+}
+
 const char * NewEpollInstance::CannotInitEpollInstance::what() const throw() {
     return ("Error: error in creating epoll instance with epoll_create().");
 }
