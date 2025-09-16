@@ -1,5 +1,58 @@
 #include "WebservHeader.hpp"
 
+void clientFdInReadyList(NewRunTime *runtime, struct epoll_event &element) {
+    int clientFd = element.data.fd;
+    char buffer[1024];
+    int count = 0;
+
+    (void)runtime;
+
+    while((count = read(clientFd, buffer, 1024)) > 0) {
+        // aqui, processaremos o que o cliente mandar para o servidor
+        write(STDOUT_FILENO, buffer, count);
+        // no momento, so estamos printando na tela mesmo.
+    }
+    if (count == -1) {
+        // Como vamos validar essa parte do erro?
+        // Se nao podemos verificar o errno depois de executar um read ou write?
+        std::cerr << "Error: erro ao ler os dados do cliente." << std::endl;
+    }
+    else if (!count) {
+        std::cout << "Lemos todo o conteudo do cliente." << std::endl;
+        std::cout << "Agora precisamos processar o que ele quer e devolver uma response." << std::endl;
+        // PReciso entender como funciona esse processo de responder ao cliente.
+        // Eu escrevo nesse FD a resposta apenas?
+        // Tipo, eu devolvo o html (estatico ou dinamico) escrevendo no FD?
+        // Depois de enviar a response, eu dou close()
+        close(clientFd);
+    }
+}
+
+void serverFdInReadyList(NewRunTime *runtime) {
+    while(true) {
+        struct sockaddr_in clientSocketAddr;
+        socklen_t clientLen = sizeof(clientSocketAddr);
+        int clientFd = accept(runtime->getServerFd(), (struct sockaddr *)&clientSocketAddr, &clientLen);
+        //   EAGAIN or EWOULDBLOCK
+        //   The socket is marked nonblocking and no connections are
+        //   present to be accepted (nao ha mais conexoes para serem aceitas)
+        if (clientFd == -1) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                break;
+            }
+        } else {
+            set_nonblocking(clientFd);
+            try {
+                runtime->manipInterestList(EPOLL_CTL_ADD, EPOLLIN, clientFd);
+            }
+            catch(const std::exception& e) {
+                std::cerr << e.what() << '\n';
+                close(clientFd);
+            }
+        }
+    }
+}
+
 void epollReadyListLoop(NewRunTime *runtime, int numberOfReadyFds) {
     for (int i = 0; i < numberOfReadyFds; i++) {
         struct epoll_event &element = runtime->getElementFromReadyList(i); // pega apenas um indice por vez
@@ -7,10 +60,12 @@ void epollReadyListLoop(NewRunTime *runtime, int numberOfReadyFds) {
         if (element.data.fd == runtime->getServerFd()) {
             // nova conexao foi feita no socket do servidor
             std::cout << "Server FD esta pronto!" << std::endl;
+            serverFdInReadyList(runtime);
         }
         else {
             // outro FD, que nao e o servidor, esta pronto para ser processado
             std::cout << "Cliente esta pronto!" << std::endl;
+            clientFdInReadyList(runtime, element);
         }
     }
 }
