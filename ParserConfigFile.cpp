@@ -1,5 +1,7 @@
 #include "ParserConfigFile.hpp"
 #include <sstream>
+#include <vector>
+#include <cctype>
 
 void	ParserConfigFile::readFile(const std::string &filename, std::string &content)
 {
@@ -51,6 +53,67 @@ void ParserConfigFile::cleanFile(const std::string &filename, std::string &conte
 	readFile(filename, content); //| Arquivo completo
 	removeComments(content);     //| Remover comentários (linhas com '#')
 	trim(content);               //| Remover os whitespaces do começo e do final do content.
+}
+
+std::vector<std::string> ParserConfigFile::tokenizeContent(const std::string &content)
+{
+	std::vector<std::string> tokens;
+	std::string currentToken;
+	bool inQuotes = false;
+	char quoteChar = '\0';
+	
+	for (size_t i = 0; i < content.length(); ++i)
+	{
+		char c = content[i];
+
+		if ((c == '"' || c == '\'') && !inQuotes)
+		{
+			inQuotes = true;
+			quoteChar = c;
+			if (!currentToken.empty())
+			{
+				tokens.push_back(currentToken);
+				currentToken.clear();
+			}
+			currentToken += c;
+		}
+		else if (c == quoteChar && inQuotes)
+		{
+			inQuotes = false;
+			currentToken += c;
+			tokens.push_back(currentToken);
+			currentToken.clear();
+			quoteChar = '\0';
+		}
+		else if (inQuotes)
+		{
+			currentToken += c;
+		}
+		else if (c == '{' || c == '}' || c == ';')
+		{
+			if (!currentToken.empty())
+			{
+				tokens.push_back(currentToken);
+				currentToken.clear();
+			}
+			tokens.push_back(std::string(1, c));
+		}
+		else if (std::isspace(c))
+		{
+			if (!currentToken.empty())
+			{
+				tokens.push_back(currentToken);
+				currentToken.clear();
+			}
+		}
+		else
+			currentToken += c;
+	}
+	
+	if (!currentToken.empty())
+		tokens.push_back(currentToken);
+	
+	return tokens;
 }
 
 /*
