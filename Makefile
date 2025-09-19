@@ -1,61 +1,47 @@
-NAME = Webserv
+NAME	=	Parser
 
-COMPILER = c++
+SRCS	=	main.cpp             \
+		ParserConfigFile.cpp  \
 
-FLAGS = -Wall -Werror -Wextra
+OBJDIR	=	Objects
 
-CPP_FLAGS = -std=c++98
+OBJS	=	$(SRCS:%.cpp=$(OBJDIR)/%.o)
 
-SRC = main.cpp
+CXX	=	c++
 
-OBJ = $(SRC:.cpp=.o)
+CXXFLAGS	=	-Wall -Werror -Wextra -std=c++98
 
-.cpp.o :
-	@$(COMPILER) $(FLAGS) $(CPP_FLAGS) -c $< -o $(<:.cpp=.o)
+RM	=	rm -rf
 
-$(NAME) : $(OBJ) progress
-	@$(COMPILER) $(FLAGS) $(CPP_FLAGS) $(OBJ) -o $(NAME)
+TOTAL_SRCS	=	$(words $(SRCS))
 
-all : $(NAME)
-	@sleep 0.2
-	@printf "\033[0;32m ALL READY TO GO!\033[0m\n"; \
+COMPILED_SRCS	=	0
 
-clean :
-	@rm -rf $(OBJ)
-	@sleep 0.1
-	@printf "\033[0;32m OBJECTS CLEANED!\033[0m\n"; \
+all: $(NAME)
 
-fclean : clean
-	@rm -rf $(NAME)
-	@sleep 0.1
-	@printf "\033[0;32m ALL CLEANED!\033[0m\n"; \
+$(NAME): $(OBJS)
+		@$(CXX) -o $(NAME) $(OBJS)
+		@echo "\033[1;97m🔔 WebServer Is Ready! 🔔\033[0m"
 
-re : fclean all
+$(OBJDIR)/%.o: %.cpp
+		@mkdir -p $(dir $@)
+		@$(CXX) $(CXXFLAGS) -c $< -o $@
+		$(eval COMPILED_SRCS=$(shell echo $$(($(COMPILED_SRCS)+1))))
+		$(eval COLOR_VALUE=$(shell echo $$((255*$(COMPILED_SRCS)/$(TOTAL_SRCS)))))
+		@echo -n "\033[38;2;$(COLOR_VALUE);$(COLOR_VALUE);$(COLOR_VALUE)m  WebServer Is Ready!\033[0m\r"
+		@sleep 0.01
 
-progress :
-	@$(MAKE) --no-print-directory _progress
+supp: re
+		valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./WebServer config.conf
 
-_progress :
-	@tput civis
-	@width=50; \
-	progress=0; \
-	while [ $$progress -le $$width ]; do \
-		printf "\r\033[0;32m Progress: [ "; \
-		for i in $$(seq 1 $$progress); do \
-			printf "="; \
-		done; \
-		for i in $$(seq $$progress $$width); do \
-			printf " "; \
-		done; \
-		percent=$$((progress * 2)); \
-		printf "]%d%%\033[0m" $$percent; \
-		progress=$$((progress + 5)); \
-		sleep 0.1; \
-	done; \
-	printf "\n\033[0;32m COMPILATION COMPLETE!\033[0m\n"; \
-	tput cnorm
+clean:
+		@$(RM) $(OBJDIR)
+		@echo "\033[38;2;255;165;0m🗑️  Objects Are Cleaned! 🗑️\033[0m"
 
-workflow : $(OBJ)
-	@$(COMPILER) $(FLAGS) $(CPP_FLAGS) $(OBJ) -o $(NAME)
+fclean: clean
+		@$(RM) $(NAME)
+		@echo "\033[31m🗑️  WebServer Is Cleaned! 🗑️\033[0m"
+
+re: fclean all
 
 .PHONY: all clean fclean re

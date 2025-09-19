@@ -1,62 +1,22 @@
-#include <sys/socket.h>
+#include "ParserConfigFile.hpp"
 #include <iostream>
-#include <netinet/in.h>
-#include <unistd.h>
 
-// Para testar com outro terminal, usar "nc localhost 8080"
-// Com esse teste, podemos ler o que o client manda para o servidor.
+int	verify_args(int ac, char **av)
+{
+	if (ac != 2 || std::string(av[1]).empty())
+	{
+		std::cerr << "Usage: " << av[0] << " <config_file>" << std::endl;
+		return (0);
+	}
+	return (1);
+}
 
-int main() {
-    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd == -1) {
-        std::cerr << "Erro ao criar o socket()." << std::endl;
-        return (-1);
-    }
-    else {
-        std::cout << "Socket criado com sucesso!" << std::endl;
-        std::cout << sockfd << std::endl;
-    }
+int	main(int ac, char **av)
+{
+	if (!verify_args(ac, av))
+		return (1);
 
-    struct sockaddr_in address;
-    address.sin_family = AF_INET;
-    address.sin_port = htons(8080);
-    address.sin_addr.s_addr = htons(INADDR_ANY);
-
-    if (bind(sockfd, (const struct sockaddr *)&address, sizeof(address)) == -1) {
-        std::cerr << "Erro ao bindar o socket no endereço." << std::endl;
-        return (-1);
-    }
-    else {
-        std::cout << "Socket bindado ao endereço com sucesso!" << std::endl;
-    }
-
-    if (listen(sockfd, 5) == -1){
-        std::cerr << "Erro ao por o socket em modo passivo." << std::endl;
-        return (-1);
-    }
-    else {
-        std::cout << "Socket em modo passivo!" << std::endl;
-    }
-
-    while (true) {
-        //int clientFd = accept(sockfd, (struct sockaddr *)&address, sizeof(address));
-        int clientFd = accept(sockfd, NULL, NULL);
-        char buf[1000];
-
-        if (clientFd == -1) {
-            std::cerr << "Erro ao aceitar a conexão." << std::endl;
-        }
-        else {
-            std::cout << "Conexão aceita com sucesso!" << std::endl;
-            write(clientFd, "Oie!\n", 5);
-            //close(clientFd);
-        }
-        for (;;) {
-            int bytes = read(clientFd, buf, 10);
-            std::cout << bytes << std::endl;
-            std::cout << buf << std::endl;
-        }
-    }
-
-    return (0);
+	std::string	content;
+	ParserConfigFile::readFile(av[1], content);
+	std::cout << content << std::endl;
 }
