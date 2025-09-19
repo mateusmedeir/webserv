@@ -86,9 +86,7 @@ std::vector<std::string> ParserConfigFile::tokenizeContent(const std::string &co
 			quoteChar = '\0';
 		}
 		else if (inQuotes)
-		{
 			currentToken += c;
-		}
 		else if (c == '{' || c == '}' || c == ';')
 		{
 			if (!currentToken.empty())
