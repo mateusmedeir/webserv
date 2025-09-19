@@ -18,5 +18,14 @@ int	main(int ac, char **av)
 
 	std::string	content;
 	ParserConfigFile::readFile(av[1], content);
+	
+	// Arquivo completo
+	std::cout << "----- File Content Start -----" << std::endl;
 	std::cout << content << std::endl;
+
+	// Remover os whitespaces do começo e do final do content.
+	ParserConfigFile::trim(content);
+	std::cout << "----- Trimmed Content Start -----" << std::endl;
+	std::cout << content << std::endl;
+
 }
