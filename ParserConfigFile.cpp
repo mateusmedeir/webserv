@@ -1,4 +1,5 @@
 #include "ParserConfigFile.hpp"
+#include <sstream>
 
 void	ParserConfigFile::readFile(const std::string &filename, std::string &content)
 {
@@ -7,6 +8,49 @@ void	ParserConfigFile::readFile(const std::string &filename, std::string &conten
 		throw std::runtime_error("Could not open file: " + filename);
 
 	content = std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+}
+
+void	ParserConfigFile::trim(std::string &content)
+{
+	size_t start = content.find_first_not_of(" \t\n\r\f\v");
+	if (start == std::string::npos)
+	{
+		content.clear();
+		return;
+	}
+	
+	size_t end = content.find_last_not_of(" \t\n\r\f\v");
+	
+	content = content.substr(start, end - start + 1);
+}
+
+void	ParserConfigFile::removeComments(std::string &content)
+{
+	std::string result;
+	std::istringstream iss(content);
+	std::string line;
+	
+	while (std::getline(iss, line))
+	{
+		size_t commentPos = line.find('#');
+		
+		if (commentPos != std::string::npos)
+			line = line.substr(0, commentPos);
+		
+		result += line + "\n";
+	}
+	
+	if (!result.empty() && result[result.length() - 1] == '\n')
+		result.erase(result.length() - 1);
+	
+	content = result;
+}
+
+void ParserConfigFile::cleanFile(const std::string &filename, std::string &content)
+{
+	readFile(filename, content); //| Arquivo completo
+	removeComments(content);     //| Remover comentários (linhas com '#')
+	trim(content);               //| Remover os whitespaces do começo e do final do content.
 }
 
 /*
