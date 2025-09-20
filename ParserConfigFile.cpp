@@ -1,7 +1,4 @@
 #include "ParserConfigFile.hpp"
-#include <sstream>
-#include <vector>
-#include <cctype>
 
 void	ParserConfigFile::readFile(const std::string &filename, std::string &content)
 {
@@ -61,23 +58,24 @@ std::vector<std::string> ParserConfigFile::tokenizeContent(const std::string &co
 	std::string currentToken;
 	bool inQuotes = false;
 	char quoteChar = '\0';
+	int braceCount = 0;
 	
 	for (size_t i = 0; i < content.length(); ++i)
 	{
 		char c = content[i];
 
-		if ((c == '"' || c == '\'') && !inQuotes)
+		if ((c == '"' || c == '\'') && !inQuotes) //| Verifica se o caractere é uma aspas
 		{
 			inQuotes = true;
 			quoteChar = c;
-			if (!currentToken.empty())
+			if (!currentToken.empty()) //| Adiciona o token atual ao vetor de tokens
 			{
 				tokens.push_back(currentToken);
 				currentToken.clear();
 			}
 			currentToken += c;
 		}
-		else if (c == quoteChar && inQuotes)
+		else if (c == quoteChar && inQuotes) //| Verifica se o caractere é a aspas que fecha
 		{
 			inQuotes = false;
 			currentToken += c;
@@ -85,90 +83,50 @@ std::vector<std::string> ParserConfigFile::tokenizeContent(const std::string &co
 			currentToken.clear();
 			quoteChar = '\0';
 		}
-		else if (inQuotes)
+		else if (inQuotes) //| Verifica se o caractere está dentro de aspas, se estiver, só passa para o próximo caractere
 			currentToken += c;
-		else if (c == '{' || c == '}' || c == ';')
+		else if (c == '{' || c == '}' || c == ';') //| Verifica se o caractere é uma chave ou ponto e vírgula
 		{
-			if (!currentToken.empty())
+			if (!inQuotes) //| Conta a quantidade de chaves abertas e fechadas
+			{
+				if (c == '{')
+					braceCount++;
+				else if (c == '}')
+					braceCount--;
+			}
+			if (!currentToken.empty()) //| Adiciona o token atual ao vetor de tokens
 			{
 				tokens.push_back(currentToken);
 				currentToken.clear();
 			}
 			tokens.push_back(std::string(1, c));
 		}
-		else if (std::isspace(c))
+		else if (std::isspace(c)) //| Verifica se o caractere é um espaço
 		{
-			if (!currentToken.empty())
+			if (!currentToken.empty()) //| Adiciona o token atual ao vetor de tokens
 			{
 				tokens.push_back(currentToken);
 				currentToken.clear();
 			}
 		}
-		else
+		else //| Se não for um espaço, adiciona o caractere ao token atual
 			currentToken += c;
 	}
 	
-	if (!currentToken.empty())
+	if (!currentToken.empty()) //| Adiciona o token atual ao vetor de tokens
 		tokens.push_back(currentToken);
+	
+	if (braceCount != 0) //| Verifica se as chaves estão balanceadas
+		throw std::runtime_error("Configuração inválida: chaves não balanceadas");
 	
 	return tokens;
 }
 
-/*
-void	ParserConfigFile::readFile(const std::string &filename, std::string &content)
+void ParserConfigFile::parser(const std::string &filename, std::vector<std::string> &tokens)
 {
-	std::ifstream file(filename.c_str(), std::ios::binary);
-	if (!file.is_open())
-		throw std::runtime_error("Could not open file: " + filename);
-	
-	file.seekg(0, std::ios::end);
-	std::size_t size = file.tellg();
+	std::string content;
+	cleanFile(filename, content);
+	tokens = tokenizeContent(content);
 
-	file.seekg(0, std::ios::beg);
-
-	content.assign(static_cast<size_t>(size), '\0');
-	file.read(&content[0], size);
-	if (!file)
-		throw std::runtime_error("Error reading file: " + filename);
-
-	file.close();
+	//| Fazer o parser dos tokens e setar os valores na classe
 }
-
-void	ParserConfigFile::readFile(const std::string &filename, std::string &content)
-{
-	int fd = open(filename.c_str(), O_RDONLY);
-	if (fd < 0)
-		throw std::runtime_error("Could not open file: " + filename);
-
-	struct stat st;
-	if (fstat(fd, &st) < 0)
-	{
-		close(fd);
-		throw std::runtime_error("Could not get file size: " + filename);
-	}
-	size_t size = st.st_size;
-
-	content.resize(size);
-
-	ssize_t bytesRead = 0;
-	size_t totalRead = 0;
-	while (totalRead < size)
-	{
-		bytesRead = read(fd, &content[totalRead], size - totalRead);
-		if (bytesRead < 0)
-		{
-			close(fd);
-			throw std::runtime_error("Error reading file: " + filename);
-		}
-		if (bytesRead == 0) //| EOF
-			break;
-		totalRead += bytesRead;
-	}
-
-	close(fd);
-
-	if (totalRead != size)
-	
-	content.resize(totalRead);
-}
-*/

@@ -1,6 +1,6 @@
 NAME	=	Parser
 
-SRCS	=	main.cpp             \
+SRCS	=	main.cpp         \
 		ParserConfigFile.cpp  \
 
 OBJDIR	=	Objects

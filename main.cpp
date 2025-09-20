@@ -24,11 +24,9 @@ int	main(int ac, char **av)
 	if (!verify_args(ac, av))
 		return (1);
 
-	std::string content;
-	ParserConfigFile::cleanFile(av[1], content);
+	std::vector<std::string> tokens;
+	ParserConfigFile::parser(av[1], tokens);
 	
-	std::vector<std::string> tokens = ParserConfigFile::tokenizeContent(content);
-
 	print_tokens(tokens);
 
 	return (0);
