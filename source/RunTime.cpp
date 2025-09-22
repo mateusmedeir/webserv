@@ -1,11 +1,5 @@
-#include "WebservHeader.hpp"
+#include "../includes/WebservHeader.hpp"
 
-        // RunTime(void);
-        // RunTime(int socketDomain, int socketType);
-        // RunTime(const RunTime &src);
-        // RunTime &operator=(const RunTime &src);
-
-        // ~RunTime(void);
 RunTime::RunTime(void) {}
 
 RunTime::RunTime(int socketDomain, int socketType): _server(socketDomain, socketType), _epoll() {

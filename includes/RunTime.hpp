@@ -1,12 +1,15 @@
 #pragma once
 
 # include "WebservHeader.hpp"
+# include <map>
+
 
 class RunTime {
     private:
     public:
-        ServerInstance  _server;
-        EpollInstance   _epoll;
+        ServerInstance              _server;
+        EpollInstance               _epoll;
+        std::map <int, ClientState> _clients;
         
         RunTime(void);
         RunTime(int socketDomain, int socketType);

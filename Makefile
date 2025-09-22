@@ -6,16 +6,17 @@ FLAGS = -Wall -Werror -Wextra
 
 CPP_FLAGS = -std=c++98
 
-SRC = 	main.cpp \
-		Utils.cpp \
-		EpollInstance.cpp\
-		ServerInstance.cpp \
-		RunTime.cpp
+SRC =	main.cpp \
+		source/Utils.cpp \
+		source/EpollInstance.cpp \
+		source/ServerInstance.cpp \
+		source/ClientState.cpp \
+		source/RunTime.cpp
 
 OBJ = $(SRC:.cpp=.o)
 
-.cpp.o :
-	@$(COMPILER) $(FLAGS) $(CPP_FLAGS) -c $< -o $(<:.cpp=.o)
+.cpp.o:
+	@$(COMPILER) $(FLAGS) $(CPP_FLAGS) -Iincludes -c $< -o $@
 
 $(NAME) : $(OBJ) progress
 	@$(COMPILER) $(FLAGS) $(CPP_FLAGS) $(OBJ) -o $(NAME)
