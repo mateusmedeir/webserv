@@ -8,7 +8,7 @@
         // ~RunTime(void);
 RunTime::RunTime(void) {}
 
-RunTime::RunTime(int socketDomain, int socketType): _epoll(), _server(socketDomain, socketType) {
+RunTime::RunTime(int socketDomain, int socketType): _server(socketDomain, socketType), _epoll() {
     std::cout << "RunTime got created!" << std::endl;
 }
 
