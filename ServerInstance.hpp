@@ -2,22 +2,17 @@
 
 # include "WebservHeader.hpp"
 
-class NewEpollInstance;
-
-class NewRunTime : public NewEpollInstance {
+class ServerInstance {
     private:
         int                 _serverFd;
         struct sockaddr_in  _serverAddr;
     public:
-        NewRunTime(void);
-        NewRunTime(int socketDomain, int socketType);
-        NewRunTime(const NewRunTime &src);
-        NewRunTime &operator=(const NewRunTime &src);
+        ServerInstance(void);
+        ServerInstance(int socketDomain, int socketType);
+        ServerInstance(const ServerInstance &src);
+        ServerInstance &operator=(const ServerInstance &src);
 
-        ~NewRunTime(void);
-
-        virtual void manipInterestList(int operation, uint32_t events, int socketFd);
-        virtual int manipEpollWait(void);
+        ~ServerInstance(void);
 
         int getServerFd(void) const;
 

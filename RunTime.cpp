@@ -1,151 +1,27 @@
-#include "RunTime.hpp"
-#include "EpollInstance.hpp"
-// #include "WebservHeader.hpp"
+#include "WebservHeader.hpp"
 
-// RunTime(void);
-RunTime::RunTime(void) : EpollInstance() {
-    std::cout << "Instance of RunTime was created!" << std::endl;
+        // RunTime(void);
+        // RunTime(int socketDomain, int socketType);
+        // RunTime(const RunTime &src);
+        // RunTime &operator=(const RunTime &src);
+
+        // ~RunTime(void);
+RunTime::RunTime(void) {}
+
+RunTime::RunTime(int socketDomain, int socketType): _epoll(), _server(socketDomain, socketType) {
+    std::cout << "RunTime got created!" << std::endl;
 }
 
-// ~RunTime(void);
-RunTime::~RunTime(void) {
-    close(this->_serverFd);
-}
-
-// RunTime(const RunTime &src);
 RunTime::RunTime(const RunTime &src) {
     *this = src;
 }
-// RunTime &operator=(const RunTime &src);
+
 RunTime &RunTime::operator=(const RunTime &src) {
     if (this != &src) {
-        this->_serverFd = src._serverFd;
-        this->_serverAddr = src._serverAddr;
-        this->_epollFd = src._epollFd;
-        this->_configEpollEvents = src._configEpollEvents;
-        for (int i = 0; i < MAX_EVENTS; i++) {
-            this->_readyList[i].data.fd = src._readyList[i].data.fd;
-            this->_readyList[i].events = src._readyList[i].events;
-        }
-        // this->_epollInstance = src._epollInstance;
-        // this->_configEpollEvents = src._configEpollEvents;
+        this->_server = src._server;
+        this->_epoll = src._epoll;
     }
     return (*this);
 }
 
-// // RunTime(int socketDomain, int socketType, int serverPort, int serverAddr);
-// RunTime::RunTime(int socketDomain, int socketType, int serverPort, int serverAddr) {
-//     this->_serverFd = socket(socketDomain, socketType, 0);
-//     if (this->_serverFd == -1) {
-//         //error
-//         //dar close nos FDs abertos
-//     }
-//     this->_serverAddr.sin_family = socketDomain;
-//     this->_serverAddr.sin_port = htons(serverPort);
-//     this->_serverAddr.sin_addr.s_addr = htons(serverAddr);
-//     if (bind(this->_serverFd, (struct sockaddr *)&this->_serverAddr, sizeof(this->_serverAddr)) == -1) {
-//         //error
-//         //dar close nos FDs abertos
-//     }
-//     if (set_nonblocking(this->_serverFd) == -1) {
-//         //error
-//         //dar close nos FDs abertos
-//     }
-//     if (listen(this->_serverFd, MAX_EVENTS) == -1) {
-//         //error
-//         //dar close nos FDs abertos
-//     }
-// }
-
-// int getServerFd(void) const;
-int RunTime::getServerFd(void) const {
-    return (this->_serverFd);
-}
-
-// struct sockaddr_in getServerAddr(void) const;
-struct sockaddr_in RunTime::getServerAddr(void) const {
-    return (this->_serverAddr);
-}
-
-// void setServerAddrStruct(int socketDomain, int serverPort, int serverAddr);
-void RunTime::setServerAddrStruct(int socketDomain, int serverPort, int serverAddr) {
-    this->_serverAddr.sin_family = socketDomain;
-    this->_serverAddr.sin_port = htons(serverPort);
-    this->_serverAddr.sin_addr.s_addr = htons(serverAddr);
-}
-
-// void initServerSocket(int socketDomain, int socketType);
-void RunTime::initServerSocket(int socketDomain, int socketType) {
-    this->_serverFd = socket(socketDomain, socketType, 0);
-    if (getServerFd() == -1) {
-        throw(RunTime::CannotInitServerSocket());
-        //trow alguma exception??
-        //erro ao criar o socket principal do servidor
-        //dar close nos FDs abertos
-    }
-}
-
-// void bindServerSocket();
-void RunTime::bindServerSocket(void) {
-    if (bind(getServerFd(), (struct sockaddr *)&this->_serverAddr, sizeof(getServerAddr())) == -1) {
-        throw(RunTime::CannotBindServerSocket());
-        //trow alguma exception?
-        //erro ao bindar o socket a uma porta/endereco
-        //dar close nos FDs abertos
-    }
-}
-
-// void updateToNonBlocking();
-void RunTime::updateToNonBlocking(void) {
-    if (set_nonblocking(getServerFd()) == -1) {
-        throw(RunTime::CannotUpdateServerToNonBlocking());
-        //trow alguma exception?
-        //erro ao por o servidor em modo nao bloqueante
-        //dar close nos FDs abertos
-    }
-}
-
-// void listenServerSocket();
-void RunTime::listenServerSocket(void) {
-    if (listen(getServerFd(), MAX_EVENTS) == -1) {
-        throw(RunTime::CannotSetServerToListen());
-        //trow alguma exception?
-        //erro ao colocar o servidor em modo passivo
-        //dar close nos FDs abertos
-    }
-}
-
-// virtual void initEpollInstance(void) const;
-// void RunTime::initEpollInstance(void) const {
-//     this->_epollFd = epoll_create(1);
-//     if (this->_epollFd == -1) {
-//         throw(EpollInstance::CannotInitEpollInstance());
-//     }
-// }
-
-
-// virtual void manipulateEpollInstance(int operation, uint32_t events, int socketFd) const;
-void RunTime::manipulateEpollInstance(int operation, uint32_t events, int socketFd) const {
-    if (operation != EPOLL_CTL_ADD && operation != EPOLL_CTL_MOD && operation != EPOLL_CTL_DEL) {
-        throw(EpollInstance::CannotManipulateEpollInstance());
-    }
-    if (epoll_ctl(getEpollFd(), operation, socketFd, &this->_configEpollEvents) == -1) {
-        throw(EpollInstance::CannotManipulateEpollInstance());
-    }
-}
-
-const char * RunTime::CannotInitServerSocket::what() const throw() {
-    return ("Error: error in creating socket with socket().");
-}
-
-const char * RunTime::CannotBindServerSocket::what() const throw() {
-    return ("Error: error in binding server socket with bind().");
-}
-
-const char * RunTime::CannotUpdateServerToNonBlocking::what() const throw() {
-    return ("Error: error in trying to set the non-blocking behavior.");
-}
-
-const char * RunTime::CannotSetServerToListen::what() const throw() {
-    return ("Error: error in setting the server to listen with listen().");
-}
+RunTime::~RunTime(void) {}

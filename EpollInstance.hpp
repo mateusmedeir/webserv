@@ -2,13 +2,8 @@
 
 # include "WebservHeader.hpp"
 
-// Acho que uma saida e declarar essa classe como Abstrata. Dessa forma, a classe RunTime
-// consegue acessar os atributos da Epoll diretamente, sem passar pelos metodos, e vai
-// conseguir implementar os metodos necessarios para manipular o Epoll tambem.
-// Preciso de ajuda para decidir isso. Mas acho que e uma boa saida.
-
 class EpollInstance {
-    protected:
+    private:
         int                 _epollFd;
         struct epoll_event  _configEpollEvents;
         struct epoll_event  _readyList[MAX_EVENTS];
@@ -17,15 +12,20 @@ class EpollInstance {
         EpollInstance(const EpollInstance &src);
         EpollInstance &operator=(const EpollInstance &src);
 
-        virtual ~EpollInstance(void);
-
+        ~EpollInstance(void);
+        
         int getEpollFd(void) const;
+        
         void initEpollInstance(void);
+        struct epoll_event getConfigEpollEvents(void) const;
+        struct epoll_event &getReadyList(void);
 
-        void setConfigEpollEvents(uint32_t events, int socketFd);
+        void setConfigEpollEvents(int socketFd, uint32_t events);
 
-        virtual void manipulateEpollInstance(int operation, uint32_t events, int socketFd) const = 0;
-        // virtual void initEpollInstance(void) const = 0;
+        struct epoll_event &getElementFromReadyList(int index);
+
+        void manipInterestList(int operation, uint32_t events, int socketFd);
+        int manipEpollWait(void);
 
         class CannotInitEpollInstance : public std::exception {
             public:
