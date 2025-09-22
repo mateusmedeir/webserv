@@ -1,6 +1,6 @@
 #include "ParserConfigFile.hpp"
 
-void	ParserConfigFile::readFile(const std::string &filename, std::string &content)
+void ParserConfigFile::readFile(const std::string &filename, std::string &content)
 {
 	std::ifstream file(filename.c_str());
 	if (!file.is_open())
@@ -9,7 +9,7 @@ void	ParserConfigFile::readFile(const std::string &filename, std::string &conten
 	content = std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 }
 
-void	ParserConfigFile::trim(std::string &content)
+void ParserConfigFile::trim(std::string &content)
 {
 	size_t start = content.find_first_not_of(" \t\n\r\f\v");
 	if (start == std::string::npos)
@@ -23,7 +23,7 @@ void	ParserConfigFile::trim(std::string &content)
 	content = content.substr(start, end - start + 1);
 }
 
-void	ParserConfigFile::removeComments(std::string &content)
+void ParserConfigFile::removeComments(std::string &content)
 {
 	std::string result;
 	std::istringstream iss(content);
@@ -128,5 +128,21 @@ void ParserConfigFile::parser(const std::string &filename, std::vector<std::stri
 	cleanFile(filename, content);
 	tokens = tokenizeContent(content);
 
-	//| Fazer o parser dos tokens e setar os valores na classe
+	if (tokens.size() == 0)
+		throw std::runtime_error("Configuração inválida: não foi encontrado nenhum servidor");
+
+	std::vector<ServerBlock*> serverBlocks; //| É um ponteiro para usar o new e ele continuar alocado na memória mesmo fora da função
+	while (tokens.size() > 0) //| While para pegar todos os servers (se tiver mais de um server)
+	{
+		if (tokens[0] == "server" && tokens[1] == "{")
+			serverBlocks.push_back(new ServerBlock(tokens));
+		else
+			throw std::runtime_error("Configuração inválida: servidor não encontrado");
+	}
+}
+
+void ParserConfigFile::removeTokens(std::vector<std::string> &tokens, size_t amount)
+{
+	if (!tokens.empty())
+		tokens.erase(tokens.begin(), tokens.begin() + amount);
 }
