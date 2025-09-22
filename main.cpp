@@ -16,19 +16,24 @@ void clientFdInReadyList3(NewRunTime *runtime, struct epoll_event &element) {
     
     if (element.events & EPOLLIN) {
         while((count = read(clientFd, buffer, 1024)) > 0) {
-            // aqui, processaremos o que o cliente mandar para o servidor
+            // aqui, leremos o que o cliente esta mandando para o servidor.
+            // Faremos uma leitura em chuncks! Isto e, leremos de pouco em pouco.
+            // provavelmente nunca leremos todo o conteudo da requisicao de uma vez so.
             write(STDOUT_FILENO, buffer, count);
             // no momento, so estamos printando na tela mesmo.
+            //Precisamos de alguma forma de armazenar o conteudo ja lido de algum socket
+            // em alguma estrutura para que, durante as proximas leituras, possamos concatenar
+            // o que ja lemos com o que acabamos de ler.
         }
     }
-    else if (element.events & (EPOLLERR | EPOLLHUP)) {
-        std::cout << "teste kill de outro terminal" << std::endl;
-        close(clientFd);
-    }
-    else if (element.events & EPOLLRDHUP) {
+    if (element.events & EPOLLRDHUP) {
         std::cout << "Erro capturado pelo epoll." << std::endl;
         close(clientFd);
     }
+    // else if (element.events & (EPOLLERR | EPOLLHUP)) {
+    //     std::cout << "teste kill de outro terminal" << std::endl;
+    //     close(clientFd);
+    // }
     // std::cout << "Valor de count no loop do clientFdInReadyList(): " << count << std::endl;
     // if (count == -1) {
     //     // Como vamos validar essa parte do erro?
@@ -61,7 +66,7 @@ void serverFdInReadyList3(NewRunTime *runtime) {
         } else {
             set_nonblocking(clientFd);
             try {
-                runtime->manipInterestList(EPOLL_CTL_ADD, EPOLLIN, clientFd);
+                runtime->manipInterestList(EPOLL_CTL_ADD, EPOLLIN | EPOLLRDHUP, clientFd);
             }
             catch(const std::exception& e) {
                 std::cerr << e.what() << '\n';
