@@ -18,9 +18,8 @@
 # include "RunTime.hpp"
 
 enum clientBufferState {
-    IN_PROGRESS = 10,
-    COMPLETE = 11,
-    DONE = 12
+    IN_PROGRESS = 10, //Lendo o conteudo da request ainda
+    COMPLETE = 11, //Ja lemos todo o conteudo da request
 };
 
-int set_nonblocking(int sockfd);
+void set_nonblocking(int sockfd);

@@ -2,14 +2,14 @@
 
 void clientSocketIsReady(RunTime *runtime, struct epoll_event &clientSocket) {
     int clientFd = clientSocket.data.fd;
-    char buffer[1024] = {0};
+    char buffer[5] = {0};
     int count = 0;
     // (void)runtime;
 
     // Precisamos de uma forma de identificar o final da request.
-    // Dessa forma, conseguimos setar o state do client para DONE
+    // Dessa forma, conseguimos setar o state do client para COMPLETE
     if (clientSocket.events & EPOLLIN) {
-        while((count = read(clientFd, buffer, 1024)) > 0) {
+        while((count = read(clientFd, buffer, 5)) > 0) {
             // aqui, leremos o que o cliente esta mandando para o servidor.
             // Faremos uma leitura em chuncks! Isto e, leremos de pouco em pouco.
             // provavelmente nunca leremos todo o conteudo da requisicao de uma vez so.
@@ -20,11 +20,13 @@ void clientSocketIsReady(RunTime *runtime, struct epoll_event &clientSocket) {
             // em alguma estrutura para que, durante as proximas leituras, possamos concatenar
             // o que ja lemos com o que acabamos de ler.
         }
+        // std::cout << runtime->_clients[clientFd].getState() << std::endl;
+        // std::cout << runtime->_clients[clientFd].getRequest() << std::endl;
     }
     if (clientSocket.events & EPOLLRDHUP) {
         std::cout << "Erro capturado pelo epoll." << std::endl;
-        runtime->_clients[clientFd].getState();
         std::cout << runtime->_clients[clientFd].getRequest() << std::endl;
+        runtime->_clients.erase(clientFd);
         close(clientFd);
     }
 }
@@ -43,13 +45,13 @@ void serverSocketIsReady(RunTime *runtime) {
                 break;
             }
         } else {
-            set_nonblocking(clientFd);
             try {
                 // Adicionar o novo socket do cliente no map de clientes.
                 // A ideia aqui e que, sempre quando um novo cliente realizar uma conexao com o servidor
                 // Precisaremos ler o conteudo da request, armazenar, parsear, processar e devolver
                 // Com o map, esses processos devem ficar mais tranquilos e simples/rapidos
-                runtime->_clients[clientFd] = ClientState(IN_PROGRESS, "", "");
+                set_nonblocking(clientFd);
+                runtime->_clients[clientFd] = ClientState(IN_PROGRESS, clientFd, ".", ".");
                 runtime->_epoll.manipInterestList(EPOLL_CTL_ADD, EPOLLIN | EPOLLRDHUP, clientFd);
             }
             catch (const std::exception &e) {
@@ -62,31 +64,82 @@ void serverSocketIsReady(RunTime *runtime) {
 }
 
 void epollReadyListLoop(RunTime *runtime, int numberOfReadySockets) {
-    for (int i = 0; i < numberOfReadySockets; i++) {
-        struct epoll_event &socketReady = runtime->_epoll.getElementFromReadyList(i);
-
-        if (socketReady.data.fd == runtime->_server.getServerFd()) {
-            std::cout << "Evento ocorreu no serverSocket." << std::endl;
-            serverSocketIsReady(runtime);
-        }
-        else {
-            std::cout << "Evento ocorreu com um clientSocket." << std::endl;
-            //Validar se ja existe alguma key no map de clientes com o valor do FD do clientFd.
-            //Caso ja exista, nao faz nada????
-            //Caso nao exista, adiciona mais um elemento no map
-            clientSocketIsReady(runtime, socketReady);
+    if (numberOfReadySockets) {
+        for (int i = 0; i < numberOfReadySockets; i++) {
+            struct epoll_event &socketReady = runtime->_epoll.getElementFromReadyList(i);
+    
+            if (socketReady.data.fd == runtime->_server.getServerFd()) {
+                std::cout << "Evento ocorreu no serverSocket." << std::endl;
+                serverSocketIsReady(runtime);
+            }
+            else {
+                std::cout << "Evento ocorreu com um clientSocket." << std::endl;
+                //Validar se ja existe alguma key no map de clientes com o valor do FD do clientFd.
+                //Caso ja exista, nao faz nada????
+                //Caso nao exista, adiciona mais um elemento no map
+                clientSocketIsReady(runtime, socketReady);
+            }
         }
     }
+    int clientMapSize = runtime->_clients.size();
+    if (!clientMapSize) {
+        return ;
+    }
+    for (int i = 0; i < clientMapSize; i++) {
+        if (runtime->_clients[i].getState() == IN_PROGRESS) {
+            // Iremos ler o conteudo da request e concatenar na string request.
+            continue;
+        }
+        else if (runtime->_clients[i].getState() == COMPLETE) {
+            // Ja lemos toda a request
+            // Vamos parsear
+            // Processar o que for necessario
+            // Montar a response
+            // Enviar a response ao cliente
+            // close() no fd do client
+            // .erase() do map
+            continue;
+        }
+    }
+    // else {
+    //     int clientMapSize = runtime->_clients.size();
+    //     if (!clientMapSize) {
+    //         return ;
+    //     }
+    //     for (int i = 0; i < clientMapSize; i++) {
+    //         if (runtime->_clients[i].getState() == IN_PROGRESS) {
+    //             // Iremos ler o conteudo da request e concatenar na string request.
+    //             continue;
+    //         }
+    //         else if (runtime->_clients[i].getState() == COMPLETE) {
+    //             // Ja lemos toda a request
+    //             // Vamos parsear
+    //             // Processar o que for necessario
+    //             // Montar a response
+    //             // Enviar a response ao cliente
+    //             // close() no fd do client
+    //             // .erase() do map
+    //             continue;
+    //         }
+    //     }
+    // }
 }
 
 void serverMainLoop(RunTime *runtime) {
     while (true) {
         int numberOfReadySockets = runtime->_epoll.manipEpollWait();
+        // if (numberOfReadySockets == -1) {
+        //     std::cerr << "Error: erro ao manipular o epoll_wait()." << std::endl;
+        //     break;
+        // }
+        // else if (numberOfReadySockets > 0) {
+        //     epollReadyListLoop(runtime, numberOfReadySockets);
+        // }
         if (numberOfReadySockets == -1) {
             std::cerr << "Error: erro ao manipular o epoll_wait()." << std::endl;
             break;
         }
-        else if (numberOfReadySockets > 0) {
+        else {
             epollReadyListLoop(runtime, numberOfReadySockets);
         }
     }

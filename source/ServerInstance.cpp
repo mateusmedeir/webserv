@@ -52,9 +52,14 @@ void ServerInstance::bindServerSocket(void) {
 }
 
 void ServerInstance::updateToNonBlocking(void) {
-    if (set_nonblocking(getServerFd()) == -1) {
-        throw(ServerInstance::CannotUpdateServerToNonBlocking());
+    try
+    {
+        set_nonblocking(getServerFd());
     }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+    }   
 }
 
 void ServerInstance::listenServerSocket(void) {

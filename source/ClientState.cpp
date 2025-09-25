@@ -3,10 +3,10 @@
 
 ClientState::ClientState(void) {}
 
-        // ClientState(int state, std::string request, std::string response);
-ClientState::ClientState(int state, std::string request, std::string response) {
+ClientState::ClientState(int state, int clientFd, std::string request, std::string response) {
     std::cout << "Client got created..." << std::endl;
     this->_state = state;
+    this->_clientFd = clientFd;
     this->_request = request;
     this->_response = response;
 }

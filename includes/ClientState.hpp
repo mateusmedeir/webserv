@@ -6,11 +6,12 @@
 class ClientState {
     private:
         int         _state;
+        int         _clientFd;
         std::string _request;
         std::string _response;
     public:
         ClientState(void);
-        ClientState(int state, std::string request, std::string response);
+        ClientState(int state, int clientFd, std::string request, std::string response);
         ClientState(const ClientState &src);
         ClientState &operator=(const ClientState &src);
 
