@@ -10,7 +10,7 @@ SRC =	main.cpp \
 		source/Utils.cpp \
 		source/EpollInstance.cpp \
 		source/ServerInstance.cpp \
-		source/ClientState.cpp \
+		source/Client.cpp \
 		source/RunTime.cpp
 
 OBJ = $(SRC:.cpp=.o)

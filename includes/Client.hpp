@@ -3,19 +3,19 @@
 # include "WebservHeader.hpp"
 # include <string>
 
-class ClientState {
+class Client {
     private:
         int         _state;
         int         _clientFd;
         std::string _request;
         std::string _response;
     public:
-        ClientState(void);
-        ClientState(int state, int clientFd, std::string request, std::string response);
-        ClientState(const ClientState &src);
-        ClientState &operator=(const ClientState &src);
+        Client(void);
+        Client(int state, int clientFd, std::string request, std::string response);
+        Client(const Client &src);
+        Client &operator=(const Client &src);
 
-        ~ClientState(void);
+        ~Client(void);
 
         int getState(void) const;
         std::string &getRequest(void);
@@ -23,4 +23,6 @@ class ClientState {
         void setState(int state);
 
         void concatenateClientRequest(std::string request);
+
+        bool isRequestComplete(void);
 };

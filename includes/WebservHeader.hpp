@@ -14,7 +14,7 @@
 
 # include "EpollInstance.hpp"
 # include "ServerInstance.hpp"
-# include "ClientState.hpp"
+# include "Client.hpp"
 # include "RunTime.hpp"
 
 enum clientBufferState {

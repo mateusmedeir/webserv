@@ -9,7 +9,7 @@ class RunTime {
     public:
         ServerInstance              _server;
         EpollInstance               _epoll;
-        std::map <int, ClientState> _clients;
+        std::map <int, Client> _clients;
         
         RunTime(void);
         RunTime(int socketDomain, int socketType);
