@@ -1,11 +1,13 @@
 #include "ParserConfigFile.hpp"
 #include <iostream>
 
+#include "ServerBlock.hpp"
+
 int	verify_args(int ac, char **av)
 {
-	if (ac != 2 || std::string(av[1]).empty())
+	if (ac > 2)
 	{
-		std::cerr << "Usage: " << av[0] << " <config_file>" << std::endl;
+		std::cerr << "Usage: " << av[0] << " <config_file>\n\tOR\nUsage: " << av[0] << std::endl;
 		return (0);
 	}
 	return (1);
@@ -24,10 +26,19 @@ int	main(int ac, char **av)
 	if (!verify_args(ac, av))
 		return (1);
 
-	std::vector<std::string> tokens;
-	ParserConfigFile::parser(av[1], tokens);
-	
-	print_tokens(tokens);
+	try
+	{
+		std::vector<std::string> tokens;
+		if (ac == 2)
+			ParserConfigFile::parser(av[1], tokens);
+		else //| Caso não passem nenhum argumento, vamos usar nosso arquivo padrão
+			ParserConfigFile::parser("Configures/test_simple.conf", tokens);
+	}
+	catch (const std::exception &e)
+	{
+		std::cerr << "Error! Webserv: " << e.what() << std::endl;
+		return (1);
+	}
 
 	return (0);
 }

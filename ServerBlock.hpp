@@ -7,6 +7,9 @@
 #include <cstdlib>              //| std::atoi
 #include "ParserConfigFile.hpp" //| ParserConfigFile
 
+#include <iostream> //| Para testes, remover depois
+
+
 typedef struct s_listen
 {
     unsigned int    host;
@@ -25,15 +28,19 @@ class ServerBlock
         std::pair<bool, size_t> getMaxBodySize() const;
 
     private:
-		std::vector<std::string>	_serverNames;
-		std::vector<t_listen>		_listen;
-		std::pair<bool, size_t>		_maxBodySize;
+		std::vector<std::string>        _serverNames;
+		std::vector<t_listen>         _listen;
+		std::pair<bool, size_t>         _maxBodySize;
+        std::pair<bool, std::string>    _root;
+        //std::map<std::string, Location> _locations;
+        //std::map<int, std::string>    _errorPages;
 
-        //| Setters
-		//void setListen(std::vector<std::string> &tokens);      //| Fazer
-		//void setServerName(std::vector<std::string> &tokens);  //| Fazer
-		void setMaxBodySize(std::vector<std::string> &tokens);
-		//void setErrorPage(std::vector<std::string> &tokens);   //| Fazer
-		//void setLocation(std::vector<std::string> &tokens);    //| Fazer
-		//void setRoot(std::vector<std::string> &tokens);        //| Fazer
+        void printServerBlock();
+
+        void addListens(std::vector<std::string> &tokens);
+        void addServerNames(std::vector<std::string> &tokens);
+        void addMaxBodySize(std::vector<std::string> &tokens);
+        void addRoot(std::vector<std::string> &tokens);
+
+
 };
