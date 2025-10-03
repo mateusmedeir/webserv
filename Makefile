@@ -1,8 +1,9 @@
 NAME	=	Parser
 
-SRCS	=	main.cpp         \
-		ParserConfigFile.cpp  \
-		ServerBlock.cpp        \
+SRCS	=	main.cpp             \
+			ParserConfigFile.cpp  \
+			ServerBlock.cpp        \
+			LocationBlock.cpp       \
 
 OBJDIR	=	Objects
 
