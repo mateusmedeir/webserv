@@ -16,8 +16,8 @@ ServerBlock::ServerBlock(std::vector<std::string> &tokens): _maxBodySize(false, 
 			addServerNames(tokens);
 		else if (tokens[0] == "client_max_body_size")
 			addMaxBodySize(tokens);
-		//else if (tokens[0] == "error_page")
-			//addErrorPage(tokens);
+		else if (tokens[0] == "error_page")
+			addErrorPages(tokens);
 		//else if (tokens[0] == "location") //| Vai ser um classe LocationBlock
 			//addLocation(tokens); //| Fazer
 		else if (tokens[0] == "root")
@@ -43,6 +43,8 @@ ServerBlock::~ServerBlock() {}
 std::vector<std::string> ServerBlock::getServerNames() const { return this->_serverNames; }
 std::vector<t_listen> ServerBlock::getListen() const { return this->_listen; }
 std::pair<bool, size_t> ServerBlock::getMaxBodySize() const { return this->_maxBodySize; }
+std::pair<bool, std::string> ServerBlock::getRoot() const { return this->_root; }
+std::map<int, std::string> ServerBlock::getErrorPages() const { return this->_errorPages; }
 
 void ServerBlock::printServerBlock()
 {
@@ -57,6 +59,18 @@ void ServerBlock::printServerBlock()
     std::cout << "Listens: " << std::endl;
     for (size_t i = 0; i < this->_listen.size(); i++)
         std::cout << "Host[" << i << "]: " << this->_listen[i].host << " Port[" << i << "]: " << this->_listen[i].port << std::endl;
+
+    std::cout << "Error pages: " << std::endl;
+    for (std::map<int, std::string>::iterator it = this->_errorPages.begin(); it != this->_errorPages.end(); ++it)
+        std::cout << "Code: " << it->first << " | URI: " << it->second << std::endl;
+}
+
+static bool isAllNumber(std::string s)
+{
+    for (size_t i = 0; i < s.size(); i++)
+        if (!isdigit(s[i]))
+            return (false);
+    return (true);
 }
 
 static unsigned int strToIpv4(std::string s)
@@ -70,20 +84,18 @@ static unsigned int strToIpv4(std::string s)
 
     while (std::getline(ss, octet_str, '.'))
     {
-        unsigned int octet;
-        if (!(std::istringstream(octet_str) >> octet) || octet > 255) //| Verificando se é só número e se o octeto é maior que 225
-        {
-            throw std::runtime_error("Host inválido, octeto > 255 ou caracteres não numéricos");
-            return (0);
-        }
+        if (octet_str.empty() || isAllNumber(octet_str) == false)
+            throw std::runtime_error("Host inválido: octeto contém caracteres não numéricos");
+
+        unsigned int octet = std::atoi(octet_str.c_str());
+        if (octet > 255)
+            throw std::runtime_error("Host inválido: octeto maior que 255");
+
         octets.push_back(octet);
     }
 
     if (octets.size() != 4) //| Verificando se tem mais de 4 octetos
-    {
-        throw std::runtime_error("Host inválido, mais de 4 octetos");
-        return (0);
-    }
+        throw std::runtime_error("Host inválido:  mais de 4 octetos");
 
     return ((octets[0] << 24) | (octets[1] << 16) | (octets[2] << 8) | octets[3]);
 }
@@ -110,13 +122,8 @@ void ServerBlock::addListens(std::vector<std::string> &tokens)
         port = 80;
     else
     {
-        size_t i = 0;
-        while (i < after.size() - 1)
-        {
-            if (!isdigit(after[i]))
+        if (isAllNumber(after) == false)
                 throw std::runtime_error("Configuração inválida: port deve ser um número");
-            i++;
-        }
 
         port = std::atoi(after.c_str());
         if (port < 1 || port > 65535)
@@ -129,10 +136,8 @@ void ServerBlock::addListens(std::vector<std::string> &tokens)
 
     //| Remover duplicatas de listen (?)
     for (size_t i = 0; i < this->_listen.size(); i++)
-    {
         if (this->_listen[i].host == listen.host && this->_listen[i].port == listen.port)
-            throw std::runtime_error("Duplicated listen"); //| Ou somente remover duplicatas?
-    }
+            throw std::runtime_error("Listen duplicado"); //| Ou somente remover duplicatas?
 
     this->_listen.push_back(listen);
 
@@ -187,7 +192,7 @@ void ServerBlock::addMaxBodySize(std::vector<std::string> &tokens)
 
     std::string value = tokens[0];
     size_t i = 0;
-    while (i < value.size() - 1)
+    while (i < value.size() - 1) //| Para verificar se todos os caracteres, menos o último, é numérico
     {
         if (!isdigit(value[i]))
             throw std::runtime_error("Configuração inválida: client_max_body_size deve ser um número");
@@ -209,6 +214,45 @@ void ServerBlock::addMaxBodySize(std::vector<std::string> &tokens)
     ParserConfigFile::removeTokens(tokens, 1); //| Removendo o argumento de max_body_size
     if (tokens.size() == 0 || tokens[0] != ";")
         throw std::runtime_error("Configuração inválida: esperava um ponto e vírgula");
+    ParserConfigFile::removeTokens(tokens, 1); //| Removendo o ponto e vírgula
+}
+
+void ServerBlock::addErrorPages(std::vector<std::string> &tokens)
+{
+    ParserConfigFile::removeTokens(tokens, 1);
+    if (tokens.size() == 0 || tokens[0] == ";")
+        throw std::runtime_error("Configuração inválida: não foi encontrado nenhum error_page");
+
+    std::vector<std::string> codes_str; //| Para armazenar todos os [codes] que possam ter. Exemplo: error_page 101 102 103 page.html
+    while (tokens[0] != ";")
+    {
+        if (tokens[0] == tokens.back())
+            throw std::runtime_error("Configuração inválida: final do arquivo");
+        codes_str.push_back(tokens[0]);
+        ParserConfigFile::removeTokens(tokens, 1);
+    }
+
+    std::string uri = codes_str.back(); //| O último argumento deve ser a URI
+    codes_str.pop_back(); //| Removendo a URI do vetor de [codes]
+
+    std::vector<int> codes;
+    for (std::vector<std::string>::iterator it = codes_str.begin(); it != codes_str.end(); ++it)
+    {
+        if (isAllNumber(*it) == false)
+                throw std::runtime_error("Configuração inválida: error_page [code] deve ser um número");
+
+        int code = std::atoi(it->c_str());
+        if (code < 100 || code > 599)
+            throw std::runtime_error("Configuração inválida: error_page [code] deve ser um número entre 100 e 599");
+
+        codes.push_back(code);
+    }
+
+    for (std::vector<int>::iterator it = codes.begin(); it != codes.end(); ++it)
+        this->_errorPages[*it] = uri;
+
+    if (tokens.size() == 0)
+        throw std::runtime_error("Configuração inválida: final do arquivo");
     ParserConfigFile::removeTokens(tokens, 1); //| Removendo o ponto e vírgula
 }
 
