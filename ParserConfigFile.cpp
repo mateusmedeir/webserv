@@ -146,3 +146,29 @@ void ParserConfigFile::removeTokens(std::vector<std::string> &tokens, size_t amo
 	if (!tokens.empty())
 		tokens.erase(tokens.begin(), tokens.begin() + amount);
 }
+
+void ParserConfigFile::verifyToken(const std::vector<std::string> &tokens, TypeValidation type, const std::string &message)
+{
+	bool shouldThrow = false;
+
+	switch (type)
+	{
+		case EMPTY:
+			shouldThrow = tokens.empty();
+			break;
+		case SEMICOLON:
+			shouldThrow = tokens.empty() || tokens[0] == ";";
+			break;
+		case DIFF_SEMICOLON:
+			shouldThrow = tokens.empty() || tokens[0] != ";";
+			break;
+		case END_OF_FILE:
+			shouldThrow = tokens[0] == tokens.back();
+			break;
+		default:
+			throw std::runtime_error("Configuração inválida: tipo de validação desconhecido");
+	}
+
+	if (shouldThrow)
+		throw std::runtime_error(message);
+}

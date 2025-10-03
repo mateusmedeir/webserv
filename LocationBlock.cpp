@@ -9,8 +9,7 @@ void LocationBlock::addLocationBlock(std::vector<std::string> &tokens)
     this->_uri = tokens[0];
 
     ParserConfigFile::removeTokens(tokens, 2); //| Remove o token de URI e '{'
-    if (tokens.size() == 0)
-        throw std::runtime_error("Configuração inválida: location: não foi encontrado nenhum location");
+    ParserConfigFile::verifyToken(tokens, EMPTY, "Configuração inválida: location: não foi encontrado nenhum location");
 
     while (tokens.size() > 0)
     {
@@ -88,8 +87,7 @@ void LocationBlock::printLocationBlock()
 void LocationBlock::addAutoIndex(std::vector<std::string> &tokens)
 {
     ParserConfigFile::removeTokens(tokens, 1); //| Remove o token 'autoindex'
-    if (tokens.size() == 0 || tokens[0] == ";")
-        throw std::runtime_error("Configuração inválida: autoindex: não foi encontrado nenhum autoindex");
+    ParserConfigFile::verifyToken(tokens, SEMICOLON, "Configuração inválida: autoindex: não foi encontrado nenhum autoindex");
 
     if (tokens[0] == "on")
         this->_autoIndex = true;
@@ -99,16 +97,14 @@ void LocationBlock::addAutoIndex(std::vector<std::string> &tokens)
         throw std::runtime_error("Configuração inválida: autoindex: deve ser 'on' ou 'off'");
 
     ParserConfigFile::removeTokens(tokens, 1); //| Removendo o argumento de autoindex
-    if (tokens.size() == 0 || tokens[0] != ";")
-        throw std::runtime_error("Configuração inválida: autoindex: esperava um ponto e vírgula no final de autoindex");
+    ParserConfigFile::verifyToken(tokens, DIFF_SEMICOLON, "Configuração inválida: autoindex: esperava um ponto e vírgula no final de autoindex");
     ParserConfigFile::removeTokens(tokens, 1); //| Removendo o ponto e vírgula
 }
 
 void LocationBlock::addCanUpload(std::vector<std::string> &tokens)
 {
     ParserConfigFile::removeTokens(tokens, 1); //| Remove o token 'can_upload'
-    if (tokens.size() == 0 || tokens[0] == ";")
-        throw std::runtime_error("Configuração inválida: can_upload: não foi encontrado nenhum can_upload");
+    ParserConfigFile::verifyToken(tokens, SEMICOLON, "Configuração inválida: can_upload: não foi encontrado nenhum can_upload");
 
     if (tokens[0] == "on")
         this->_canUpload = true;
@@ -118,73 +114,61 @@ void LocationBlock::addCanUpload(std::vector<std::string> &tokens)
         throw std::runtime_error("Configuração inválida: can_upload: deve ser 'on' ou 'off'");
 
     ParserConfigFile::removeTokens(tokens, 1); //| Removendo o argumento de can_upload
-    if (tokens.size() == 0 || tokens[0] != ";")
-        throw std::runtime_error("Configuração inválida: can_upload: esperava um ponto e vírgula no final de can_upload");
+    ParserConfigFile::verifyToken(tokens, DIFF_SEMICOLON, "Configuração inválida: can_upload: esperava um ponto e vírgula no final de can_upload");
     ParserConfigFile::removeTokens(tokens, 1); //| Removendo o ponto e vírgula
 }
 
 void LocationBlock::addAlias(std::vector<std::string> &tokens)
 {
     ParserConfigFile::removeTokens(tokens, 1); //| Remove o token 'alias'
-    if (tokens.size() == 0 || tokens[0] == ";")
-        throw std::runtime_error("Configuração inválida: alias: não foi encontrado nenhum alias");
+    ParserConfigFile::verifyToken(tokens, SEMICOLON, "Configuração inválida: alias: não foi encontrado nenhum alias");
 
-    if (tokens[0] == tokens.back())
-        throw std::runtime_error("Configuração inválida: alias: final do arquivo encontrado");
+    ParserConfigFile::verifyToken(tokens, END_OF_FILE, "Configuração inválida: alias: final do arquivo encontrado");
 
     this->_alias = tokens[0];
 
     ParserConfigFile::removeTokens(tokens, 1); //| Removendo o argumento de alias
-    if (tokens.size() == 0 || tokens[0] != ";")
-        throw std::runtime_error("Configuração inválida: alias: esperava um ponto e vírgula no final de alias");
+    ParserConfigFile::verifyToken(tokens, DIFF_SEMICOLON, "Configuração inválida: alias: esperava um ponto e vírgula no final de alias");
     ParserConfigFile::removeTokens(tokens, 1); //| Removendo o ponto e vírgula
 }
 
 void LocationBlock::addReturn(std::vector<std::string> &tokens)
 {
     ParserConfigFile::removeTokens(tokens, 1); //| Remove o token 'return'
-    if (tokens.size() == 0 || tokens[0] == ";")
-        throw std::runtime_error("Configuração inválida: return: não foi encontrado nenhum return");
+    ParserConfigFile::verifyToken(tokens, SEMICOLON, "Configuração inválida: return: não foi encontrado nenhum return");
 
-    if (tokens[0] == tokens.back())
-        throw std::runtime_error("Configuração inválida: return: final do arquivo encontrado");
+    ParserConfigFile::verifyToken(tokens, END_OF_FILE, "Configuração inválida: return: final do arquivo encontrado");
 
     this->_return = tokens[0];
 
     ParserConfigFile::removeTokens(tokens, 1); //| Removendo o argumento de return
-    if (tokens.size() == 0 || tokens[0] != ";")
-        throw std::runtime_error("Configuração inválida: return: esperava um ponto e vírgula no final de return");
+    ParserConfigFile::verifyToken(tokens, DIFF_SEMICOLON, "Configuração inválida: return: esperava um ponto e vírgula no final de return");
     ParserConfigFile::removeTokens(tokens, 1); //| Removendo o ponto e vírgula
 }
 
 void LocationBlock::addUploadPath(std::vector<std::string> &tokens)
 {
     ParserConfigFile::removeTokens(tokens, 1); //| Remove o token 'upload_path'
-    if (tokens.size() == 0 || tokens[0] == ";")
-        throw std::runtime_error("Configuração inválida: upload_path: não foi encontrado nenhum upload_path");
+    ParserConfigFile::verifyToken(tokens, SEMICOLON, "Configuração inválida: upload_path: não foi encontrado nenhum upload_path");
 
-    if (tokens[0] == tokens.back())
-        throw std::runtime_error("Configuração inválida: upload_path: final do arquivo encontrado");
+    ParserConfigFile::verifyToken(tokens, END_OF_FILE, "Configuração inválida: upload_path: final do arquivo encontrado");
 
     this->_uploadPath = tokens[0];
 
     ParserConfigFile::removeTokens(tokens, 1); //| Removendo o argumento de upload_path
-    if (tokens.size() == 0 || tokens[0] != ";")
-        throw std::runtime_error("Configuração inválida: upload_path: esperava um ponto e vírgula no final de upload_path");
+    ParserConfigFile::verifyToken(tokens, DIFF_SEMICOLON, "Configuração inválida: upload_path: esperava um ponto e vírgula no final de upload_path");
     ParserConfigFile::removeTokens(tokens, 1); //| Removendo o ponto e vírgula
 }
 
 void LocationBlock::addIndex(std::vector<std::string> &tokens)
 {
     ParserConfigFile::removeTokens(tokens, 1); //| Remove o token 'index'
-    if (tokens.size() == 0 || tokens[0] == ";")
-        throw std::runtime_error("Configuração inválida: index: não foi encontrado nenhum index");
+    ParserConfigFile::verifyToken(tokens, SEMICOLON, "Configuração inválida: index: não foi encontrado nenhum index");
 
     std::vector<std::string> indexes;
     while (tokens[0] != ";")
     {
-        if (tokens[0] == tokens.back())
-            throw std::runtime_error("Configuração inválida: index: final do arquivo encontrado");
+        ParserConfigFile::verifyToken(tokens, END_OF_FILE, "Configuração inválida: index: final do arquivo encontrado");
         indexes.push_back(tokens[0]);
         ParserConfigFile::removeTokens(tokens, 1);
     }
@@ -192,22 +176,19 @@ void LocationBlock::addIndex(std::vector<std::string> &tokens)
     for (std::vector<std::string>::iterator it = indexes.begin(); it != indexes.end(); ++it)
         this->_index.push_back(*it);
 
-    if (tokens.size() == 0 || tokens[0] != ";")
-        throw std::runtime_error("Configuração inválida: index: esperava um ponto e vírgula no final de index");
+    ParserConfigFile::verifyToken(tokens, DIFF_SEMICOLON, "Configuração inválida: index: esperava um ponto e vírgula no final de index");
     ParserConfigFile::removeTokens(tokens, 1); //| Removendo o ponto e vírgula
 }
 
 void LocationBlock::addCgiExtensions(std::vector<std::string> &tokens)
 {
     ParserConfigFile::removeTokens(tokens, 1); //| Remove o token 'cgi_extensions'
-    if (tokens.size() == 0 || tokens[0] == ";")
-        throw std::runtime_error("Configuração inválida: cgi_extensions: não foi encontrado nenhum cgi_extensions");
+    ParserConfigFile::verifyToken(tokens, SEMICOLON, "Configuração inválida: cgi_extensions: não foi encontrado nenhum cgi_extensions");
 
     std::vector<std::string> cgi_extensions;
     while (tokens[0] != ";")
     {
-        if (tokens[0] == tokens.back())
-            throw std::runtime_error("Configuração inválida: cgi_extensions: final do arquivo encontrado");
+        ParserConfigFile::verifyToken(tokens, END_OF_FILE, "Configuração inválida: cgi_extensions: final do arquivo encontrado");
         if (tokens[0][0] != '.') //| Adiciona o ponto na frente da extensão para ficar .php ou .py
             tokens[0] = "." + tokens[0];
         if (tokens[0] != ".php" && tokens[0] != ".py") //| Um dos bônus: multiplas extensões de cgi
@@ -219,22 +200,19 @@ void LocationBlock::addCgiExtensions(std::vector<std::string> &tokens)
     for (std::vector<std::string>::iterator it = cgi_extensions.begin(); it != cgi_extensions.end(); ++it)
         this->_cgiExtensions.push_back(*it);
 
-    if (tokens.size() == 0 || tokens[0] != ";")
-        throw std::runtime_error("Configuração inválida: cgi_extensions: esperava um ponto e vírgula no final de cgi_extensions");
+    ParserConfigFile::verifyToken(tokens, DIFF_SEMICOLON, "Configuração inválida: cgi_extensions: esperava um ponto e vírgula no final de cgi_extensions");
     ParserConfigFile::removeTokens(tokens, 1); //| Removendo o ponto e vírgula
 }
 
 void LocationBlock::addAllowMethods(std::vector<std::string> &tokens)
 {
     ParserConfigFile::removeTokens(tokens, 1); //| Remove o token 'allow_methods'
-    if (tokens.size() == 0 || tokens[0] == ";")
-        throw std::runtime_error("Configuração inválida: allow_methods: não foi encontrado nenhum allow_methods");
+    ParserConfigFile::verifyToken(tokens, SEMICOLON, "Configuração inválida: allow_methods: não foi encontrado nenhum allow_methods");
 
     std::vector<std::string> allow_methods;
     while (tokens[0] != ";")
     {
-        if (tokens[0] == tokens.back())
-            throw std::runtime_error("Configuração inválida: allow_methods: final do arquivo encontrado");
+        ParserConfigFile::verifyToken(tokens, END_OF_FILE, "Configuração inválida: allow_methods: final do arquivo encontrado");
         if (tokens[0] != "GET" && tokens[0] != "POST" && tokens[0] != "DELETE")
             throw std::runtime_error("Configuração inválida: allow_methods: método inválido");
         allow_methods.push_back(tokens[0]);
@@ -244,7 +222,6 @@ void LocationBlock::addAllowMethods(std::vector<std::string> &tokens)
     for (std::vector<std::string>::iterator it = allow_methods.begin(); it != allow_methods.end(); ++it)
         this->_allowMethods.push_back(*it);
 
-    if (tokens.size() == 0 || tokens[0] != ";")
-        throw std::runtime_error("Configuração inválida: allow_methods: esperava um ponto e vírgula no final de allow_methods");
+    ParserConfigFile::verifyToken(tokens, DIFF_SEMICOLON, "Configuração inválida: allow_methods: esperava um ponto e vírgula no final de allow_methods");
     ParserConfigFile::removeTokens(tokens, 1); //| Removendo o ponto e vírgula
 }
