@@ -111,7 +111,11 @@ void ServerBlock::addListens(std::vector<std::string> &tokens)
         host_port = "0.0.0.0:80";
 
     //| Pegar conteúdo que vem antes do : e transformar em Host
-    std::string before = host_port.substr(0, host_port.find(':'));
+    std::string before;
+    if (host_port.find(':') != std::string::npos)
+        before = host_port.substr(0, host_port.find(':'));
+    else
+        before = "0.0.0.0";
     unsigned int host = strToIpv4(before);
 
     //| Pegar conteúdo que vem depois do : e transformar em Port
@@ -227,7 +231,7 @@ void ServerBlock::addErrorPages(std::vector<std::string> &tokens)
     while (tokens[0] != ";")
     {
         if (tokens[0] == tokens.back())
-            throw std::runtime_error("Configuração inválida: final do arquivo");
+            throw std::runtime_error("Configuração inválida: esperava um ponto e vírgula");
         codes_str.push_back(tokens[0]);
         ParserConfigFile::removeTokens(tokens, 1);
     }
@@ -251,8 +255,8 @@ void ServerBlock::addErrorPages(std::vector<std::string> &tokens)
     for (std::vector<int>::iterator it = codes.begin(); it != codes.end(); ++it)
         this->_errorPages[*it] = uri;
 
-    if (tokens.size() == 0)
-        throw std::runtime_error("Configuração inválida: final do arquivo");
+    if (tokens.size() == 0) //| Somente por segurança, mas não deve acontecer
+        throw std::runtime_error("Configuração inválida: esperava um ponto e vírgula");
     ParserConfigFile::removeTokens(tokens, 1); //| Removendo o ponto e vírgula
 }
 
