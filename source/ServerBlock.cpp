@@ -1,0 +1,286 @@
+#include "../includes/ServerBlock.hpp"
+
+
+ServerBlock::ServerBlock(ConfigFile &config): _maxBodySize(false, 0), _root(false, "./")
+{
+	config.removeTokens(2); //| Remove os 2 primeiros tokens ('server' e '{')
+	config.verifyToken(EMPTY, "Configuração inválida: server: não foi encontrado nenhum servidor");
+
+	while (config.getTokens().size() > 0)
+	{
+        std::vector<std::string> tokens = config.getTokens();
+		if (tokens[0] == "listen")
+			addListens(config);
+		else if (tokens[0] == "server_name")
+			addServerNames(config);
+		else if (tokens[0] == "client_max_body_size")
+			addMaxBodySize(config);
+		else if (tokens[0] == "error_page")
+			addErrorPages(config);
+		else if (tokens[0] == "location")
+			addLocation(config);
+		else if (tokens[0] == "root")
+			addRoot(config);
+		else if (tokens[0] == "}")
+        {
+            config.removeTokens(1);
+            break;
+        }
+		else {
+			throw std::runtime_error("Configuração inválida: server: token inválido");
+        }
+	}
+
+    //| Fazer verificação para ver se os atributos estão corretos.
+    if (this->_maxBodySize.second == 0)
+        throw std::runtime_error("Configuração inválida: server: client_max_body_size não pode ser zero.");
+}
+
+ServerBlock::~ServerBlock() {}
+
+std::vector<std::string> ServerBlock::getServerNames() const { return this->_serverNames; }
+std::vector<t_listen> ServerBlock::getListen() const { return this->_listen; }
+std::pair<bool, size_t> ServerBlock::getMaxBodySize() const { return this->_maxBodySize; }
+std::pair<bool, std::string> ServerBlock::getRoot() const { return this->_root; }
+std::map<int, std::string> ServerBlock::getErrorPages() const { return this->_errorPages; }
+std::map<std::string, LocationBlock> ServerBlock::getLocations() const { return this->_locations; }
+
+void ServerBlock::printServerBlock()
+{
+    std::cout << "Server names: " << std::endl;
+	for (std::vector<std::string>::iterator it = this->_serverNames.begin(); it != this->_serverNames.end(); it++)
+		std::cout << *it << " " << std::endl;
+
+	std::cout << "Max body size: " << this->_maxBodySize.second << std::endl;
+
+    std::cout << "Root: " << this->_root.second << std::endl;
+
+    std::cout << "Listens: " << std::endl;
+    for (size_t i = 0; i < this->_listen.size(); i++)
+        std::cout << "Host[" << i << "]: " << this->_listen[i].host << " Port[" << i << "]: " << this->_listen[i].port << std::endl;
+
+    std::cout << "Error pages: " << std::endl;
+    for (std::map<int, std::string>::iterator it = this->_errorPages.begin(); it != this->_errorPages.end(); ++it)
+        std::cout << "Code: " << it->first << " | URI: " << it->second << std::endl;
+}
+
+static bool isAllNumber(std::string s)
+{
+    for (size_t i = 0; i < s.size(); i++)
+        if (!isdigit(s[i]))
+            return (false);
+    return (true);
+}
+
+static unsigned int strToIpv4(std::string s)
+{
+    if (s == "localhost")
+        s = "127.0.0.1";
+
+    std::istringstream ss(s);
+    std::string octet_str;
+    std::vector<unsigned int> octets;
+
+    while (std::getline(ss, octet_str, '.'))
+    {
+        if (octet_str.empty() || isAllNumber(octet_str) == false)
+            throw std::runtime_error("Configuração inválida: listen: host: o octeto é inválido, contém caracteres não numéricos");
+
+        unsigned int octet = std::atoi(octet_str.c_str());
+        if (octet > 255)
+            throw std::runtime_error("Configuração inválida: listen: host: o octeto é inválido, é maior que 255");
+
+        octets.push_back(octet);
+    }
+
+    if (octets.size() != 4) //| Verificando se tem mais de 4 octetos
+        throw std::runtime_error("Configuração inválida: listen: host: o host inválido, possui mais de 4 octetos");
+
+    return ((octets[0] << 24) | (octets[1] << 16) | (octets[2] << 8) | octets[3]);
+}
+
+void ServerBlock::addListens(ConfigFile &config)
+{
+    config.removeTokens(1); //| Removendo o token 'listen'
+    config.verifyToken(EMPTY, "Configuração inválida: listen: não foi encontrado nenhum listen");
+
+    std::string host_port = config.getTokens()[0];
+    if (host_port == ";") //| Caso não seja especificado nenhum Host e Port, tem a padrão 0.0.0.0:80
+        host_port = "0.0.0.0:80";
+
+    //| Pegar conteúdo que vem antes do : e transformar em Host
+    std::string before;
+    if (host_port.find(':') != std::string::npos)
+        before = host_port.substr(0, host_port.find(':'));
+    else
+        before = "0.0.0.0";
+    unsigned int host = strToIpv4(before);
+
+    //| Pegar conteúdo que vem depois do : e transformar em Port
+    //| Para o Port, tem que verificar antes se tem o : se não vai duplicar o Host > listen localhost -> Host: localhost & Port: localhost
+    std::string after = host_port.substr(host_port.find(':') + 1, host_port.length() - host_port.find(':'));
+    int port;
+    if (after == before) //| Caso a porta não seja especificada
+        port = 80;
+    else
+    {
+        if (isAllNumber(after) == false)
+                throw std::runtime_error("Configuração inválida: listen: port: é inválido, deve ser um número");
+
+        port = std::atoi(after.c_str());
+        if (port < 1 || port > 65535)
+            throw std::runtime_error("Configuração inválida: listen: port: é inválido, deve ser um número entre 1 e 65535");
+    }
+
+    t_listen listen;
+    listen.host = host;
+    listen.port = port;
+
+    //| Remover duplicatas de listen (?)
+    for (size_t i = 0; i < this->_listen.size(); i++)
+        if (this->_listen[i].host == listen.host && this->_listen[i].port == listen.port)
+            throw std::runtime_error("Configuração inválida: listen: listen duplicado"); //| Ou somente remover duplicatas?
+
+    this->_listen.push_back(listen);
+
+    if (config.getTokens()[0] != ";")
+        config.removeTokens(1); //| Removendo o argumento de listen
+    config.verifyToken(DIFF_SEMICOLON, "Configuração inválida: listen: esperava um ponto e vírgula no final de listen");
+    config.removeTokens(1); //| Removendo o ponto e vírgula
+}
+
+void ServerBlock::addServerNames(ConfigFile &config)
+{
+    config.removeTokens(1); //| Removendo o token 'server_name'
+    config.verifyToken(SEMICOLON, "Configuração inválida: server_name: não foi encontrado nenhum server_name");
+
+    std::vector<std::string> names;
+    while (config.getTokens()[0] != ";") //| Enquanto não encontrar o ponto e vírgula, todos os argumentos devem ser nomes de servidor
+    {
+        config.verifyToken(END_OF_FILE, "Configuração inválida: server_name: final do arquivo encontrado");
+        names.push_back(config.getTokens()[0]);
+        config.removeTokens(1);
+    }
+
+    for (std::vector<std::string>::iterator it = names.begin(); it != names.end(); ++it)
+        this->_serverNames.push_back(*it);        
+
+    for (std::vector<std::string>::iterator it = this->_serverNames.begin(); it != this->_serverNames.end(); ++it) //| Removendo duplicatas
+    {
+        for (std::vector<std::string>::iterator jt = it + 1; jt != this->_serverNames.end(); )
+        {
+            if (*it == *jt)
+                jt = this->_serverNames.erase(jt);
+            else
+                ++jt;
+        }
+    }
+
+    config.verifyToken(DIFF_SEMICOLON, "Configuração inválida: server_name: esperava um ponto e vírgula no final de server_name");
+    config.removeTokens(1); //| Removendo o ponto e vírgula
+}
+
+void ServerBlock::addMaxBodySize(ConfigFile &config)
+{
+    config.removeTokens(1); //| Removendo o token 'client_max_body_size'
+    config.verifyToken(SEMICOLON, "Configuração inválida: client_max_body_size: não foi encontrado nenhum client_max_body_size");
+
+    if (this->_maxBodySize.first == true) //| Verifica se o client_max_body_size já está definido
+        throw std::runtime_error("Configuração inválida: client_max_body_size: client_max_body_size já foi definido");
+    this->_maxBodySize.first = true;
+
+    std::string value = config.getTokens()[0];
+    size_t i = 0;
+    while (i < value.size() - 1) //| Para verificar se todos os caracteres, menos o último, é numérico
+    {
+        if (!isdigit(value[i]))
+            throw std::runtime_error("Configuração inválida: client_max_body_size: é inválido, deve ser um número");
+        i++;
+    }
+
+    this->_maxBodySize.second = std::atoi(value.c_str());
+    if (value[i] == 'G')
+        this->_maxBodySize.second *= 1024 * 1024 * 1024;
+    else if (value[i] == 'M')
+        this->_maxBodySize.second *= 1024 * 1024;
+    else if (value[i] == 'K')
+        this->_maxBodySize.second *= 1024;
+    else if (value[i] == 'B')
+        this->_maxBodySize.second *= 1;
+    else
+        throw std::runtime_error("Configuração inválida: client_max_body_size: é inválido, deve ser um número seguido de unidade");
+
+    config.removeTokens(1); //| Removendo o argumento de max_body_size
+    config.verifyToken(DIFF_SEMICOLON, "Configuração inválida: client_max_body_size: esperava um ponto e vírgula no final de client_max_body_size");
+    config.removeTokens(1); //| Removendo o ponto e vírgula
+}
+
+void ServerBlock::addErrorPages(ConfigFile &config)
+{
+    config.removeTokens(1); //| Removendo o token 'error_page'
+    config.verifyToken(SEMICOLON, "Configuração inválida: error_page: não foi encontrado nenhum error_page");
+
+    std::vector<std::string> codes_str; //| Para armazenar todos os [codes] que possam ter. Exemplo: error_page 101 102 103 page.html
+    while (config.getTokens()[0] != ";")
+    {
+        config.verifyToken(END_OF_FILE, "Configuração inválida: error_page: final do arquivo encontrado");
+        codes_str.push_back(config.getTokens()[0]);
+        config.removeTokens(1);
+    }
+
+    std::string uri = codes_str.back(); //| O último argumento deve ser a URI
+    codes_str.pop_back(); //| Removendo a URI do vetor de [codes]
+
+    std::vector<int> codes;
+    for (std::vector<std::string>::iterator it = codes_str.begin(); it != codes_str.end(); ++it)
+    {
+        if (isAllNumber(*it) == false)
+                throw std::runtime_error("Configuração inválida: error_page: [code] é inválido, deve ser um número");
+
+        int code = std::atoi(it->c_str());
+        if (code < 100 || code > 599)
+            throw std::runtime_error("Configuração inválida: error_page: [code] é inválido, deve ser um número entre 100 e 599");
+
+        codes.push_back(code);
+    }
+
+    for (std::vector<int>::iterator it = codes.begin(); it != codes.end(); ++it)
+        this->_errorPages[*it] = uri;
+
+    config.verifyToken(EMPTY, "Configuração inválida: error_page: esperava um ponto e vírgula no final de error_page"); //| Somente por segurança, mas não deve acontecer
+    config.removeTokens(1); //| Removendo o ponto e vírgula
+}
+
+void ServerBlock::addLocation(ConfigFile &config)
+{
+    config.removeTokens(1); //| Removendo o token 'location'
+    config.verifyToken(EMPTY, "Configuração inválida: location: não foi encontrado nenhum location");
+
+    if (config.getTokens()[0][0] != '/')
+        throw std::runtime_error("Configuração inválida: location: URI inválida, deve começar com '/'");
+
+    if (this->_locations.count(config.getTokens()[0]) > 0)
+        throw std::runtime_error("Configuração inválida: location: location duplicado");
+
+    this->_locations[config.getTokens()[0]].addLocationBlock(config);
+
+    config.verifyToken(EMPTY, "Configuração inválida: location: esperava um ponto e vírgula no final de location");
+}
+
+void ServerBlock::addRoot(ConfigFile &config)
+{
+    config.removeTokens(1); //| Removendo o token 'root'
+    config.verifyToken(SEMICOLON, "Configuração inválida: root: não foi encontrado nenhuma root");
+
+    config.verifyToken(END_OF_FILE, "Configuração inválida: root: final do arquivo encontrado");
+
+    if (this->_root.first == true) //| Verifica se o root já está definido
+        throw std::runtime_error("Configuração inválida: root: root já foi definido");
+    this->_root.first = true;
+
+    this->_root.second = config.getTokens()[0];
+
+    config.removeTokens(1); //| Removendo o argumento de root
+    config.verifyToken(DIFF_SEMICOLON, "Configuração inválida: root: esperava um ponto e vírgula no final de root");
+    config.removeTokens(1); //| Removendo o ponto e vírgula
+}

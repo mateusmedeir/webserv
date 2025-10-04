@@ -1,7 +1,6 @@
 #pragma once
 
 # include "WebservHeader.hpp"
-# include <string>
 
 class Client {
     private:

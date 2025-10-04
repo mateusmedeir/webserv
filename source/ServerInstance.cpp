@@ -35,7 +35,7 @@ int ServerInstance::getServerFd(void) const {
 void ServerInstance::setServerAddr(int socketDomain, int serverPort, int serverAddr) {
     this->_serverAddr.sin_family = socketDomain;
     this->_serverAddr.sin_port = htons(serverPort);
-    this->_serverAddr.sin_addr.s_addr = htons(serverAddr);
+    this->_serverAddr.sin_addr.s_addr = htonl(serverAddr);
 }
 
 void ServerInstance::initServerSocket(int socketDomain, int socketType) {
