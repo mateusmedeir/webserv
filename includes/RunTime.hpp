@@ -8,7 +8,7 @@ class RunTime {
         ConfigFile                  _config;
         ServerInstance              _server;
         EpollInstance               _epoll;
-        std::map <int, ClientState> _clients;
+        std::map <int, Client> _clients;
         
         RunTime(void);
         RunTime(int socketDomain, int socketType);
@@ -16,4 +16,6 @@ class RunTime {
         RunTime &operator=(const RunTime &src);
 
         ~RunTime(void);
+
+        void deleteClient(int clientFd);
 };

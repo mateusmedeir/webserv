@@ -5,9 +5,11 @@ COMPILER = c++
 FLAGS = -Wall -Werror -Wextra -std=c++98
 
 SRC =	main.cpp \
-		source/ClientState.cpp \
+		source/Client.cpp \
 		source/ConfigFile.cpp \
 		source/EpollInstance.cpp \
+		source/HttpRequest.cpp \
+		source/HttpResponse.cpp \
 		source/LocationBlock.cpp \
 		source/RunTime.cpp \
 		source/ServerBlock.cpp \

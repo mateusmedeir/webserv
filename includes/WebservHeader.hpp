@@ -21,15 +21,18 @@
 # include <sstream>
 # include <cctype>
 
-# include "ServerInstance.hpp"
-# include "ClientState.hpp"
-# include "LocationBlock.hpp"
-# include "ServerBlock.hpp"
+# include "HttpResponse.hpp"
+# include "HttpRequest.hpp"
+# include "Client.hpp"
 # include "ConfigFile.hpp"
 # include "EpollInstance.hpp"
+# include "LocationBlock.hpp"
+# include "ServerBlock.hpp"
+# include "ServerInstance.hpp"
 
 enum clientBufferState {
-    IN_PROGRESS = 10, //Lendo o conteudo da request ainda
+    READING_HEADER = 9, //Lendo o header da request ainda
+    READING_BODY = 10, //Lendo o conteudo da request ainda
     COMPLETE = 11, //Ja lemos todo o conteudo da request
 };
 

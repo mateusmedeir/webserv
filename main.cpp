@@ -44,25 +44,50 @@ void clientSocketIsReady(RunTime *runtime, struct epoll_event &clientSocket) {
     // Precisamos de uma forma de identificar o final da request.
     // Dessa forma, conseguimos setar o state do client para COMPLETE
     if (clientSocket.events & EPOLLIN) {
-        while((count = read(clientFd, buffer, 5)) > 0) {
+        if ((count = read(clientFd, buffer, 5)) > 0) {
             // aqui, leremos o que o cliente esta mandando para o servidor.
             // Faremos uma leitura em chuncks! Isto e, leremos de pouco em pouco.
             // provavelmente nunca leremos todo o conteudo da requisicao de uma vez so.
-            write(STDOUT_FILENO, buffer, count);
-            runtime->_clients[clientFd].concatenateClientRequest(buffer);
+            runtime->_clients[clientFd].concatenateRequestData(buffer);
+            if (runtime->_clients[clientFd].isRequestComplete()) {
+                // Ao chegar aqui, ja lemos toda a request do cliente.
+                // Nessa etapa, precisamos parsear a request
+                // Processar o que for necessario
+                // Montar a response
+                // Enviar a response ao cliente
+                // close() no fd do client
+                // .erase() do map
+                std::cout << "================== REQUEST COMPLETE =================" << std::endl;
+                std::cout << runtime->_clients[clientFd].request.getMethod() << std::endl;
+                std::cout << runtime->_clients[clientFd].request.getUri() << std::endl;
+                std::map<std::string, std::string> headers = runtime->_clients[clientFd].request.getHeaders();
+                for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); it++) {
+                    std::cout << it->first << ": " << it->second << std::endl;
+                }
+                std::cout << "Body: " << runtime->_clients[clientFd].request.getBody() << std::endl;
+                std::cout << "=====================================================" << std::endl;
+                runtime->_clients[clientFd].response = HttpResponse(runtime->_clients[clientFd].request);
+                std::string responseStr = runtime->_clients[clientFd].response.toString();
+                std::cout << "=================== RESPONSE SEND ===================" << std::endl;
+                std::cout << responseStr << std::endl;
+                std::cout << "=====================================================" << std::endl;
+                send(clientFd, responseStr.c_str(), responseStr.size(), 0);
+                runtime->deleteClient(clientFd);
+            }
             // no momento, so estamos printando na tela mesmo.
             //Precisamos de alguma forma de armazenar o conteudo ja lido de algum socket
             // em alguma estrutura para que, durante as proximas leituras, possamos concatenar
             // o que ja lemos com o que acabamos de ler.
+        } else if (count == 0) {
+            std::cout << "Client closed the connection." << std::endl;
+            std::cout << runtime->_clients[clientFd].getRawRequest() << std::endl;
+            runtime->deleteClient(clientFd);
         }
-        // std::cout << runtime->_clients[clientFd].getState() << std::endl;
-        // std::cout << runtime->_clients[clientFd].getRequest() << std::endl;
     }
     if (clientSocket.events & EPOLLRDHUP) {
         std::cout << "Erro capturado pelo epoll." << std::endl;
-        std::cout << runtime->_clients[clientFd].getRequest() << std::endl;
-        runtime->_clients.erase(clientFd);
-        close(clientFd);
+        std::cout << runtime->_clients[clientFd].getRawRequest() << std::endl;
+        runtime->deleteClient(clientFd);
     }
 }
 
@@ -86,7 +111,7 @@ void serverSocketIsReady(RunTime *runtime) {
                 // Precisaremos ler o conteudo da request, armazenar, parsear, processar e devolver
                 // Com o map, esses processos devem ficar mais tranquilos e simples/rapidos
                 set_nonblocking(clientFd);
-                runtime->_clients[clientFd] = ClientState(IN_PROGRESS, clientFd, ".", ".");
+                runtime->_clients[clientFd] = Client(clientFd);
                 runtime->_epoll.manipInterestList(EPOLL_CTL_ADD, EPOLLIN | EPOLLRDHUP, clientFd);
             }
             catch (const std::exception &e) {
@@ -114,26 +139,6 @@ void epollReadyListLoop(RunTime *runtime, int numberOfReadySockets) {
                 //Caso nao exista, adiciona mais um elemento no map
                 clientSocketIsReady(runtime, socketReady);
             }
-        }
-    }
-    int clientMapSize = runtime->_clients.size();
-    if (!clientMapSize) {
-        return ;
-    }
-    for (int i = 0; i < clientMapSize; i++) {
-        if (runtime->_clients[i].getState() == IN_PROGRESS) {
-            // Iremos ler o conteudo da request e concatenar na string request.
-            continue;
-        }
-        else if (runtime->_clients[i].getState() == COMPLETE) {
-            // Ja lemos toda a request
-            // Vamos parsear
-            // Processar o que for necessario
-            // Montar a response
-            // Enviar a response ao cliente
-            // close() no fd do client
-            // .erase() do map
-            continue;
         }
     }
 }
