@@ -2,7 +2,7 @@
 
 # define MAX_EVENTS 10
 
-# include <iostream>
+# include <iostream> //| Para testes, remover depois
 # include <sys/socket.h>
 # include <netinet/in.h>
 # include <unistd.h>
@@ -11,11 +11,22 @@
 # include <cerrno>
 # include <exception>
 # include <algorithm>
+# include <vector>
+# include <map>
+# include <string>
+# include <utility>
+# include <cstddef>
+# include <cstdlib>
+# include <fstream>
+# include <sstream>
+# include <cctype>
 
-# include "EpollInstance.hpp"
 # include "ServerInstance.hpp"
 # include "ClientState.hpp"
-# include "RunTime.hpp"
+# include "LocationBlock.hpp"
+# include "ServerBlock.hpp"
+# include "ConfigFile.hpp"
+# include "EpollInstance.hpp"
 
 enum clientBufferState {
     IN_PROGRESS = 10, //Lendo o conteudo da request ainda

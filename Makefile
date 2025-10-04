@@ -1,25 +1,26 @@
-NAME = Webserv
+NAME = webserv
 
 COMPILER = c++
 
-FLAGS = -Wall -Werror -Wextra
-
-CPP_FLAGS = -std=c++98
+FLAGS = -Wall -Werror -Wextra -std=c++98
 
 SRC =	main.cpp \
-		source/Utils.cpp \
-		source/EpollInstance.cpp \
-		source/ServerInstance.cpp \
 		source/ClientState.cpp \
-		source/RunTime.cpp
+		source/ConfigFile.cpp \
+		source/EpollInstance.cpp \
+		source/LocationBlock.cpp \
+		source/RunTime.cpp \
+		source/ServerBlock.cpp \
+		source/ServerInstance.cpp \
+		source/Utils.cpp
 
 OBJ = $(SRC:.cpp=.o)
 
 .cpp.o:
-	@$(COMPILER) $(FLAGS) $(CPP_FLAGS) -Iincludes -c $< -o $@
+	@$(COMPILER) $(FLAGS) -Iincludes -c $< -o $@
 
 $(NAME) : $(OBJ) progress
-	@$(COMPILER) $(FLAGS) $(CPP_FLAGS) $(OBJ) -o $(NAME)
+	@$(COMPILER) $(FLAGS) $(OBJ) -o $(NAME)
 
 all : $(NAME)
 	@sleep 0.2
@@ -61,6 +62,9 @@ _progress :
 	tput cnorm
 
 workflow : $(OBJ)
-	@$(COMPILER) $(FLAGS) $(CPP_FLAGS) $(OBJ) -o $(NAME)
+	@$(COMPILER) $(FLAGS) $(OBJ) -o $(NAME)
+
+supp: re
+		valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./$(NAME) config.conf
 
 .PHONY: all clean fclean re

@@ -1,4 +1,39 @@
-#include "includes/WebservHeader.hpp"
+#include "includes/RunTime.hpp"
+
+int	verifyArgs(int ac, char **av)
+{
+	if (ac > 2)
+	{
+		std::cerr << "Usage: " << av[0] << " <config_file>\n\tOR\nUsage: " << av[0] << std::endl;
+		return (0);
+	}
+	return (1);
+}
+
+void	printBlock(std::vector<ServerBlock> serverBlocks)
+{
+    for (size_t i = 0; i < serverBlocks.size(); i++)
+    {
+        std::cout << "==================== SERVER BLOCK " << i + 1 << " ====================" << std::endl;
+        serverBlocks[i].printServerBlock();
+        std::map<std::string, LocationBlock> locations = serverBlocks[i].getLocations();
+        for (std::map<std::string, LocationBlock>::iterator it = locations.begin(); it != locations.end(); it++)
+        {
+            std::cout << "------------------ LOCATION BLOCK ------------------" << std::endl;
+            it->second.printLocationBlock();
+            std::cout << "----------------------------------------------------" << std::endl;
+        }
+        std::cout << "========================================================" << std::endl;
+    }
+}
+void parseConfigFile(RunTime *runtime, int ac, char **av)
+{
+    if (ac == 2)
+        runtime->_config.parser(av[1]);
+    else //| Caso não passem nenhum argumento, vamos usar nosso arquivo padrão
+        runtime->_config.parser("configs/test_simple.conf");
+    printBlock(runtime->_config.getServerBlocks());
+}
 
 void clientSocketIsReady(RunTime *runtime, struct epoll_event &clientSocket) {
     int clientFd = clientSocket.data.fd;
@@ -101,40 +136,11 @@ void epollReadyListLoop(RunTime *runtime, int numberOfReadySockets) {
             continue;
         }
     }
-    // else {
-    //     int clientMapSize = runtime->_clients.size();
-    //     if (!clientMapSize) {
-    //         return ;
-    //     }
-    //     for (int i = 0; i < clientMapSize; i++) {
-    //         if (runtime->_clients[i].getState() == IN_PROGRESS) {
-    //             // Iremos ler o conteudo da request e concatenar na string request.
-    //             continue;
-    //         }
-    //         else if (runtime->_clients[i].getState() == COMPLETE) {
-    //             // Ja lemos toda a request
-    //             // Vamos parsear
-    //             // Processar o que for necessario
-    //             // Montar a response
-    //             // Enviar a response ao cliente
-    //             // close() no fd do client
-    //             // .erase() do map
-    //             continue;
-    //         }
-    //     }
-    // }
 }
 
 void serverMainLoop(RunTime *runtime) {
     while (true) {
         int numberOfReadySockets = runtime->_epoll.manipEpollWait();
-        // if (numberOfReadySockets == -1) {
-        //     std::cerr << "Error: erro ao manipular o epoll_wait()." << std::endl;
-        //     break;
-        // }
-        // else if (numberOfReadySockets > 0) {
-        //     epollReadyListLoop(runtime, numberOfReadySockets);
-        // }
         if (numberOfReadySockets == -1) {
             std::cerr << "Error: erro ao manipular o epoll_wait()." << std::endl;
             break;
@@ -145,11 +151,16 @@ void serverMainLoop(RunTime *runtime) {
     }
 }
 
-int main(void) {
+int main(int ac, char **av) {
+    if (!verifyArgs(ac, av))
+        return (1);
+
     RunTime runtime(AF_INET, SOCK_STREAM);
 
     try {
-        runtime._server.setServerAddr(AF_INET, 2000, INADDR_ANY);
+        parseConfigFile(&runtime, ac, av);
+
+        runtime._server.setServerAddr(AF_INET, runtime._config.getServerBlocks()[0].getListen()[0].port, runtime._config.getServerBlocks()[0].getListen()[0].host);
         runtime._server.bindServerSocket();
         runtime._server.updateToNonBlocking();
         runtime._server.listenServerSocket();

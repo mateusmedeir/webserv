@@ -1,12 +1,11 @@
 #pragma once
 
 # include "WebservHeader.hpp"
-# include <map>
-
 
 class RunTime {
     private:
     public:
+        ConfigFile                  _config;
         ServerInstance              _server;
         EpollInstance               _epoll;
         std::map <int, ClientState> _clients;
