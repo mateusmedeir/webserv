@@ -19,3 +19,8 @@ RunTime &RunTime::operator=(const RunTime &src) {
 }
 
 RunTime::~RunTime(void) {}
+
+void RunTime::deleteClient(int clientFd) {
+    this->_clients.erase(clientFd);
+    close(clientFd);
+}

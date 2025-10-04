@@ -6,22 +6,25 @@ class Client {
     private:
         int         _state;
         int         _clientFd;
-        std::string _request;
-        std::string _response;
-    public:
+        std::string _rawRequest;
+        public:
+        HttpRequest request;
+        HttpResponse response;
+
         Client(void);
-        Client(int state, int clientFd, std::string request, std::string response);
+        Client(int clientFd);
+        Client(int state, int clientFd, HttpRequest request, HttpResponse response);
         Client(const Client &src);
         Client &operator=(const Client &src);
-
         ~Client(void);
 
+        void concatenateRequestData(std::string data);        
+        bool isRequestComplete(void);
+        
         int getState(void) const;
-        std::string &getRequest(void);
+        std::string &getRawRequest(void);
+        HttpRequest &getRequest(void);
+        HttpResponse &getResponse(void);
 
         void setState(int state);
-
-        void concatenateClientRequest(std::string request);
-
-        bool isRequestComplete(void);
 };

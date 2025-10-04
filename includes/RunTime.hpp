@@ -16,4 +16,6 @@ class RunTime {
         RunTime &operator=(const RunTime &src);
 
         ~RunTime(void);
+
+        void deleteClient(int clientFd);
 };

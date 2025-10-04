@@ -8,6 +8,8 @@ SRC =	main.cpp \
 		source/Client.cpp \
 		source/ConfigFile.cpp \
 		source/EpollInstance.cpp \
+		source/HttpRequest.cpp \
+		source/HttpResponse.cpp \
 		source/LocationBlock.cpp \
 		source/RunTime.cpp \
 		source/ServerBlock.cpp \
