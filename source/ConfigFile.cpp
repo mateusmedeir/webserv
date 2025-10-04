@@ -1,6 +1,10 @@
-#include "ParserConfigFile.hpp"
+#include "../includes/ConfigFile.hpp"
 
-void ParserConfigFile::readFile(const std::string &filename, std::string &content)
+ConfigFile::ConfigFile(void) {}
+
+ConfigFile::~ConfigFile(void) {}
+
+void ConfigFile::readFile(const std::string &filename, std::string &content)
 {
 	std::ifstream file(filename.c_str());
 	if (!file.is_open())
@@ -9,7 +13,7 @@ void ParserConfigFile::readFile(const std::string &filename, std::string &conten
 	content = std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 }
 
-void ParserConfigFile::trim(std::string &content)
+void ConfigFile::trim(std::string &content)
 {
 	size_t start = content.find_first_not_of(" \t\n\r\f\v");
 	if (start == std::string::npos)
@@ -23,7 +27,7 @@ void ParserConfigFile::trim(std::string &content)
 	content = content.substr(start, end - start + 1);
 }
 
-void ParserConfigFile::removeComments(std::string &content)
+void ConfigFile::removeComments(std::string &content)
 {
 	std::string result;
 	std::istringstream iss(content);
@@ -45,16 +49,15 @@ void ParserConfigFile::removeComments(std::string &content)
 	content = result;
 }
 
-void ParserConfigFile::cleanFile(const std::string &filename, std::string &content)
+void ConfigFile::cleanFile(const std::string &filename, std::string &content)
 {
 	readFile(filename, content); //| Arquivo completo
 	removeComments(content);     //| Remover comentários (linhas com '#')
 	trim(content);               //| Remover os whitespaces do começo e do final do content.
 }
 
-std::vector<std::string> ParserConfigFile::tokenizeContent(const std::string &content)
+std::vector<std::string> ConfigFile::tokenizeContent(const std::string &content)
 {
-	std::vector<std::string> tokens;
 	std::string currentToken;
 	bool inQuotes = false;
 	char quoteChar = '\0';
@@ -70,7 +73,7 @@ std::vector<std::string> ParserConfigFile::tokenizeContent(const std::string &co
 			quoteChar = c;
 			if (!currentToken.empty()) //| Adiciona o token atual ao vetor de tokens
 			{
-				tokens.push_back(currentToken);
+				this->_tokens.push_back(currentToken);
 				currentToken.clear();
 			}
 			currentToken += c;
@@ -79,7 +82,7 @@ std::vector<std::string> ParserConfigFile::tokenizeContent(const std::string &co
 		{
 			inQuotes = false;
 			currentToken += c;
-			tokens.push_back(currentToken);
+			this->_tokens.push_back(currentToken);
 			currentToken.clear();
 			quoteChar = '\0';
 		}
@@ -96,16 +99,16 @@ std::vector<std::string> ParserConfigFile::tokenizeContent(const std::string &co
 			}
 			if (!currentToken.empty()) //| Adiciona o token atual ao vetor de tokens
 			{
-				tokens.push_back(currentToken);
+				this->_tokens.push_back(currentToken);
 				currentToken.clear();
 			}
-			tokens.push_back(std::string(1, c));
+			this->_tokens.push_back(std::string(1, c));
 		}
 		else if (std::isspace(c)) //| Verifica se o caractere é um espaço
 		{
 			if (!currentToken.empty()) //| Adiciona o token atual ao vetor de tokens
 			{
-				tokens.push_back(currentToken);
+				this->_tokens.push_back(currentToken);
 				currentToken.clear();
 			}
 		}
@@ -114,56 +117,55 @@ std::vector<std::string> ParserConfigFile::tokenizeContent(const std::string &co
 	}
 	
 	if (!currentToken.empty()) //| Adiciona o token atual ao vetor de tokens
-		tokens.push_back(currentToken);
+		this->_tokens.push_back(currentToken);
 	
 	if (braceCount != 0) //| Verifica se as chaves estão balanceadas
 		throw std::runtime_error("Configuração inválida: chaves não balanceadas");
 	
-	return tokens;
+	return this->_tokens;
 }
 
-void ParserConfigFile::parser(const std::string &filename, std::vector<std::string> &tokens)
+void ConfigFile::parser(const std::string &filename)
 {
 	std::string content;
 	cleanFile(filename, content);
-	tokens = tokenizeContent(content);
+	tokenizeContent(content);
 
-	if (tokens.size() == 0)
+	if (this->_tokens.size() == 0)
 		throw std::runtime_error("Configuração inválida: não foi encontrado nenhum servidor");
 
-	std::vector<ServerBlock*> serverBlocks; //| É um ponteiro para usar o new e ele continuar alocado na memória mesmo fora da função
-	while (tokens.size() > 0) //| While para pegar todos os servers (se tiver mais de um server)
+	while (this->_tokens.size() > 0) //| While para pegar todos os servers (se tiver mais de um server)
 	{
-		if (tokens[0] == "server" && tokens[1] == "{")
-			serverBlocks.push_back(new ServerBlock(tokens));
+		if (this->_tokens[0] == "server" && this->_tokens[1] == "{")
+			this->_serverBlocks.push_back(ServerBlock(*this));
 		else
 			throw std::runtime_error("Configuração inválida: servidor não encontrado");
 	}
 }
 
-void ParserConfigFile::removeTokens(std::vector<std::string> &tokens, size_t amount)
+void ConfigFile::removeTokens(size_t amount)
 {
-	if (!tokens.empty())
-		tokens.erase(tokens.begin(), tokens.begin() + amount);
+	if (!this->_tokens.empty())
+		this->_tokens.erase(this->_tokens.begin(), this->_tokens.begin() + amount);
 }
 
-void ParserConfigFile::verifyToken(const std::vector<std::string> &tokens, TypeValidation type, const std::string &message)
+void ConfigFile::verifyToken(TypeValidation type, const std::string &message)
 {
 	bool shouldThrow = false;
 
 	switch (type)
 	{
 		case EMPTY:
-			shouldThrow = tokens.empty();
+			shouldThrow = this->_tokens.empty();
 			break;
 		case SEMICOLON:
-			shouldThrow = tokens.empty() || tokens[0] == ";";
+			shouldThrow = this->_tokens.empty() || this->_tokens[0] == ";";
 			break;
 		case DIFF_SEMICOLON:
-			shouldThrow = tokens.empty() || tokens[0] != ";";
+			shouldThrow = this->_tokens.empty() || this->_tokens[0] != ";";
 			break;
 		case END_OF_FILE:
-			shouldThrow = tokens[0] == tokens.back();
+			shouldThrow = this->_tokens[0] == this->_tokens.back();
 			break;
 		default:
 			throw std::runtime_error("Configuração inválida: tipo de validação desconhecido");
@@ -171,4 +173,14 @@ void ParserConfigFile::verifyToken(const std::vector<std::string> &tokens, TypeV
 
 	if (shouldThrow)
 		throw std::runtime_error(message);
+}
+
+std::vector<std::string> ConfigFile::getTokens(void)
+{
+	return this->_tokens;
+}
+
+std::vector<ServerBlock> ConfigFile::getServerBlocks(void) const
+{
+	return this->_serverBlocks;
 }
