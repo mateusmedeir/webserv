@@ -1,7 +1,5 @@
 #include "../includes/WebservHeader.hpp"
 
-ServerListen::ServerListen(void) {}
-
 ServerListen::ServerListen(unsigned int host, int port, ServerBlock &serverBlock)
     : _host(host), _port(port), _serverBlock(serverBlock) {}
 

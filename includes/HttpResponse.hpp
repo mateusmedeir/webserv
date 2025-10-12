@@ -5,11 +5,11 @@
 
 class HttpResponse {
 	private:
-		std::string http_version;
-		int status_code;
-		std::string status_message;
-		std::map<std::string, std::string> headers;
-		std::string body;
+		std::string													http_version;
+		int 																status_code;
+		std::string 												status_message;
+		std::map<std::string, std::string>	headers;
+		std::string 												body;
 	public:
 		HttpResponse();
 		HttpResponse(HttpRequest const &req);

@@ -16,7 +16,7 @@ class ServerListen;
 class ConfigFile {
 	private:
 		std::vector<std::string>    _tokens;
-		std::vector<ServerBlock>	 _serverBlocks;
+		std::vector<ServerBlock>    _serverBlocks;
 		std::vector<ServerListen>   _serverListens;
 	public:
 		ConfigFile(void);

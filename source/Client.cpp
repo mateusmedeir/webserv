@@ -1,26 +1,14 @@
 #include "../includes/WebservHeader.hpp"
 
-
-Client::Client(void) {}
-
-Client::Client(int clientFd, ServerListen &serverListen) {
+Client::Client(int clientFd, ServerListen &serverListen) : _serverListen(serverListen) {
     std::cout << "Client got created..." << std::endl;
     this->_state = READING_HEADER;
     this->_clientFd = clientFd;
     this->_rawRequest = "";
-    this->_serverListen = serverListen;
     this->request = HttpRequest();
 }
 
-Client::Client(int state, int clientFd, HttpRequest request, HttpResponse response) {
-    std::cout << "Client got created..." << std::endl;
-    this->_state = state;
-    this->_clientFd = clientFd;
-    this->request = request;
-    this->response = response;
-}
-
-Client::Client(const Client &src) {
+Client::Client(const Client &src) : _serverListen(src._serverListen) {
     *this = src;
 }
 

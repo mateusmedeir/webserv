@@ -1,30 +1,27 @@
 #include "../includes/WebservHeader.hpp"
 
-ServerBlock::ServerBlock(): _maxBodySize(false, 0), _root(false, "./") {}
+ServerBlock::ServerBlock(ConfigFile &config) : _config(config), _maxBodySize(false, 0), _root(false, "./") {
+	this->_config.removeTokens(2); //| Remove os 2 primeiros tokens ('server' e '{')
+	this->_config.verifyToken(EMPTY, "Configuração inválida: server: não foi encontrado nenhum servidor");
 
-ServerBlock::ServerBlock(ConfigFile &config): _maxBodySize(false, 0), _root(false, "./")
-{
-	config.removeTokens(2); //| Remove os 2 primeiros tokens ('server' e '{')
-	config.verifyToken(EMPTY, "Configuração inválida: server: não foi encontrado nenhum servidor");
-
-	while (config.getTokens().size() > 0)
+	while (this->_config.getTokens().size() > 0)
 	{
-        std::vector<std::string> tokens = config.getTokens();
+        std::vector<std::string> tokens = this->_config.getTokens();
 		if (tokens[0] == "listen")
-			addListens(config);
+			addListens();
 		else if (tokens[0] == "server_name")
-			addServerNames(config);
+			addServerNames();
 		else if (tokens[0] == "client_max_body_size")
-			addMaxBodySize(config);
+			addMaxBodySize();
 		else if (tokens[0] == "error_page")
-			addErrorPages(config);
+			addErrorPages();
 		else if (tokens[0] == "location")
-			addLocation(config);
+			addLocation();
 		else if (tokens[0] == "root")
-			addRoot(config);
+			addRoot();
 		else if (tokens[0] == "}")
         {
-            config.removeTokens(1);
+            this->_config.removeTokens(1);
             break;
         }
 		else {
@@ -38,6 +35,19 @@ ServerBlock::ServerBlock(ConfigFile &config): _maxBodySize(false, 0), _root(fals
 }
 
 ServerBlock::~ServerBlock() {}
+
+ServerBlock &ServerBlock::operator=(const ServerBlock &src)
+{
+    if (this != &src) {
+        this->_serverNames = src._serverNames;
+        this->_listen = src._listen;
+        this->_maxBodySize = src._maxBodySize;
+        this->_root = src._root;
+        this->_locations = src._locations;
+        this->_errorPages = src._errorPages;
+    }
+    return *this;
+}
 
 bool ServerBlock::operator==(const ServerBlock &other) const
 {
@@ -104,12 +114,12 @@ static unsigned int strToIpv4(std::string s)
     return ((octets[0] << 24) | (octets[1] << 16) | (octets[2] << 8) | octets[3]);
 }
 
-void ServerBlock::addListens(ConfigFile &config)
+void ServerBlock::addListens()
 {
-    config.removeTokens(1); //| Removendo o token 'listen'
-    config.verifyToken(EMPTY, "Configuração inválida: listen: não foi encontrado nenhum listen");
+    this->_config.removeTokens(1); //| Removendo o token 'listen'
+    this->_config.verifyToken(EMPTY, "Configuração inválida: listen: não foi encontrado nenhum listen");
 
-    std::string host_port = config.getTokens()[0];
+    std::string host_port = this->_config.getTokens()[0];
     if (host_port == ";") //| Caso não seja especificado nenhum Host e Port, tem a padrão 0.0.0.0:80
         host_port = "0.0.0.0:80";
 
@@ -148,23 +158,23 @@ void ServerBlock::addListens(ConfigFile &config)
 
     this->_listen.push_back(listen);
 
-    if (config.getTokens()[0] != ";")
-        config.removeTokens(1); //| Removendo o argumento de listen
-    config.verifyToken(DIFF_SEMICOLON, "Configuração inválida: listen: esperava um ponto e vírgula no final de listen");
-    config.removeTokens(1); //| Removendo o ponto e vírgula
+    if (this->_config.getTokens()[0] != ";")
+        this->_config.removeTokens(1); //| Removendo o argumento de listen
+    this->_config.verifyToken(DIFF_SEMICOLON, "Configuração inválida: listen: esperava um ponto e vírgula no final de listen");
+    this->_config.removeTokens(1); //| Removendo o ponto e vírgula
 }
 
-void ServerBlock::addServerNames(ConfigFile &config)
+void ServerBlock::addServerNames()
 {
-    config.removeTokens(1); //| Removendo o token 'server_name'
-    config.verifyToken(SEMICOLON, "Configuração inválida: server_name: não foi encontrado nenhum server_name");
+    this->_config.removeTokens(1); //| Removendo o token 'server_name'
+    this->_config.verifyToken(SEMICOLON, "Configuração inválida: server_name: não foi encontrado nenhum server_name");
 
     std::vector<std::string> names;
-    while (config.getTokens()[0] != ";") //| Enquanto não encontrar o ponto e vírgula, todos os argumentos devem ser nomes de servidor
+    while (this->_config.getTokens()[0] != ";") //| Enquanto não encontrar o ponto e vírgula, todos os argumentos devem ser nomes de servidor
     {
-        config.verifyToken(END_OF_FILE, "Configuração inválida: server_name: final do arquivo encontrado");
-        names.push_back(config.getTokens()[0]);
-        config.removeTokens(1);
+        this->_config.verifyToken(END_OF_FILE, "Configuração inválida: server_name: final do arquivo encontrado");
+        names.push_back(this->_config.getTokens()[0]);
+        this->_config.removeTokens(1);
     }
 
     for (std::vector<std::string>::iterator it = names.begin(); it != names.end(); ++it)
@@ -181,20 +191,20 @@ void ServerBlock::addServerNames(ConfigFile &config)
         }
     }
 
-    config.verifyToken(DIFF_SEMICOLON, "Configuração inválida: server_name: esperava um ponto e vírgula no final de server_name");
-    config.removeTokens(1); //| Removendo o ponto e vírgula
+    this->_config.verifyToken(DIFF_SEMICOLON, "Configuração inválida: server_name: esperava um ponto e vírgula no final de server_name");
+    this->_config.removeTokens(1); //| Removendo o ponto e vírgula
 }
 
-void ServerBlock::addMaxBodySize(ConfigFile &config)
+void ServerBlock::addMaxBodySize()
 {
-    config.removeTokens(1); //| Removendo o token 'client_max_body_size'
-    config.verifyToken(SEMICOLON, "Configuração inválida: client_max_body_size: não foi encontrado nenhum client_max_body_size");
+    this->_config.removeTokens(1); //| Removendo o token 'client_max_body_size'
+    this->_config.verifyToken(SEMICOLON, "Configuração inválida: client_max_body_size: não foi encontrado nenhum client_max_body_size");
 
     if (this->_maxBodySize.first == true) //| Verifica se o client_max_body_size já está definido
         throw std::runtime_error("Configuração inválida: client_max_body_size: client_max_body_size já foi definido");
     this->_maxBodySize.first = true;
 
-    std::string value = config.getTokens()[0];
+    std::string value = this->_config.getTokens()[0];
     size_t i = 0;
     while (i < value.size() - 1) //| Para verificar se todos os caracteres, menos o último, é numérico
     {
@@ -215,22 +225,22 @@ void ServerBlock::addMaxBodySize(ConfigFile &config)
     else
         throw std::runtime_error("Configuração inválida: client_max_body_size: é inválido, deve ser um número seguido de unidade");
 
-    config.removeTokens(1); //| Removendo o argumento de max_body_size
-    config.verifyToken(DIFF_SEMICOLON, "Configuração inválida: client_max_body_size: esperava um ponto e vírgula no final de client_max_body_size");
-    config.removeTokens(1); //| Removendo o ponto e vírgula
+    this->_config.removeTokens(1); //| Removendo o argumento de max_body_size
+    this->_config.verifyToken(DIFF_SEMICOLON, "Configuração inválida: client_max_body_size: esperava um ponto e vírgula no final de client_max_body_size");
+    this->_config.removeTokens(1); //| Removendo o ponto e vírgula
 }
 
-void ServerBlock::addErrorPages(ConfigFile &config)
+void ServerBlock::addErrorPages()
 {
-    config.removeTokens(1); //| Removendo o token 'error_page'
-    config.verifyToken(SEMICOLON, "Configuração inválida: error_page: não foi encontrado nenhum error_page");
+    this->_config.removeTokens(1); //| Removendo o token 'error_page'
+    this->_config.verifyToken(SEMICOLON, "Configuração inválida: error_page: não foi encontrado nenhum error_page");
 
     std::vector<std::string> codes_str; //| Para armazenar todos os [codes] que possam ter. Exemplo: error_page 101 102 103 page.html
-    while (config.getTokens()[0] != ";")
+    while (this->_config.getTokens()[0] != ";")
     {
-        config.verifyToken(END_OF_FILE, "Configuração inválida: error_page: final do arquivo encontrado");
-        codes_str.push_back(config.getTokens()[0]);
-        config.removeTokens(1);
+        this->_config.verifyToken(END_OF_FILE, "Configuração inválida: error_page: final do arquivo encontrado");
+        codes_str.push_back(this->_config.getTokens()[0]);
+        this->_config.removeTokens(1);
     }
 
     std::string uri = codes_str.back(); //| O último argumento deve ser a URI
@@ -252,40 +262,40 @@ void ServerBlock::addErrorPages(ConfigFile &config)
     for (std::vector<int>::iterator it = codes.begin(); it != codes.end(); ++it)
         this->_errorPages[*it] = uri;
 
-    config.verifyToken(EMPTY, "Configuração inválida: error_page: esperava um ponto e vírgula no final de error_page"); //| Somente por segurança, mas não deve acontecer
-    config.removeTokens(1); //| Removendo o ponto e vírgula
+    this->_config.verifyToken(EMPTY, "Configuração inválida: error_page: esperava um ponto e vírgula no final de error_page"); //| Somente por segurança, mas não deve acontecer
+    this->_config.removeTokens(1); //| Removendo o ponto e vírgula
 }
 
-void ServerBlock::addLocation(ConfigFile &config)
+void ServerBlock::addLocation()
 {
-    config.removeTokens(1); //| Removendo o token 'location'
-    config.verifyToken(EMPTY, "Configuração inválida: location: não foi encontrado nenhum location");
+    this->_config.removeTokens(1); //| Removendo o token 'location'
+    this->_config.verifyToken(EMPTY, "Configuração inválida: location: não foi encontrado nenhum location");
 
-    if (config.getTokens()[0][0] != '/')
+    if (this->_config.getTokens()[0][0] != '/')
         throw std::runtime_error("Configuração inválida: location: URI inválida, deve começar com '/'");
 
-    if (this->_locations.count(config.getTokens()[0]) > 0)
+    if (this->_locations.count(this->_config.getTokens()[0]) > 0)
         throw std::runtime_error("Configuração inválida: location: location duplicado");
 
-    this->_locations[config.getTokens()[0]].addLocationBlock(config);
+    this->_locations.insert(std::make_pair(this->_config.getTokens()[0], LocationBlock(this->_config)));
 
-    config.verifyToken(EMPTY, "Configuração inválida: location: esperava um ponto e vírgula no final de location");
+    this->_config.verifyToken(EMPTY, "Configuração inválida: location: esperava um ponto e vírgula no final de location");
 }
 
-void ServerBlock::addRoot(ConfigFile &config)
+void ServerBlock::addRoot()
 {
-    config.removeTokens(1); //| Removendo o token 'root'
-    config.verifyToken(SEMICOLON, "Configuração inválida: root: não foi encontrado nenhuma root");
+    this->_config.removeTokens(1); //| Removendo o token 'root'
+    this->_config.verifyToken(SEMICOLON, "Configuração inválida: root: não foi encontrado nenhuma root");
 
-    config.verifyToken(END_OF_FILE, "Configuração inválida: root: final do arquivo encontrado");
+    this->_config.verifyToken(END_OF_FILE, "Configuração inválida: root: final do arquivo encontrado");
 
     if (this->_root.first == true) //| Verifica se o root já está definido
         throw std::runtime_error("Configuração inválida: root: root já foi definido");
     this->_root.first = true;
 
-    this->_root.second = config.getTokens()[0];
+    this->_root.second = this->_config.getTokens()[0];
 
-    config.removeTokens(1); //| Removendo o argumento de root
-    config.verifyToken(DIFF_SEMICOLON, "Configuração inválida: root: esperava um ponto e vírgula no final de root");
-    config.removeTokens(1); //| Removendo o ponto e vírgula
+    this->_config.removeTokens(1); //| Removendo o argumento de root
+    this->_config.verifyToken(DIFF_SEMICOLON, "Configuração inválida: root: esperava um ponto e vírgula no final de root");
+    this->_config.removeTokens(1); //| Removendo o ponto e vírgula
 }
