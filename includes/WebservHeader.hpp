@@ -20,15 +20,17 @@
 # include <fstream>
 # include <sstream>
 # include <cctype>
+#include <set>
 
-# include "HttpResponse.hpp"
 # include "HttpRequest.hpp"
-# include "Client.hpp"
+# include "HttpResponse.hpp"
+# include "ServerBlock.hpp"
 # include "ConfigFile.hpp"
 # include "EpollInstance.hpp"
 # include "LocationBlock.hpp"
-# include "ServerBlock.hpp"
 # include "ServerInstance.hpp"
+# include "ServerListen.hpp"
+# include "Client.hpp"
 
 enum clientBufferState {
     READING_HEADER = 9, //Lendo o header da request ainda

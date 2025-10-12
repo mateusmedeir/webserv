@@ -3,11 +3,12 @@
 
 Client::Client(void) {}
 
-Client::Client(int clientFd) {
+Client::Client(int clientFd, ServerListen &serverListen) {
     std::cout << "Client got created..." << std::endl;
     this->_state = READING_HEADER;
     this->_clientFd = clientFd;
     this->_rawRequest = "";
+    this->_serverListen = serverListen;
     this->request = HttpRequest();
 }
 

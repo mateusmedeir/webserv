@@ -1,4 +1,4 @@
-#include "../includes/ConfigFile.hpp"
+#include "../includes/WebservHeader.hpp"
 
 ConfigFile::ConfigFile(void) {}
 
@@ -141,6 +141,19 @@ void ConfigFile::parser(const std::string &filename)
 		else
 			throw std::runtime_error("Configuração inválida: servidor não encontrado");
 	}
+
+	std::set<std::pair<unsigned int, int> > uniqueListens;
+	for (size_t i = 0; i < this->_serverBlocks.size(); i++)
+	{
+		std::vector<t_listen> listens = this->_serverBlocks[i].getListen();
+
+		for (size_t j = 0; j < listens.size(); j++) {
+			std::pair<unsigned int, int> key(listens[j].host, listens[j].port);
+
+			if (uniqueListens.insert(key).second)
+				this->_serverListens.push_back(ServerListen(listens[j].host, listens[j].port, this->_serverBlocks[i]));
+		}
+	}
 }
 
 void ConfigFile::removeTokens(size_t amount)
@@ -183,4 +196,9 @@ std::vector<std::string> ConfigFile::getTokens(void)
 std::vector<ServerBlock> ConfigFile::getServerBlocks(void) const
 {
 	return this->_serverBlocks;
+}
+
+std::vector<ServerListen> ConfigFile::getServerListens(void) const
+{
+	return this->_serverListens;
 }

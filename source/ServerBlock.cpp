@@ -1,5 +1,6 @@
-#include "../includes/ServerBlock.hpp"
+#include "../includes/WebservHeader.hpp"
 
+ServerBlock::ServerBlock(): _maxBodySize(false, 0), _root(false, "./") {}
 
 ServerBlock::ServerBlock(ConfigFile &config): _maxBodySize(false, 0), _root(false, "./")
 {
@@ -38,6 +39,14 @@ ServerBlock::ServerBlock(ConfigFile &config): _maxBodySize(false, 0), _root(fals
 
 ServerBlock::~ServerBlock() {}
 
+bool ServerBlock::operator==(const ServerBlock &other) const
+{
+    return (this->_serverNames == other._serverNames &&
+            this->_maxBodySize == other._maxBodySize &&
+            this->_root == other._root &&
+            this->_errorPages == other._errorPages);
+}
+
 std::vector<std::string> ServerBlock::getServerNames() const { return this->_serverNames; }
 std::vector<t_listen> ServerBlock::getListen() const { return this->_listen; }
 std::pair<bool, size_t> ServerBlock::getMaxBodySize() const { return this->_maxBodySize; }
@@ -54,10 +63,6 @@ void ServerBlock::printServerBlock()
 	std::cout << "Max body size: " << this->_maxBodySize.second << std::endl;
 
     std::cout << "Root: " << this->_root.second << std::endl;
-
-    std::cout << "Listens: " << std::endl;
-    for (size_t i = 0; i < this->_listen.size(); i++)
-        std::cout << "Host[" << i << "]: " << this->_listen[i].host << " Port[" << i << "]: " << this->_listen[i].port << std::endl;
 
     std::cout << "Error pages: " << std::endl;
     for (std::map<int, std::string>::iterator it = this->_errorPages.begin(); it != this->_errorPages.end(); ++it)

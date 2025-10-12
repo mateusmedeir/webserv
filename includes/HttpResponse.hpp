@@ -1,10 +1,7 @@
 # pragma once
 
-# include "HttpRequest.hpp"
-# include <string>
-# include <map>
-# include <sstream>
-# include <fstream>
+# include "WebservHeader.hpp"
+
 
 class HttpResponse {
 	private:

@@ -1,4 +1,4 @@
-#include "../includes/LocationBlock.hpp"
+#include "../includes/WebservHeader.hpp"
 
 LocationBlock::LocationBlock(): _autoIndex(false), _canUpload(false), _uploadPath("./") { this->_index.push_back("index.html"); }
 

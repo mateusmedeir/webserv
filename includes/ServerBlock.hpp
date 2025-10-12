@@ -22,8 +22,11 @@ class ServerBlock
         std::map<int, std::string>              _errorPages;
 
     public:
+        ServerBlock();
         ServerBlock(ConfigFile &config);
         ~ServerBlock();
+
+        bool operator==(const ServerBlock &other) const;
         
         void printServerBlock();
 
