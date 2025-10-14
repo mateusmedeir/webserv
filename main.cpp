@@ -34,18 +34,10 @@ void	printBlock(std::vector<ServerBlock> serverBlocks, std::vector<ServerListen>
         std::cout << "========================================================" << std::endl;
     }
 }
-void parseConfigFile(RunTime *runtime, int ac, char **av)
-{
-    if (ac == 2)
-        runtime->_config.parser(av[1]);
-    else //| Caso não passem nenhum argumento, vamos usar nosso arquivo padrão
-        runtime->_config.parser("configs/test_simple.conf");
-    printBlock(runtime->_config.getServerBlocks(), runtime->_config.getServerListens());
-}
 
 void clientSocketIsReady(RunTime *runtime, struct epoll_event &clientSocket) {
     int clientFd = clientSocket.data.fd;
-
+    
     std::map<int, Client>::iterator it = runtime->_clients.find(clientFd);
     if (it == runtime->_clients.end()) {
         std::cerr << "Client not found in the map." << std::endl;
@@ -55,11 +47,11 @@ void clientSocketIsReady(RunTime *runtime, struct epoll_event &clientSocket) {
     char buffer[5] = {0};
     int count = 0;
     // (void)runtime;
-
+    
     // Precisamos de uma forma de identificar o final da request.
     // Dessa forma, conseguimos setar o state do client para COMPLETE
     if (clientSocket.events & EPOLLIN) {
-        if ((count = read(clientFd, buffer, 5)) > 0) {
+        if ((count = read(clientFd, buffer, 1)) > 0) {
             // aqui, leremos o que o cliente esta mandando para o servidor.
             // Faremos uma leitura em chuncks! Isto e, leremos de pouco em pouco.
             // provavelmente nunca leremos todo o conteudo da requisicao de uma vez so.
@@ -173,6 +165,15 @@ void serverMainLoop(RunTime *runtime) {
     }
 }
 
+void parseConfigFile(RunTime *runtime, int ac, char **av)
+{
+    if (ac == 2)
+        runtime->_config.parser(av[1]);
+    else //| Caso não passem nenhum argumento, vamos usar nosso arquivo padrão
+        runtime->_config.parser("configs/test_simple.conf");
+    printBlock(runtime->_config.getServerBlocks(), runtime->_config.getServerListens());
+}
+
 int main(int ac, char **av) {
     if (!verifyArgs(ac, av))
         return (1);
@@ -180,24 +181,38 @@ int main(int ac, char **av) {
     RunTime runtime(AF_INET, SOCK_STREAM);
 
     try {
-        parseConfigFile(&runtime, ac, av);
+        RunTime runtime(av, ac);
+        printBlock(runtime._config.getServerBlocks(), runtime._config.getServerListens());
 
-        runtime._server.setServerAddr(
-            AF_INET,
-            runtime._config.getServerListens()[0].getPort(),
-            runtime._config.getServerListens()[0].getHost()
-        );
-        runtime._server.bindServerSocket();
-        runtime._server.updateToNonBlocking();
-        runtime._server.listenServerSocket();
-        runtime._epoll.manipInterestList(EPOLL_CTL_ADD, EPOLLIN, runtime._server.getServerFd());
+        // Criar um novo construtor para a Classe RunTime.
+        // Esse novo construtor vai fazer ser responsavel por parsear o .conf
+        //  Caso tenha dado certo o parser, ele continua. Se nao, ja joga um exception.
+        //  Em sucesso, ele cria e abastece todos os atributos necessarios para o servidor rodar.
+        //      Isto e: 
+        //          os sockets do servidor em modo passivo
+        //          setados para nao bloqueante
+        //          cria a instancia de epoll
+        //          seleciona o modo correto do epoll
+        //          abastece a insterest list com os fds dos sockets do servidor
+        //          
+        
+        // parseConfigFile(&runtime, ac, av);
+        // runtime._server.setServerAddr(
+        //     AF_INET,
+        //     runtime._config.getServerListens()[0].getPort(),
+        //     runtime._config.getServerListens()[0].getHost()
+        // );
+        // runtime._server.bindServerSocket();
+        // runtime._server.updateToNonBlocking();
+        // runtime._server.listenServerSocket();
+        // runtime._epoll.manipInterestList(EPOLL_CTL_ADD, EPOLLIN, runtime._server.getServerFd());
     }
     catch (const std::exception &e) {
         std::cerr << e.what() << std::endl;
         return (-1);
     }
 
-    serverMainLoop(&runtime);
+    // serverMainLoop(&runtime);
 
     return (0);
 }
