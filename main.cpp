@@ -10,12 +10,20 @@ int	verifyArgs(int ac, char **av)
 	return (1);
 }
 
-void	printBlock(std::vector<ServerBlock> serverBlocks)
+void	printBlock(std::vector<ServerBlock> serverBlocks, std::vector<ServerListen> serverListens)
 {
     for (size_t i = 0; i < serverBlocks.size(); i++)
     {
         std::cout << "==================== SERVER BLOCK " << i + 1 << " ====================" << std::endl;
         serverBlocks[i].printServerBlock();
+        std::cout << "Listens: " << std::endl;
+        for (size_t j = 0; j < serverListens.size(); j++)
+        {
+            if (serverListens[j].getServerBlock() == serverBlocks[i])
+            {
+                std::cout << "Host[" << j << "]: " << serverListens[j].getHost() << " Port[" << j << "]: " << serverListens[j].getPort() << std::endl;
+            }
+        }
         std::map<std::string, LocationBlock> locations = serverBlocks[i].getLocations();
         for (std::map<std::string, LocationBlock>::iterator it = locations.begin(); it != locations.end(); it++)
         {
@@ -32,11 +40,18 @@ void parseConfigFile(RunTime *runtime, int ac, char **av)
         runtime->_config.parser(av[1]);
     else //| Caso não passem nenhum argumento, vamos usar nosso arquivo padrão
         runtime->_config.parser("configs/test_simple.conf");
-    printBlock(runtime->_config.getServerBlocks());
+    printBlock(runtime->_config.getServerBlocks(), runtime->_config.getServerListens());
 }
 
 void clientSocketIsReady(RunTime *runtime, struct epoll_event &clientSocket) {
     int clientFd = clientSocket.data.fd;
+
+    std::map<int, Client>::iterator it = runtime->_clients.find(clientFd);
+    if (it == runtime->_clients.end()) {
+        std::cerr << "Client not found in the map." << std::endl;
+        return;
+    }
+    Client &client = it->second; 
     char buffer[5] = {0};
     int count = 0;
     // (void)runtime;
@@ -48,8 +63,8 @@ void clientSocketIsReady(RunTime *runtime, struct epoll_event &clientSocket) {
             // aqui, leremos o que o cliente esta mandando para o servidor.
             // Faremos uma leitura em chuncks! Isto e, leremos de pouco em pouco.
             // provavelmente nunca leremos todo o conteudo da requisicao de uma vez so.
-            runtime->_clients[clientFd].concatenateRequestData(buffer);
-            if (runtime->_clients[clientFd].isRequestComplete()) {
+            client.concatenateRequestData(buffer);
+            if (client.isRequestComplete()) {
                 // Ao chegar aqui, ja lemos toda a request do cliente.
                 // Nessa etapa, precisamos parsear a request
                 // Processar o que for necessario
@@ -58,16 +73,16 @@ void clientSocketIsReady(RunTime *runtime, struct epoll_event &clientSocket) {
                 // close() no fd do client
                 // .erase() do map
                 std::cout << "================== REQUEST COMPLETE =================" << std::endl;
-                std::cout << runtime->_clients[clientFd].request.getMethod() << std::endl;
-                std::cout << runtime->_clients[clientFd].request.getUri() << std::endl;
-                std::map<std::string, std::string> headers = runtime->_clients[clientFd].request.getHeaders();
+                std::cout << client.request.getMethod() << std::endl;
+                std::cout << client.request.getUri() << std::endl;
+                std::map<std::string, std::string> headers = client.request.getHeaders();
                 for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); it++) {
                     std::cout << it->first << ": " << it->second << std::endl;
                 }
-                std::cout << "Body: " << runtime->_clients[clientFd].request.getBody() << std::endl;
+                std::cout << "Body: " << client.request.getBody() << std::endl;
                 std::cout << "=====================================================" << std::endl;
-                runtime->_clients[clientFd].response = HttpResponse(runtime->_clients[clientFd].request);
-                std::string responseStr = runtime->_clients[clientFd].response.toString();
+                client.response = HttpResponse(client.request);
+                std::string responseStr = client.response.toString();
                 std::cout << "=================== RESPONSE SEND ===================" << std::endl;
                 std::cout << responseStr << std::endl;
                 std::cout << "=====================================================" << std::endl;
@@ -80,13 +95,13 @@ void clientSocketIsReady(RunTime *runtime, struct epoll_event &clientSocket) {
             // o que ja lemos com o que acabamos de ler.
         } else if (count == 0) {
             std::cout << "Client closed the connection." << std::endl;
-            std::cout << runtime->_clients[clientFd].getRawRequest() << std::endl;
+            std::cout << client.getRawRequest() << std::endl;
             runtime->deleteClient(clientFd);
         }
     }
     if (clientSocket.events & EPOLLRDHUP) {
         std::cout << "Erro capturado pelo epoll." << std::endl;
-        std::cout << runtime->_clients[clientFd].getRawRequest() << std::endl;
+        std::cout << client.getRawRequest() << std::endl;
         runtime->deleteClient(clientFd);
     }
 }
@@ -111,7 +126,9 @@ void serverSocketIsReady(RunTime *runtime) {
                 // Precisaremos ler o conteudo da request, armazenar, parsear, processar e devolver
                 // Com o map, esses processos devem ficar mais tranquilos e simples/rapidos
                 set_nonblocking(clientFd);
-                runtime->_clients[clientFd] = Client(clientFd);
+                runtime->_clients.insert(
+                    std::make_pair(clientFd, Client(clientFd, runtime->_config.getServerListens()[0]))
+                );
                 runtime->_epoll.manipInterestList(EPOLL_CTL_ADD, EPOLLIN | EPOLLRDHUP, clientFd);
             }
             catch (const std::exception &e) {
@@ -165,7 +182,11 @@ int main(int ac, char **av) {
     try {
         parseConfigFile(&runtime, ac, av);
 
-        runtime._server.setServerAddr(AF_INET, runtime._config.getServerBlocks()[0].getListen()[0].port, runtime._config.getServerBlocks()[0].getListen()[0].host);
+        runtime._server.setServerAddr(
+            AF_INET,
+            runtime._config.getServerListens()[0].getPort(),
+            runtime._config.getServerListens()[0].getHost()
+        );
         runtime._server.bindServerSocket();
         runtime._server.updateToNonBlocking();
         runtime._server.listenServerSocket();

@@ -6,33 +6,36 @@ class ConfigFile;
 
 class LocationBlock {
     private:
-        bool _autoIndex;
-        bool _canUpload;
-        std::string _uri;
-        std::string _alias;
-        std::string _return;
-        std::string _uploadPath;
-        std::vector<std::string> _index;
-        std::vector<std::string> _cgiExtensions;
-        std::vector<std::string> _allowMethods;
+        ConfigFile                  &_config;
+        bool                        _autoIndex;
+        bool                        _canUpload;
+        std::string                 _uri;
+        std::string                 _alias;
+        std::string                 _return;
+        std::string                 _uploadPath;
+        std::vector<std::string>    _index;
+        std::vector<std::string>    _cgiExtensions;
+        std::vector<std::string>    _allowMethods;
 
         
-        void addAutoIndex(ConfigFile &config);
-        void addCanUpload(ConfigFile &config);
-        void addUri(ConfigFile &config);
-        void addAlias(ConfigFile &config);
-        void addReturn(ConfigFile &config);
-        void addUploadPath(ConfigFile &config);
-        void addIndex(ConfigFile &config);
-        void addCgiExtensions(ConfigFile &config);
-        void addAllowMethods(ConfigFile &config);
+        void addAutoIndex();
+        void addCanUpload();
+        void addUri();
+        void addAlias();
+        void addReturn();
+        void addUploadPath();
+        void addIndex();
+        void addCgiExtensions();
+        void addAllowMethods();
         
     public:
-        LocationBlock();
+        LocationBlock(ConfigFile &config);
         ~LocationBlock();
+
+        LocationBlock &operator=(const LocationBlock &src);
         
         void printLocationBlock();
-        void addLocationBlock(ConfigFile &config);
+        void addLocationBlock();
 
         //| Getters
         bool getAutoIndex() const;

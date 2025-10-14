@@ -5,7 +5,6 @@ COMPILER = c++
 FLAGS = -Wall -Werror -Wextra -std=c++98
 
 SRC =	main.cpp \
-		source/Client.cpp \
 		source/ConfigFile.cpp \
 		source/EpollInstance.cpp \
 		source/HttpRequest.cpp \
@@ -13,7 +12,9 @@ SRC =	main.cpp \
 		source/LocationBlock.cpp \
 		source/RunTime.cpp \
 		source/ServerBlock.cpp \
+		source/ServerListen.cpp \
 		source/ServerInstance.cpp \
+		source/Client.cpp \
 		source/Utils.cpp
 
 OBJ = $(SRC:.cpp=.o)

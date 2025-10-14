@@ -14,6 +14,7 @@ typedef struct s_listen
 class ServerBlock
 {
     private:
+        ConfigFile&                             _config;
         std::vector<std::string>                _serverNames;
         std::vector<t_listen>                   _listen;
         std::pair<bool, size_t>                 _maxBodySize;
@@ -24,15 +25,18 @@ class ServerBlock
     public:
         ServerBlock(ConfigFile &config);
         ~ServerBlock();
+
+        ServerBlock &operator=(const ServerBlock &src);
+        bool operator==(const ServerBlock &other) const;
         
         void printServerBlock();
 
-        void addListens(ConfigFile &config);
-        void addServerNames(ConfigFile &config);
-        void addMaxBodySize(ConfigFile &config);
-        void addRoot(ConfigFile &config);
-        void addErrorPages(ConfigFile &config);
-        void addLocation(ConfigFile &config);
+        void addListens();
+        void addServerNames();
+        void addMaxBodySize();
+        void addRoot();
+        void addErrorPages();
+        void addLocation();
 
         //| Getters
         std::vector<std::string> getServerNames() const;

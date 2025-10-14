@@ -4,16 +4,16 @@
 
 class HttpRequest {
   private:
-    std::string	method;
-    std::string	uri;
-    std::string	version;
-		std::map<std::string, std::string> headers;
-    std::string	body;
+    std::string                         method;
+    std::string                         uri;
+    std::string                         version;
+    std::map<std::string, std::string>  headers;
+    std::string                         body;
 
     
     public:
-		HttpRequest(const std::string &rawRequest);
 		HttpRequest();
+		HttpRequest(const std::string &rawRequest);
 		~HttpRequest();
 
     void parseRequestLine(const std::string &rawRequest);

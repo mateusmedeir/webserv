@@ -8,7 +8,7 @@ class RunTime {
         ConfigFile                  _config;
         ServerInstance              _server;
         EpollInstance               _epoll;
-        std::map <int, Client> _clients;
+        std::map <int, Client>      _clients;
         
         RunTime(void);
         RunTime(int socketDomain, int socketType);
