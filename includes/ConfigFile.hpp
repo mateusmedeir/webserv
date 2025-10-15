@@ -36,4 +36,8 @@ class ConfigFile {
 		std::vector<std::string> getTokens(void);
 		std::vector<ServerBlock> getServerBlocks(void) const;
 		std::vector<ServerListen> getServerListens(void) const;
+
+		ServerListen &getElementInServerList(int serverSocketFd);
+
+		void initServerSockets(int socketDomain, int socketType);
 };

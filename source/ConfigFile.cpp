@@ -210,3 +210,29 @@ std::vector<ServerListen> ConfigFile::getServerListens(void) const
 {
 	return this->_serverListens;
 }
+
+ServerListen &ConfigFile::getElementInServerList(int serverSocketFd) {
+	unsigned int i = 0;
+	for (; this->_serverListens.size(); i++) {
+		if (this->_serverListens[i].getServerFd() == serverSocketFd) {
+			std::cout << "OPA, achamos o server correto!" << std::endl;
+			break;
+		}
+	}
+	return (this->_serverListens[i]);
+}
+
+void ConfigFile::initServerSockets(int socketDomain, int socketType) {
+	try {
+		for (unsigned int i = 0; i < this->_serverListens.size(); i++) {
+			this->_serverListens[i].createServerSocket(socketDomain, socketType);
+			this->_serverListens[i].setServerAddr(socketDomain);
+			this->_serverListens[i].bindServerSocket();
+			this->_serverListens[i].updateToNonBlocking();
+			this->_serverListens[i].listenServerSocket();
+		}
+	}
+    catch(const std::exception& e) {
+        std::cerr << e.what() << '\n';
+    }    
+}

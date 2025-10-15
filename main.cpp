@@ -98,17 +98,24 @@ void clientSocketIsReady(RunTime *runtime, struct epoll_event &clientSocket) {
     }
 }
 
-void serverSocketIsReady(RunTime *runtime) {
+void serverSocketIsReady(RunTime *runtime, struct epoll_event &serverSocket) {
+    std::cout << "FD do server: " << serverSocket.data.fd << std::endl;
     while (true) {
         struct sockaddr_in clientSocketAddr;
         socklen_t clientSocketLength = sizeof(clientSocketAddr);
-        int clientFd = accept(runtime->_server.getServerFd(), (struct sockaddr *)&clientSocketAddr, &clientSocketLength);
+        int clientFd = accept(serverSocket.data.fd, (struct sockaddr *)&clientSocketAddr, &clientSocketLength);
 
+        std::cout << "comecou" << std::endl;
         if (clientFd == -1) {
+            std::cout << "Erro accept" << std::endl;
+            std::cout << clientFd << std::endl;
+            std::cout << "errno: " << errno << std::endl;
+            break;
             //EAGAIN or EWOULDBLOCK
             //The socket is marked nonblocking and no connections are
             //present to be accepted (nao ha mais conexoes para serem aceitas)
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                std::cout << "BREAK;" << std::endl;
                 break;
             }
         } else {
@@ -118,10 +125,15 @@ void serverSocketIsReady(RunTime *runtime) {
                 // Precisaremos ler o conteudo da request, armazenar, parsear, processar e devolver
                 // Com o map, esses processos devem ficar mais tranquilos e simples/rapidos
                 set_nonblocking(clientFd);
+                // runtime->_clients.insert(
+                //     std::make_pair(clientFd, Client(clientFd, runtime->_config.getServerListens()[0]))
+                // );
+                // std::cout << "Nao inseriu no map" << std::endl;
                 runtime->_clients.insert(
-                    std::make_pair(clientFd, Client(clientFd, runtime->_config.getServerListens()[0]))
+                    std::make_pair(clientFd, Client(clientFd, runtime->_config.getElementInServerList(serverSocket.data.fd)))
                 );
-                runtime->_epoll.manipInterestList(EPOLL_CTL_ADD, EPOLLIN | EPOLLRDHUP, clientFd);
+                std::cout << "inseriu novo client no map." << std::endl;
+                runtime->_epoll.manipInterestList(EPOLL_CTL_ADD, EPOLLIN | EPOLLRDHUP, clientFd, 0);
             }
             catch (const std::exception &e) {
                 std::cerr << e.what() << std::endl;
@@ -129,6 +141,7 @@ void serverSocketIsReady(RunTime *runtime) {
             }
         }
     }
+    std::cout << "acabou" << std::endl;
     
 }
 
@@ -136,10 +149,13 @@ void epollReadyListLoop(RunTime *runtime, int numberOfReadySockets) {
     if (numberOfReadySockets) {
         for (int i = 0; i < numberOfReadySockets; i++) {
             struct epoll_event &socketReady = runtime->_epoll.getElementFromReadyList(i);
+            // struct epoll_event &socketReady = runtime->_epoll.getReadyList();
     
-            if (socketReady.data.fd == runtime->_server.getServerFd()) {
+            if (socketReady.data.ptr != NULL) {
                 std::cout << "Evento ocorreu no serverSocket." << std::endl;
-                serverSocketIsReady(runtime);
+                std::cout << "O FD e: " << socketReady.data.fd << std::endl;
+                serverSocketIsReady(runtime, socketReady);
+                return ;
             }
             else {
                 std::cout << "Evento ocorreu com um clientSocket." << std::endl;
@@ -148,6 +164,7 @@ void epollReadyListLoop(RunTime *runtime, int numberOfReadySockets) {
                 //Caso nao exista, adiciona mais um elemento no map
                 clientSocketIsReady(runtime, socketReady);
             }
+            break;
         }
     }
 }
@@ -159,8 +176,9 @@ void serverMainLoop(RunTime *runtime) {
             std::cerr << "Error: erro ao manipular o epoll_wait()." << std::endl;
             break;
         }
-        else {
+        else if (numberOfReadySockets >= 1){
             epollReadyListLoop(runtime, numberOfReadySockets);
+            break;
         }
     }
 }
@@ -178,10 +196,10 @@ int main(int ac, char **av) {
     if (!verifyArgs(ac, av))
         return (1);
 
-    RunTime runtime(AF_INET, SOCK_STREAM);
+    // RunTime runtime(AF_INET, SOCK_STREAM);
+    RunTime runtime(av, ac);
 
     try {
-        RunTime runtime(av, ac);
         printBlock(runtime._config.getServerBlocks(), runtime._config.getServerListens());
 
         // Criar um novo construtor para a Classe RunTime.
@@ -212,7 +230,7 @@ int main(int ac, char **av) {
         return (-1);
     }
 
-    // serverMainLoop(&runtime);
+    serverMainLoop(&runtime);
 
     return (0);
 }
