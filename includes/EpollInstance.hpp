@@ -2,6 +2,11 @@
 
 # include "WebservHeader.hpp"
 
+struct epollUserData {
+    int fd;
+    bool isServerSocket;
+};
+
 class EpollInstance {
     private:
         int                 _epollFd;

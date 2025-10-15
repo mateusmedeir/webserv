@@ -53,19 +53,26 @@ struct epoll_event &EpollInstance::getReadyList(void) {
 }
 
 void EpollInstance::setConfigEpollEvents(int socketFd, uint32_t events, bool isServerSocket) {
-    this->_configEpollEvents.data.fd = socketFd;
-    if (isServerSocket) {
-        std::cout << "Modificamos o data.ptr para identificar que e um socket de servidor." << std::endl;
-        this->_configEpollEvents.data.ptr = (bool *)isServerSocket;
-    }
-    else {
-        this->_configEpollEvents.data.ptr = NULL;
-    }
-    this->_configEpollEvents.events = events;
+    struct epoll_event aux;
+
+    aux.data.fd = socketFd;
+    if (isServerSocket) aux.data.ptr = (bool *)isServerSocket, aux.data.ptr = NULL;
+    aux.events = events;
+    (void)aux;
+    // this->_configEpollEvents.data.fd = socketFd;
+    // if (isServerSocket) {
+    //     std::cout << "Modificamos o data.ptr para identificar que e um socket de servidor." << std::endl;
+    //     this->_configEpollEvents.data.ptr = (bool *)isServerSocket;
+    // }
+    // else {
+    //     this->_configEpollEvents.data.ptr = NULL;
+    // }
+    // this->_configEpollEvents.events = events;
 }
 
 struct epoll_event &EpollInstance::getElementFromReadyList(int index) {
-    std::cout << "Dentro da ready list: " << this->_readyList[index].data.fd << std::endl;
+    struct epollUserData *aux = (struct epollUserData *)this->_readyList[index].data.ptr;
+    std::cout << "Dentro da ready list: " << aux->fd << std::endl;
     return (this->_readyList[index]);
 }
 
@@ -73,8 +80,17 @@ void EpollInstance::manipInterestList(int operation, uint32_t events, int socket
     if (operation != EPOLL_CTL_ADD && operation != EPOLL_CTL_DEL && operation != EPOLL_CTL_MOD) {
         throw(EpollInstance::CannotManipulateEpollInstance());
     }
-    this->setConfigEpollEvents(socketFd, events, isServerSocket);
-    if (epoll_ctl(this->_epollFd, operation, socketFd, &this->_configEpollEvents) == -1) {
+    struct epoll_event aux;
+    struct epollUserData *data = new struct epollUserData;
+    data->fd = socketFd;
+    data->isServerSocket = isServerSocket;
+
+    std::cout << "Dentro do manipInterest. FD: " << socketFd << std::endl;
+
+    aux.data.ptr = data;
+    aux.events = events;
+    // this->setConfigEpollEvents(socketFd, events, isServerSocket);
+    if (epoll_ctl(this->_epollFd, operation, socketFd, &aux) == -1) {
         throw(EpollInstance::CannotManipulateEpollInstance());
     }
     std::cout << "Manipulacao feita com sucesso!" << std::endl;

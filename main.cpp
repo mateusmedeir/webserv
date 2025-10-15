@@ -35,8 +35,8 @@ void	printBlock(std::vector<ServerBlock> serverBlocks, std::vector<ServerListen>
     }
 }
 
-void clientSocketIsReady(RunTime *runtime, struct epoll_event &clientSocket) {
-    int clientFd = clientSocket.data.fd;
+void clientSocketIsReady(RunTime *runtime, struct epoll_event &clientSocket, int clientFd) {
+    // int clientFd = clientSocket.data.fd;
     
     std::map<int, Client>::iterator it = runtime->_clients.find(clientFd);
     if (it == runtime->_clients.end()) {
@@ -98,24 +98,23 @@ void clientSocketIsReady(RunTime *runtime, struct epoll_event &clientSocket) {
     }
 }
 
-void serverSocketIsReady(RunTime *runtime, struct epoll_event &serverSocket) {
-    std::cout << "FD do server: " << serverSocket.data.fd << std::endl;
+void serverSocketIsReady(RunTime *runtime, int serverFd) {
+    // std::cout << "FD do server: " << serverFd << std::endl;
     while (true) {
         struct sockaddr_in clientSocketAddr;
         socklen_t clientSocketLength = sizeof(clientSocketAddr);
-        int clientFd = accept(serverSocket.data.fd, (struct sockaddr *)&clientSocketAddr, &clientSocketLength);
+        int clientFd = accept(serverFd, (struct sockaddr *)&clientSocketAddr, &clientSocketLength);
 
-        std::cout << "comecou" << std::endl;
+        // std::cout << "comecou" << std::endl;
         if (clientFd == -1) {
-            std::cout << "Erro accept" << std::endl;
-            std::cout << clientFd << std::endl;
-            std::cout << "errno: " << errno << std::endl;
-            break;
+            // std::cout << "Erro accept" << std::endl;
+            // std::cout << clientFd << std::endl;
+            // std::cout << "errno: " << errno << std::endl;
             //EAGAIN or EWOULDBLOCK
             //The socket is marked nonblocking and no connections are
             //present to be accepted (nao ha mais conexoes para serem aceitas)
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                std::cout << "BREAK;" << std::endl;
+                // std::cout << "BREAK;" << std::endl;
                 break;
             }
         } else {
@@ -130,7 +129,7 @@ void serverSocketIsReady(RunTime *runtime, struct epoll_event &serverSocket) {
                 // );
                 // std::cout << "Nao inseriu no map" << std::endl;
                 runtime->_clients.insert(
-                    std::make_pair(clientFd, Client(clientFd, runtime->_config.getElementInServerList(serverSocket.data.fd)))
+                    std::make_pair(clientFd, Client(clientFd, runtime->_config.getElementInServerList(serverFd)))
                 );
                 std::cout << "inseriu novo client no map." << std::endl;
                 runtime->_epoll.manipInterestList(EPOLL_CTL_ADD, EPOLLIN | EPOLLRDHUP, clientFd, 0);
@@ -140,31 +139,32 @@ void serverSocketIsReady(RunTime *runtime, struct epoll_event &serverSocket) {
                 close(clientFd);
             }
         }
+        return ;
     }
-    std::cout << "acabou" << std::endl;
-    
+    // std::cout << "acabou" << std::endl;
 }
 
 void epollReadyListLoop(RunTime *runtime, int numberOfReadySockets) {
     if (numberOfReadySockets) {
         for (int i = 0; i < numberOfReadySockets; i++) {
             struct epoll_event &socketReady = runtime->_epoll.getElementFromReadyList(i);
+            struct epollUserData *data = (struct epollUserData *)socketReady.data.ptr;
             // struct epoll_event &socketReady = runtime->_epoll.getReadyList();
     
-            if (socketReady.data.ptr != NULL) {
+            if (data->isServerSocket) {
                 std::cout << "Evento ocorreu no serverSocket." << std::endl;
-                std::cout << "O FD e: " << socketReady.data.fd << std::endl;
-                serverSocketIsReady(runtime, socketReady);
-                return ;
+                std::cout << "O FD e: " << data->fd << std::endl;
+                serverSocketIsReady(runtime, data->fd);
+                return;
             }
             else {
                 std::cout << "Evento ocorreu com um clientSocket." << std::endl;
+                std::cout << "O FD e: " << data->fd << std::endl;
                 //Validar se ja existe alguma key no map de clientes com o valor do FD do clientFd.
                 //Caso ja exista, nao faz nada????
                 //Caso nao exista, adiciona mais um elemento no map
-                clientSocketIsReady(runtime, socketReady);
+                clientSocketIsReady(runtime, socketReady, data->fd);
             }
-            break;
         }
     }
 }
@@ -176,9 +176,8 @@ void serverMainLoop(RunTime *runtime) {
             std::cerr << "Error: erro ao manipular o epoll_wait()." << std::endl;
             break;
         }
-        else if (numberOfReadySockets >= 1){
+        else {
             epollReadyListLoop(runtime, numberOfReadySockets);
-            break;
         }
     }
 }
