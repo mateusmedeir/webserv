@@ -20,8 +20,6 @@ class ServerListen {
         int getPort(void) const;
         ServerBlock getServerBlock(void) const;
 
-        // void initServerSockets(int socketDomain, int socketType);
-
         int getServerFd(void) const;
         void setServerAddr(int socketDomain);
         void createServerSocket(int socketDomain, int socketType);

@@ -34,20 +34,6 @@ ServerBlock ServerListen::getServerBlock(void) const {
     return (this->_serverBlock);
 }
 
-// void ServerListen::initServerSockets(int socketDomain, int socketType) {
-//     try {
-//         this->createServerSocket(socketDomain, socketType);
-//         this->setServerAddr(socketDomain);
-//         this->bindServerSocket();
-//         this->updateToNonBlocking();
-//         this->listenServerSocket();
-//     }
-//     catch(const std::exception& e) {
-//         std::cerr << e.what() << '\n';
-//     }
-    
-// }
-
 int ServerListen::getServerFd(void) const {
     return (this->_serverFd);
 }
