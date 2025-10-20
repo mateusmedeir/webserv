@@ -11,13 +11,11 @@ enum TypeValidation
 };
 
 class ServerBlock;
-class ServerListen;
 
 class ConfigFile {
 	private:
 		std::vector<std::string>    _tokens;
 		std::vector<ServerBlock>    _serverBlocks;
-		std::vector<ServerListen>   _serverListens;
 	public:
 		ConfigFile(void);
 		~ConfigFile(void);
@@ -34,10 +32,7 @@ class ConfigFile {
 		static void cleanFile(const std::string &filename, std::string &content);
 
 		std::vector<std::string> getTokens(void);
-		std::vector<ServerBlock> getServerBlocks(void) const;
-		std::vector<ServerListen> getServerListens(void) const;
-
-		ServerListen &getElementInServerList(int serverSocketFd);
+		const std::vector<ServerBlock> &getServerBlocks(void) const;
 
 		void initServerSockets(int socketDomain, int socketType);
 };

@@ -36,8 +36,8 @@ void	printBlock(std::vector<ServerBlock> serverBlocks, std::vector<ServerListen>
 }
 
 void clientSocketIsReady(RunTime *runtime, struct epoll_event &clientSocket, int clientFd) {
-    std::map<int, Client>::iterator it = runtime->_clients.find(clientFd);
-    if (it == runtime->_clients.end()) {
+    std::map<int, Client>::iterator it = runtime->clients.find(clientFd);
+    if (it == runtime->clients.end()) {
         std::cerr << "Client not found in the map." << std::endl;
         return;
     }
@@ -58,7 +58,7 @@ void clientSocketIsReady(RunTime *runtime, struct epoll_event &clientSocket, int
                 }
                 std::cout << "Body: " << client.request.getBody() << std::endl;
                 std::cout << "=====================================================" << std::endl;
-                client.response = HttpResponse(client.request);
+                client.response.dispatchRequest(client.request);
                 std::string responseStr = client.response.toString();
                 std::cout << "=================== RESPONSE SEND ===================" << std::endl;
                 std::cout << responseStr << std::endl;
@@ -96,11 +96,11 @@ void serverSocketIsReady(RunTime *runtime, int serverFd) {
         } else {
             try {
                 set_nonblocking(clientFd);
-                runtime->_clients.insert(
-                    std::make_pair(clientFd, Client(clientFd, runtime->_config.getElementInServerList(serverFd)))
+                runtime->clients.insert(
+                    std::make_pair(clientFd, Client(clientFd, runtime->getElementInServerList(serverFd)))
                 );
                 std::cout << "inseriu novo client no map." << std::endl;
-                runtime->_epoll.manipInterestList(EPOLL_CTL_ADD, EPOLLIN | EPOLLRDHUP, clientFd, 0);
+                runtime->epoll.manipInterestList(EPOLL_CTL_ADD, EPOLLIN | EPOLLRDHUP, clientFd, 0);
             }
             catch (const std::exception &e) {
                 std::cerr << e.what() << std::endl;
@@ -114,9 +114,8 @@ void serverSocketIsReady(RunTime *runtime, int serverFd) {
 void epollReadyListLoop(RunTime *runtime, int numberOfReadySockets) {
     if (numberOfReadySockets) {
         for (int i = 0; i < numberOfReadySockets; i++) {
-            struct epoll_event &socketReady = runtime->_epoll.getElementFromReadyList(i);
+            struct epoll_event &socketReady = runtime->epoll.getElementFromReadyList(i);
             struct epollUserData *data = (struct epollUserData *)socketReady.data.ptr;
-            // struct epoll_event &socketReady = runtime->_epoll.getReadyList();
     
             if (data->isServerSocket) {
                 std::cout << "Evento ocorreu no serverSocket." << std::endl;
@@ -135,7 +134,7 @@ void epollReadyListLoop(RunTime *runtime, int numberOfReadySockets) {
 
 void serverMainLoop(RunTime *runtime) {
     while (true) {
-        int numberOfReadySockets = runtime->_epoll.manipEpollWait();
+        int numberOfReadySockets = runtime->epoll.manipEpollWait();
         if (numberOfReadySockets == -1) {
             std::cerr << "Error: erro ao manipular o epoll_wait()." << std::endl;
             break;
@@ -146,22 +145,13 @@ void serverMainLoop(RunTime *runtime) {
     }
 }
 
-void parseConfigFile(RunTime *runtime, int ac, char **av)
-{
-    if (ac == 2)
-        runtime->_config.parser(av[1]);
-    else //| Caso não passem nenhum argumento, vamos usar nosso arquivo padrão
-        runtime->_config.parser("configs/test_simple.conf");
-    printBlock(runtime->_config.getServerBlocks(), runtime->_config.getServerListens());
-}
-
 int main(int ac, char **av) {
     if (!verifyArgs(ac, av))
         return (1);
 
     try {
         RunTime runtime(av, ac);
-        printBlock(runtime._config.getServerBlocks(), runtime._config.getServerListens());
+        printBlock(runtime.config.getServerBlocks(), runtime.getServerListeners());
         serverMainLoop(&runtime);
     }
     catch (const std::exception &e) {

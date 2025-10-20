@@ -1,19 +1,15 @@
 #include "../includes/WebservHeader.hpp"
 
-HttpResponse::HttpResponse(){};
-
-HttpResponse::HttpResponse(HttpRequest const &req){
-	this->http_version = "HTTP/1.0";
-	this->status_code = 200;
-	this->status_message = "OK";
-
-	dispatchRequest(req);
+HttpResponse::HttpResponse(){
+	this->_http_version = "HTTP/1.0";
+	this->_status_code = 200;
+	this->_status_message = "OK";
 };
 
 HttpResponse::~HttpResponse(){};
 
 void HttpResponse::handleGet(const HttpRequest &req) {
-	std::string path = "./www" + req.getUri(); // root simplificada
+	std::string path = uriToPath(req.getUri());
 
 	std::ifstream file(path.c_str(), std::ios::binary);
 	if (!file) {
@@ -44,7 +40,7 @@ void HttpResponse::handlePost(const HttpRequest &req){
 };
 
 void HttpResponse::handleDelete(const HttpRequest &req){
-		std::string path = "./www" + req.getUri();
+		std::string path = uriToPath(req.getUri());
 
 		if (std::remove(path.c_str()) == 0) {
 			this->setStatus(200, "OK");
@@ -57,44 +53,45 @@ void HttpResponse::handleDelete(const HttpRequest &req){
 
 void HttpResponse::dispatchRequest(const HttpRequest &req){
 	std::cout << "Dispatching request for method: " << req.getMethod() << std::endl;
+	if (this->_status_code != 200)
+		return;
+
 	if(req.getMethod() == "GET")
 		return handleGet(req);
-	if(req.getMethod() == "POST")
+	else if(req.getMethod() == "POST")
 		return handlePost(req);
-	if(req.getMethod() == "DELETE")
+	else if(req.getMethod() == "DELETE")
 		return handleDelete(req);
-
-	this->setStatus(405, "Method not allowed");
-	this->setHeader("Content-type", "text/html");
-	this->setBody("<h1>405: Method not allowed</h1>","text/plain");
+	else 
+		this->setErrorPage(405);
 }
 
 void		HttpResponse::setStatus(int code, const std::string &message){
-	this->status_code = code;
-	this->status_message = message;
+	this->_status_code = code;
+	this->_status_message = message;
 };
 
 void		HttpResponse::setHeader(const std::string &key, const std::string &value){
-	this->headers[key] = value;
+	this->_headers[key] = value;
 };
 
 void		HttpResponse::setBody(const std::string &b, const std::string &contentType){
-	body = b;
-	this->headers["Content-Type"] = contentType;
-	this->headers["Content-Length"] = intToString(body.size());
+	_body = b;
+	this->_headers["Content-Type"] = contentType;
+	this->_headers["Content-Length"] = intToString(_body.size());
 }
 
 std::string	HttpResponse::toString() const{
 	std::ostringstream response;
 
 	// Status line
-	response << http_version << " "
-				<< status_code << " "
-				<< status_message << "\r\n";
+	response << _http_version << " "
+				<< _status_code << " "
+				<< _status_message << "\r\n";
 
 	// Headers
-	for (std::map<std::string, std::string>::const_iterator it = headers.begin();
-			it != headers.end(); ++it) {
+	for (std::map<std::string, std::string>::const_iterator it = _headers.begin();
+			it != _headers.end(); ++it) {
 		response << it->first << ": " << it->second << "\r\n";
 	}
 
@@ -102,7 +99,7 @@ std::string	HttpResponse::toString() const{
 	response << "\r\n";
 
 	// Corpo
-	response << body;
+	response << _body;
 
 	return response.str();
 }
@@ -111,4 +108,31 @@ std::string	HttpResponse::intToString(int n) const{
 	std::ostringstream oss;
 	oss << n;
 	return oss.str();
+}
+
+std::string HttpResponse::uriToPath(const std::string &uri) const {
+    std::string path = uri;
+
+    if (path[path.size() - 1] == '/') {
+    path += "index";
+    }
+    if (path[0] != '/')
+    path = "/" + path;
+
+    std::cout << "Converted URI to path: " << "./www" + path + ".html" << std::endl;
+    return "./www" + path + ".html";
+}
+
+void		HttpResponse::setErrorPage(int code){
+	std::string path = "./error_pages/" + intToString(code) + ".html";
+	std::ifstream file(path.c_str());
+	if(!file){
+		setStatus(code, "Error");
+		setBody("<h1>"+ intToString(code) + "Error</h1>","text/html");
+		return;
+	}
+	std::ostringstream buffer;
+	buffer << file.rdbuf();
+	setStatus(code, "Error");
+	setBody(buffer.str(),"text/html");
 }
