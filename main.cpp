@@ -34,18 +34,8 @@ void	printBlock(std::vector<ServerBlock> serverBlocks, std::vector<ServerListen>
         std::cout << "========================================================" << std::endl;
     }
 }
-void parseConfigFile(RunTime *runtime, int ac, char **av)
-{
-    if (ac == 2)
-        runtime->_config.parser(av[1]);
-    else //| Caso não passem nenhum argumento, vamos usar nosso arquivo padrão
-        runtime->_config.parser("configs/test_simple.conf");
-    printBlock(runtime->_config.getServerBlocks(), runtime->_config.getServerListens());
-}
 
-void clientSocketIsReady(RunTime *runtime, struct epoll_event &clientSocket) {
-    int clientFd = clientSocket.data.fd;
-
+void clientSocketIsReady(RunTime *runtime, struct epoll_event &clientSocket, int clientFd) {
     std::map<int, Client>::iterator it = runtime->_clients.find(clientFd);
     if (it == runtime->_clients.end()) {
         std::cerr << "Client not found in the map." << std::endl;
@@ -54,24 +44,11 @@ void clientSocketIsReady(RunTime *runtime, struct epoll_event &clientSocket) {
     Client &client = it->second; 
     char buffer[5] = {0};
     int count = 0;
-    // (void)runtime;
 
-    // Precisamos de uma forma de identificar o final da request.
-    // Dessa forma, conseguimos setar o state do client para COMPLETE
     if (clientSocket.events & EPOLLIN) {
-        if ((count = read(clientFd, buffer, 5)) > 0) {
-            // aqui, leremos o que o cliente esta mandando para o servidor.
-            // Faremos uma leitura em chuncks! Isto e, leremos de pouco em pouco.
-            // provavelmente nunca leremos todo o conteudo da requisicao de uma vez so.
+        if ((count = read(clientFd, buffer, 1)) > 0) {
             client.concatenateRequestData(buffer);
             if (client.isRequestComplete()) {
-                // Ao chegar aqui, ja lemos toda a request do cliente.
-                // Nessa etapa, precisamos parsear a request
-                // Processar o que for necessario
-                // Montar a response
-                // Enviar a response ao cliente
-                // close() no fd do client
-                // .erase() do map
                 std::cout << "================== REQUEST COMPLETE =================" << std::endl;
                 std::cout << client.request.getMethod() << std::endl;
                 std::cout << client.request.getUri() << std::endl;
@@ -89,10 +66,6 @@ void clientSocketIsReady(RunTime *runtime, struct epoll_event &clientSocket) {
                 send(clientFd, responseStr.c_str(), responseStr.size(), 0);
                 runtime->deleteClient(clientFd);
             }
-            // no momento, so estamos printando na tela mesmo.
-            //Precisamos de alguma forma de armazenar o conteudo ja lido de algum socket
-            // em alguma estrutura para que, durante as proximas leituras, possamos concatenar
-            // o que ja lemos com o que acabamos de ler.
         } else if (count == 0) {
             std::cout << "Client closed the connection." << std::endl;
             std::cout << client.getRawRequest() << std::endl;
@@ -106,55 +79,55 @@ void clientSocketIsReady(RunTime *runtime, struct epoll_event &clientSocket) {
     }
 }
 
-void serverSocketIsReady(RunTime *runtime) {
+void serverSocketIsReady(RunTime *runtime, int serverFd) {
     while (true) {
         struct sockaddr_in clientSocketAddr;
         socklen_t clientSocketLength = sizeof(clientSocketAddr);
-        int clientFd = accept(runtime->_server.getServerFd(), (struct sockaddr *)&clientSocketAddr, &clientSocketLength);
+        int clientFd = accept(serverFd, (struct sockaddr *)&clientSocketAddr, &clientSocketLength);
 
         if (clientFd == -1) {
             //EAGAIN or EWOULDBLOCK
             //The socket is marked nonblocking and no connections are
             //present to be accepted (nao ha mais conexoes para serem aceitas)
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                // std::cout << "BREAK;" << std::endl;
                 break;
             }
         } else {
             try {
-                // Adicionar o novo socket do cliente no map de clientes.
-                // A ideia aqui e que, sempre quando um novo cliente realizar uma conexao com o servidor
-                // Precisaremos ler o conteudo da request, armazenar, parsear, processar e devolver
-                // Com o map, esses processos devem ficar mais tranquilos e simples/rapidos
                 set_nonblocking(clientFd);
                 runtime->_clients.insert(
-                    std::make_pair(clientFd, Client(clientFd, runtime->_config.getServerListens()[0]))
+                    std::make_pair(clientFd, Client(clientFd, runtime->_config.getElementInServerList(serverFd)))
                 );
-                runtime->_epoll.manipInterestList(EPOLL_CTL_ADD, EPOLLIN | EPOLLRDHUP, clientFd);
+                std::cout << "inseriu novo client no map." << std::endl;
+                runtime->_epoll.manipInterestList(EPOLL_CTL_ADD, EPOLLIN | EPOLLRDHUP, clientFd, 0);
             }
             catch (const std::exception &e) {
                 std::cerr << e.what() << std::endl;
                 close(clientFd);
             }
         }
+        return ;
     }
-    
 }
 
 void epollReadyListLoop(RunTime *runtime, int numberOfReadySockets) {
     if (numberOfReadySockets) {
         for (int i = 0; i < numberOfReadySockets; i++) {
             struct epoll_event &socketReady = runtime->_epoll.getElementFromReadyList(i);
+            struct epollUserData *data = (struct epollUserData *)socketReady.data.ptr;
+            // struct epoll_event &socketReady = runtime->_epoll.getReadyList();
     
-            if (socketReady.data.fd == runtime->_server.getServerFd()) {
+            if (data->isServerSocket) {
                 std::cout << "Evento ocorreu no serverSocket." << std::endl;
-                serverSocketIsReady(runtime);
+                std::cout << "O FD e: " << data->fd << std::endl;
+                serverSocketIsReady(runtime, data->fd);
+                return;
             }
             else {
                 std::cout << "Evento ocorreu com um clientSocket." << std::endl;
-                //Validar se ja existe alguma key no map de clientes com o valor do FD do clientFd.
-                //Caso ja exista, nao faz nada????
-                //Caso nao exista, adiciona mais um elemento no map
-                clientSocketIsReady(runtime, socketReady);
+                std::cout << "O FD e: " << data->fd << std::endl;
+                clientSocketIsReady(runtime, socketReady, data->fd);
             }
         }
     }
@@ -173,31 +146,28 @@ void serverMainLoop(RunTime *runtime) {
     }
 }
 
+void parseConfigFile(RunTime *runtime, int ac, char **av)
+{
+    if (ac == 2)
+        runtime->_config.parser(av[1]);
+    else //| Caso não passem nenhum argumento, vamos usar nosso arquivo padrão
+        runtime->_config.parser("configs/test_simple.conf");
+    printBlock(runtime->_config.getServerBlocks(), runtime->_config.getServerListens());
+}
+
 int main(int ac, char **av) {
     if (!verifyArgs(ac, av))
         return (1);
 
-    RunTime runtime(AF_INET, SOCK_STREAM);
-
     try {
-        parseConfigFile(&runtime, ac, av);
-
-        runtime._server.setServerAddr(
-            AF_INET,
-            runtime._config.getServerListens()[0].getPort(),
-            runtime._config.getServerListens()[0].getHost()
-        );
-        runtime._server.bindServerSocket();
-        runtime._server.updateToNonBlocking();
-        runtime._server.listenServerSocket();
-        runtime._epoll.manipInterestList(EPOLL_CTL_ADD, EPOLLIN, runtime._server.getServerFd());
+        RunTime runtime(av, ac);
+        printBlock(runtime._config.getServerBlocks(), runtime._config.getServerListens());
+        serverMainLoop(&runtime);
     }
     catch (const std::exception &e) {
         std::cerr << e.what() << std::endl;
         return (-1);
     }
-
-    serverMainLoop(&runtime);
 
     return (0);
 }

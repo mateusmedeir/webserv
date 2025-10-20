@@ -27,7 +27,6 @@ int Client::getState(void) const {
     return (this->_state);
 }
 
-        // std::string &getRequest(void) const;
 std::string &Client::getRawRequest(void) {
     return (this->_rawRequest);
 }

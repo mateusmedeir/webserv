@@ -21,6 +21,7 @@ class ConfigFile {
 	public:
 		ConfigFile(void);
 		~ConfigFile(void);
+		ConfigFile(char **av, int ac);
 
 		std::vector<std::string> tokenizeContent(const std::string &content);
 		void parser(const std::string &filename);
@@ -35,4 +36,8 @@ class ConfigFile {
 		std::vector<std::string> getTokens(void);
 		std::vector<ServerBlock> getServerBlocks(void) const;
 		std::vector<ServerListen> getServerListens(void) const;
+
+		ServerListen &getElementInServerList(int serverSocketFd);
+
+		void initServerSockets(int socketDomain, int socketType);
 };

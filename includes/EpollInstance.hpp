@@ -2,6 +2,11 @@
 
 # include "WebservHeader.hpp"
 
+struct epollUserData {
+    int fd;
+    bool isServerSocket;
+};
+
 class EpollInstance {
     private:
         int                 _epollFd;
@@ -20,11 +25,11 @@ class EpollInstance {
         struct epoll_event getConfigEpollEvents(void) const;
         struct epoll_event &getReadyList(void);
 
-        void setConfigEpollEvents(int socketFd, uint32_t events);
+        void setConfigEpollEvents(int socketFd, uint32_t events, bool isServerSocket);
 
         struct epoll_event &getElementFromReadyList(int index);
 
-        void manipInterestList(int operation, uint32_t events, int socketFd);
+        void manipInterestList(int operation, uint32_t events, int socketFd, bool isServerSocket);
         int manipEpollWait(void);
 
         class CannotInitEpollInstance : public std::exception {

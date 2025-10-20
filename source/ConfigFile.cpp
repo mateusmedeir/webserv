@@ -4,6 +4,14 @@ ConfigFile::ConfigFile(void) {}
 
 ConfigFile::~ConfigFile(void) {}
 
+// ConfigFile(char **av, int ac);
+ConfigFile::ConfigFile(char **av, int ac) {
+	if (ac == 2)
+        this->parser(av[1]);
+    else //| Caso não passem nenhum argumento, vamos usar nosso arquivo padrão
+        this->parser("configs/test_simple.conf");
+}
+
 void ConfigFile::readFile(const std::string &filename, std::string &content)
 {
 	std::ifstream file(filename.c_str());
@@ -201,4 +209,30 @@ std::vector<ServerBlock> ConfigFile::getServerBlocks(void) const
 std::vector<ServerListen> ConfigFile::getServerListens(void) const
 {
 	return this->_serverListens;
+}
+
+ServerListen &ConfigFile::getElementInServerList(int serverSocketFd) {
+	unsigned int i = 0;
+	for (; this->_serverListens.size(); i++) {
+		if (this->_serverListens[i].getServerFd() == serverSocketFd) {
+			std::cout << "OPA, achamos o server correto!" << std::endl;
+			break;
+		}
+	}
+	return (this->_serverListens[i]);
+}
+
+void ConfigFile::initServerSockets(int socketDomain, int socketType) {
+	try {
+		for (unsigned int i = 0; i < this->_serverListens.size(); i++) {
+			this->_serverListens[i].createServerSocket(socketDomain, socketType);
+			this->_serverListens[i].setServerAddr(socketDomain);
+			this->_serverListens[i].bindServerSocket();
+			this->_serverListens[i].updateToNonBlocking();
+			this->_serverListens[i].listenServerSocket();
+		}
+	}
+    catch(const std::exception& e) {
+        std::cerr << e.what() << '\n';
+    }    
 }
