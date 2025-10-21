@@ -8,9 +8,9 @@ class ServerListen {
         int                 _port;
         int                 _serverFd;
         struct sockaddr_in  _serverAddr;
-        ServerBlock         &_serverBlock;
+        const ServerBlock   &_serverBlock;
     public:
-        ServerListen(unsigned int host, int port, ServerBlock &serverBlock);
+        ServerListen(unsigned int host, int port, const ServerBlock &serverBlock);
         ServerListen(const ServerListen &src);
         ServerListen &operator=(const ServerListen &src);
         bool operator==(const ServerListen &other) const;
@@ -26,6 +26,7 @@ class ServerListen {
         void bindServerSocket(void);
         void updateToNonBlocking(void);
         void listenServerSocket(void);
+        void initServerSocket(int socketDomain, int socketType);
 
         class CannotInitServerSocket : public std::exception {
             public:

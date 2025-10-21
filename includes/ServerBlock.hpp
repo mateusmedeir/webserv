@@ -30,6 +30,8 @@ class ServerBlock
         bool operator==(const ServerBlock &other) const;
         
         void printServerBlock();
+        bool isUriValid(const std::string uri);
+        bool isLocationValid(const std::string uri, const std::string method);
 
         void addListens();
         void addServerNames();

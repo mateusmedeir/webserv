@@ -149,19 +149,6 @@ void ConfigFile::parser(const std::string &filename)
 		else
 			throw std::runtime_error("Configuração inválida: servidor não encontrado");
 	}
-
-	std::set<std::pair<unsigned int, int> > uniqueListens;
-	for (size_t i = 0; i < this->_serverBlocks.size(); i++)
-	{
-		std::vector<t_listen> listens = this->_serverBlocks[i].getListen();
-
-		for (size_t j = 0; j < listens.size(); j++) {
-			std::pair<unsigned int, int> key(listens[j].host, listens[j].port);
-
-			if (uniqueListens.insert(key).second)
-				this->_serverListens.push_back(ServerListen(listens[j].host, listens[j].port, this->_serverBlocks[i]));
-		}
-	}
 }
 
 void ConfigFile::removeTokens(size_t amount)
@@ -201,38 +188,7 @@ std::vector<std::string> ConfigFile::getTokens(void)
 	return this->_tokens;
 }
 
-std::vector<ServerBlock> ConfigFile::getServerBlocks(void) const
+const std::vector<ServerBlock> &ConfigFile::getServerBlocks(void) const
 {
 	return this->_serverBlocks;
-}
-
-std::vector<ServerListen> ConfigFile::getServerListens(void) const
-{
-	return this->_serverListens;
-}
-
-ServerListen &ConfigFile::getElementInServerList(int serverSocketFd) {
-	unsigned int i = 0;
-	for (; this->_serverListens.size(); i++) {
-		if (this->_serverListens[i].getServerFd() == serverSocketFd) {
-			std::cout << "OPA, achamos o server correto!" << std::endl;
-			break;
-		}
-	}
-	return (this->_serverListens[i]);
-}
-
-void ConfigFile::initServerSockets(int socketDomain, int socketType) {
-	try {
-		for (unsigned int i = 0; i < this->_serverListens.size(); i++) {
-			this->_serverListens[i].createServerSocket(socketDomain, socketType);
-			this->_serverListens[i].setServerAddr(socketDomain);
-			this->_serverListens[i].bindServerSocket();
-			this->_serverListens[i].updateToNonBlocking();
-			this->_serverListens[i].listenServerSocket();
-		}
-	}
-    catch(const std::exception& e) {
-        std::cerr << e.what() << '\n';
-    }    
 }

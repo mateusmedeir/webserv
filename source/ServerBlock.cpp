@@ -28,6 +28,14 @@ ServerBlock::ServerBlock(ConfigFile &config) : _config(config), _maxBodySize(fal
 			throw std::runtime_error("Configuração inválida: server: token inválido");
         }
 	}
+    for (std::map<std::string, LocationBlock>::iterator it = this->_locations.begin(); it != this->_locations.end(); ++it)
+    {
+        std::cout << "Location: " << it->first << " with methods: ";
+        std::vector<std::string> methods = it->second.getAllowMethods();
+        for (size_t i = 0; i < methods.size(); i++)
+            std::cout << methods[i] << " ";
+        std::cout << std::endl; 
+    }
 
     //| Fazer verificação para ver se os atributos estão corretos.
     if (this->_maxBodySize.second == 0)
@@ -77,6 +85,34 @@ void ServerBlock::printServerBlock()
     std::cout << "Error pages: " << std::endl;
     for (std::map<int, std::string>::iterator it = this->_errorPages.begin(); it != this->_errorPages.end(); ++it)
         std::cout << "Code: " << it->first << " | URI: " << it->second << std::endl;
+}
+
+bool ServerBlock::isUriValid(const std::string uri)
+{
+    std::map<std::string, LocationBlock>::iterator it = this->_locations.find(uri);
+    if (it != this->_locations.end())
+        return (true);
+    return (false);
+}
+
+bool ServerBlock::isLocationValid(const std::string uri, const std::string method)
+{
+    if (method != "GET" && method != "POST" && method != "DELETE")
+        return (false);
+    std::map<std::string, LocationBlock>::iterator it = this->_locations.find(uri);
+    if (it != this->_locations.end())
+    {
+        std::vector<std::string> allowedMethods = it->second.getAllowMethods();
+        if (allowedMethods.empty())
+            return (true);
+        for (size_t i = 0; i < allowedMethods.size(); i++)
+        {
+            if (allowedMethods[i] == method)
+                return (true);
+        }
+        return (false);
+    }
+    return (false);
 }
 
 static bool isAllNumber(std::string s)
@@ -271,13 +307,15 @@ void ServerBlock::addLocation()
     this->_config.removeTokens(1); //| Removendo o token 'location'
     this->_config.verifyToken(EMPTY, "Configuração inválida: location: não foi encontrado nenhum location");
 
-    if (this->_config.getTokens()[0][0] != '/')
+    std::string uri = this->_config.getTokens()[0];
+    if (uri[0] != '/')
         throw std::runtime_error("Configuração inválida: location: URI inválida, deve começar com '/'");
 
-    if (this->_locations.count(this->_config.getTokens()[0]) > 0)
+    for (std::map<std::string, LocationBlock>::iterator it = this->_locations.begin(); it != this->_locations.end(); ++it)
+        std::cout << "Location existente: " << it->first << std::endl;
+    if (this->_locations.count(uri) > 0)
         throw std::runtime_error("Configuração inválida: location: location duplicado");
-
-    this->_locations.insert(std::make_pair(this->_config.getTokens()[0], LocationBlock(this->_config)));
+    this->_locations.insert(std::make_pair(uri, LocationBlock(this->_config)));
 
     this->_config.verifyToken(EMPTY, "Configuração inválida: location: esperava um ponto e vírgula no final de location");
 }

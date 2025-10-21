@@ -6,6 +6,7 @@ Client::Client(int clientFd, ServerListen &serverListen) : _serverListen(serverL
     this->_clientFd = clientFd;
     this->_rawRequest = "";
     this->request = HttpRequest();
+    this->response = HttpResponse();
 }
 
 Client::Client(const Client &src) : _serverListen(src._serverListen) {
@@ -49,11 +50,30 @@ void Client::concatenateRequestData(std::string data) {
     }
 
     this->_rawRequest.append(data);
+
     if (this->_state == READING_HEADER && this->_rawRequest.find("\r\n\r\n") != std::string::npos) {
         this->request.parseRequestLine(this->_rawRequest);
         this->request.parseHeaders(this->_rawRequest);
+
+        if (!this->_serverListen.getServerBlock().isUriValid(this->request.getUri())) {
+            this->response.setErrorPage(404);
+            this->setState(COMPLETE);
+            return;
+        }
+        if (
+            !this->_serverListen.getServerBlock()
+            .isLocationValid(
+                this->request.getUri(),
+                this->request.getMethod()
+            )
+        ) {
+            this->response.setErrorPage(405);
+            this->setState(COMPLETE);
+            return;
+        }
         this->setState(READING_BODY);
     }
+
     if (this->_state == READING_BODY) {
         std::string contentLengthStr = this->request.getHeaderValue("Content-Length");
         if (!contentLengthStr.empty()) {

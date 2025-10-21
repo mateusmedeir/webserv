@@ -19,7 +19,7 @@ class Client {
         Client &operator=(const Client &src);
         ~Client(void);
 
-        void concatenateRequestData(std::string data);        
+        void concatenateRequestData(std::string data);
         bool isRequestComplete(void);
         
         int getState(void) const;

@@ -1,6 +1,6 @@
 #include "../includes/WebservHeader.hpp"
 
-ServerListen::ServerListen(unsigned int host, int port, ServerBlock &serverBlock)
+ServerListen::ServerListen(unsigned int host, int port, const ServerBlock &serverBlock)
     : _host(host), _port(port), _serverBlock(serverBlock) {}
 
 ServerListen::ServerListen(const ServerListen &src)
@@ -10,7 +10,6 @@ ServerListen &ServerListen::operator=(const ServerListen &src) {
     if (this != &src) {
         this->_host = src._host;
         this->_port = src._port;
-        this->_serverBlock = src._serverBlock;
         this->_serverFd = src._serverFd;
     }
     return (*this);
@@ -76,6 +75,14 @@ void ServerListen::listenServerSocket(void) {
     if (listen(this->_serverFd, MAX_EVENTS) == -1) {
         throw(ServerListen::CannotSetServerToListen());
     }
+}
+
+void ServerListen::initServerSocket(int socketDomain, int socketType) {
+    this->createServerSocket(socketDomain, socketType);
+    this->setServerAddr(socketDomain);
+    this->bindServerSocket();
+    this->updateToNonBlocking();
+    this->listenServerSocket();
 }
 
 const char * ServerListen::CannotInitServerSocket::what() const throw() {
