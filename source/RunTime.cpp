@@ -65,7 +65,7 @@ void RunTime::loadServerListeners(void) {
 void RunTime::initServerSockets(int socketDomain, int socketType) {
     for (unsigned int i = 0; i < _instance->_serverListeners.size(); i++) {
         _instance->_serverListeners[i].initServerSocket(socketDomain, socketType);
-        _instance->_epoll.manipInterestList(EPOLL_CTL_ADD, EPOLLIN, _instance->_serverListeners[i].getServerFd(), 1);
+        _instance->_epoll.manipInterestList(EPOLL_CTL_ADD, &_instance->_serverListeners[i]);
     }
 }
 
@@ -86,7 +86,7 @@ ServerListen &RunTime::getElementInServerList(int serverSocketFd) {
     }
 
     for (size_t i = 0; i < _instance->_serverListeners.size(); i++) {
-        if (_instance->_serverListeners[i].getServerFd() == serverSocketFd)
+        if (_instance->_serverListeners[i].getSocketFd() == serverSocketFd)
             return (_instance->_serverListeners[i]);
     }
     throw std::runtime_error("ServerListen not found for the given socket FD.");
@@ -104,6 +104,17 @@ EpollInstance &RunTime::getEpoll(void) {
         throw std::runtime_error("RunTime instance is not initialized.");
     }
     return (_instance->_epoll);
+}
+
+Client &RunTime::getClient(int clientFd) {
+    if (_instance == NULL) {
+        throw std::runtime_error("RunTime instance is not initialized.");
+    }
+    std::map<int, Client>::iterator it = _instance->_clients.find(clientFd);
+    if (it == _instance->_clients.end()) {
+        throw std::runtime_error("Client not found for the given client FD.");
+    }
+    return (it->second);
 }
 
 std::map<int, Client> &RunTime::getClients(void) {

@@ -21,11 +21,14 @@
 # include <sstream>
 # include <cctype>
 #include <set>
+#include <csignal>
+
 
 # include "HttpRequest.hpp"
 # include "HttpResponse.hpp"
 # include "ServerBlock.hpp"
 # include "ConfigFile.hpp"
+# include "EpollHandler.hpp"
 # include "EpollInstance.hpp"
 # include "LocationBlock.hpp"
 # include "ServerInstance.hpp"
