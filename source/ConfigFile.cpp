@@ -5,7 +5,7 @@ ConfigFile::ConfigFile(void) {}
 ConfigFile::~ConfigFile(void) {}
 
 // ConfigFile(char **av, int ac);
-ConfigFile::ConfigFile(char **av, int ac) {
+ConfigFile::ConfigFile(int ac, char **av) {
 	if (ac == 2)
         this->parser(av[1]);
     else //| Caso não passem nenhum argumento, vamos usar nosso arquivo padrão

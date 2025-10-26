@@ -1,12 +1,11 @@
 # include "../includes/RunTime.hpp"
 
+RunTime *RunTime::_instance = NULL;
+
 RunTime::RunTime(void) {}
 
-RunTime::RunTime(char **ac, int av): config(ac, av), epoll() {
+RunTime::RunTime(int ac, char **av): _config(ac, av), _epoll() {
     std::cout << "Novo construtor RunTime..." << std::endl;
-
-    this->loadServerListeners();
-    this->initServerSockets(AF_INET, SOCK_STREAM);
 }
 
 RunTime::RunTime(const RunTime &src) {
@@ -15,49 +14,101 @@ RunTime::RunTime(const RunTime &src) {
 
 RunTime &RunTime::operator=(const RunTime &src) {
     if (this != &src) {
-        this->epoll = src.epoll;
-        this->config = src.config;
+        this->_epoll = src._epoll;
+        this->_config = src._config;
     }
     return (*this);
 }
 
 RunTime::~RunTime(void) {}
 
+void RunTime::initializeRuntime(int ac, char **av) {
+    if (_instance == NULL) {
+        _instance = new RunTime(ac, av);
+        _instance->loadServerListeners();
+        _instance->initServerSockets(AF_INET, SOCK_STREAM);
+    }
+}
+
+void RunTime::deleteInstance(void) {
+    if (_instance != NULL) {
+        delete _instance;
+        _instance = NULL;
+    }
+}
+
 void RunTime::deleteClient(int clientFd) {
-    this->clients.erase(clientFd);
+    if (_instance == NULL) {
+        throw std::runtime_error("RunTime instance is not initialized.");
+    }
+    _instance->_clients.erase(clientFd);
     close(clientFd);
 }
 
 void RunTime::loadServerListeners(void) {
+    std::cout << "Loading server listeners..." << std::endl;
 	std::set<std::pair<unsigned int, int> > uniqueListens;
-	for (size_t i = 0; i < this->config.getServerBlocks().size(); i++)
+	for (size_t i = 0; i < _instance->_config.getServerBlocks().size(); i++)
 	{
-		std::vector<t_listen> listens = this->config.getServerBlocks()[i].getListen();
+        std::cout << "Loading server block " << i + 1 << "..." << std::endl;
+		std::vector<t_listen> listens = _instance->_config.getServerBlocks()[i].getListen();
 
 		for (size_t j = 0; j < listens.size(); j++) {
 			std::pair<unsigned int, int> key(listens[j].host, listens[j].port);
 
 			if (uniqueListens.insert(key).second)
-				this->serverListeners.push_back(ServerListen(listens[j].host, listens[j].port, this->config.getServerBlocks()[i]));
+				_instance->_serverListeners.push_back(ServerListen(listens[j].host, listens[j].port, _instance->_config.getServerBlocks()[i]));
 		}
 	}
 }
 
 void RunTime::initServerSockets(int socketDomain, int socketType) {
-    for (unsigned int i = 0; i < this->serverListeners.size(); i++) {
-        this->serverListeners[i].initServerSocket(socketDomain, socketType);
-        this->epoll.manipInterestList(EPOLL_CTL_ADD, EPOLLIN, this->serverListeners[i].getServerFd(), 1);
+    for (unsigned int i = 0; i < _instance->_serverListeners.size(); i++) {
+        _instance->_serverListeners[i].initServerSocket(socketDomain, socketType);
+        _instance->_epoll.manipInterestList(EPOLL_CTL_ADD, EPOLLIN, _instance->_serverListeners[i].getServerFd(), 1);
     }
 }
 
-std::vector<ServerListen> RunTime::getServerListeners(void) const {
-    return (this->serverListeners);
+RunTime &RunTime::getInstance(void) {
+    return (*_instance);
+}
+
+std::vector<ServerListen> &RunTime::getServerListeners(void) {
+    if (_instance == NULL) {
+        throw std::runtime_error("RunTime instance is not initialized.");
+    }
+    return (_instance->_serverListeners);
 }
 
 ServerListen &RunTime::getElementInServerList(int serverSocketFd) {
-    for (size_t i = 0; i < this->serverListeners.size(); i++) {
-        if (this->serverListeners[i].getServerFd() == serverSocketFd)
-            return (this->serverListeners[i]);
+    if (_instance == NULL) {
+        throw std::runtime_error("RunTime instance is not initialized.");
+    }
+
+    for (size_t i = 0; i < _instance->_serverListeners.size(); i++) {
+        if (_instance->_serverListeners[i].getServerFd() == serverSocketFd)
+            return (_instance->_serverListeners[i]);
     }
     throw std::runtime_error("ServerListen not found for the given socket FD.");
+}
+
+ConfigFile &RunTime::getConfig(void) {
+    if (_instance == NULL) {
+        throw std::runtime_error("RunTime instance is not initialized.");
+    }
+    return (_instance->_config);
+}
+
+EpollInstance &RunTime::getEpoll(void) {
+    if (_instance == NULL) {
+        throw std::runtime_error("RunTime instance is not initialized.");
+    }
+    return (_instance->_epoll);
+}
+
+std::map<int, Client> &RunTime::getClients(void) {
+    if (_instance == NULL) {
+        throw std::runtime_error("RunTime instance is not initialized.");
+    }
+    return (_instance->_clients);
 }

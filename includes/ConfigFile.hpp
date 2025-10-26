@@ -19,7 +19,7 @@ class ConfigFile {
 	public:
 		ConfigFile(void);
 		~ConfigFile(void);
-		ConfigFile(char **av, int ac);
+		ConfigFile(int ac, char **av);
 
 		std::vector<std::string> tokenizeContent(const std::string &content);
 		void parser(const std::string &filename);
