@@ -2,11 +2,10 @@
 
 # include "WebservHeader.hpp"
 
-class ServerListen {
+class ServerListen : public EpollHandler {
     private:
         unsigned int        _host;
         int                 _port;
-        int                 _serverFd;
         struct sockaddr_in  _serverAddr;
         const ServerBlock   &_serverBlock;
     public:
@@ -16,11 +15,12 @@ class ServerListen {
         bool operator==(const ServerListen &other) const;
         ~ServerListen(void);
 
+        virtual void handleEpollIn(void);
+
         unsigned int getHost(void) const;
         int getPort(void) const;
         ServerBlock getServerBlock(void) const;
 
-        int getServerFd(void) const;
         void setServerAddr(int socketDomain);
         void createServerSocket(int socketDomain, int socketType);
         void bindServerSocket(void);

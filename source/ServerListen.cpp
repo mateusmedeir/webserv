@@ -1,25 +1,59 @@
 #include "../includes/WebservHeader.hpp"
+#include "../includes/RunTime.hpp"
 
 ServerListen::ServerListen(unsigned int host, int port, const ServerBlock &serverBlock)
-    : _host(host), _port(port), _serverBlock(serverBlock) {}
+    : EpollHandler(EPOLLIN | EPOLLRDHUP), _host(host), _port(port), _serverBlock(serverBlock) {}
 
 ServerListen::ServerListen(const ServerListen &src)
-    : _host(src._host), _port(src._port), _serverFd(src._serverFd), _serverBlock(src._serverBlock) {}
+    : EpollHandler(src.getSocketFd(), src.getInterestedEvents()), _host(src._host), _port(src._port), _serverBlock(src._serverBlock) {}
 
 ServerListen &ServerListen::operator=(const ServerListen &src) {
     if (this != &src) {
         this->_host = src._host;
         this->_port = src._port;
-        this->_serverFd = src._serverFd;
+        this->setSocketFd(src.getSocketFd());
     }
     return (*this);
 }
 
 bool ServerListen::operator==(const ServerListen &other) const {
-    return (this->_host == other._host && this->_port == other._port && other._serverFd);
+    return (this->_host == other._host && this->_port == other._port && this->getSocketFd() == other.getSocketFd());
 }
 
 ServerListen::~ServerListen(void) {}
+
+void ServerListen::handleEpollIn(void) {
+    std::cout << "New connection incoming on server socket FD: " << this->getSocketFd() << std::endl;
+    while (true) {
+        struct sockaddr_in clientSocketAddr;
+        socklen_t clientSocketLength = sizeof(clientSocketAddr);
+        int clientFd = accept(this->getSocketFd(), (struct sockaddr *)&clientSocketAddr, &clientSocketLength);
+
+        if (clientFd == -1) {
+            //EAGAIN or EWOULDBLOCK
+            //The socket is marked nonblocking and no connections are
+            //present to be accepted (nao ha mais conexoes para serem aceitas)
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                // std::cout << "BREAK;" << std::endl;
+                break;
+            }
+        } else {
+            try {
+                set_nonblocking(clientFd);
+                RunTime::getClients().insert(
+                    std::make_pair(clientFd, Client(clientFd, RunTime::getElementInServerList(this->getSocketFd())))
+                );
+                std::cout << "inseriu novo client no map." << std::endl;
+                RunTime::getEpoll().manipInterestList(EPOLL_CTL_ADD, &RunTime::getClient(clientFd));
+            }
+            catch (const std::exception &e) {
+                std::cerr << e.what() << std::endl;
+                close(clientFd);
+            }
+        }
+        return ;
+    }
+}
 
 unsigned int ServerListen::getHost(void) const {
     return (this->_host);
@@ -33,10 +67,6 @@ ServerBlock ServerListen::getServerBlock(void) const {
     return (this->_serverBlock);
 }
 
-int ServerListen::getServerFd(void) const {
-    return (this->_serverFd);
-}
-
 void ServerListen::setServerAddr(int socketDomain) {
     this->_serverAddr.sin_family = socketDomain;
     this->_serverAddr.sin_port = htons(this->getPort());
@@ -44,16 +74,17 @@ void ServerListen::setServerAddr(int socketDomain) {
 }
 
 void ServerListen::createServerSocket(int socketDomain, int socketType) {
-    this->_serverFd = socket(socketDomain, socketType, 0);
-    std::cout << "socket()" << this->_serverFd << std::endl;
-    if (this->_serverFd == -1) {
+    this->setSocketFd(socket(socketDomain, socketType, 0));
+
+    std::cout << "socket()" << this->getSocketFd() << std::endl;
+    if (this->getSocketFd() == -1) {
         throw(ServerListen::CannotInitServerSocket());
     }
 }
 
 void ServerListen::bindServerSocket(void) {
-    std::cout << "bind()" << this->_serverFd << std::endl;
-    if (bind(this->_serverFd, (struct sockaddr *)&this->_serverAddr, sizeof(this->_serverAddr)) == -1) {
+    std::cout << "bind()" << this->getSocketFd() << std::endl;
+    if (bind(this->getSocketFd(), (struct sockaddr *)&this->_serverAddr, sizeof(this->_serverAddr)) == -1) {
         throw(ServerListen::CannotBindServerSocket());
     }
 }
@@ -61,8 +92,8 @@ void ServerListen::bindServerSocket(void) {
 void ServerListen::updateToNonBlocking(void) {
     try
     {
-        std::cout << "nonblocking()" << this->_serverFd << std::endl;
-        set_nonblocking(this->_serverFd);
+        std::cout << "nonblocking()" << this->getSocketFd() << std::endl;
+        set_nonblocking(this->getSocketFd());
     }
     catch(const std::exception& e)
     {
@@ -71,8 +102,8 @@ void ServerListen::updateToNonBlocking(void) {
 }
 
 void ServerListen::listenServerSocket(void) {
-    std::cout << "listen()" << this->_serverFd << std::endl;
-    if (listen(this->_serverFd, MAX_EVENTS) == -1) {
+    std::cout << "listen()" << this->getSocketFd() << std::endl;
+    if (listen(this->getSocketFd(), MAX_EVENTS) == -1) {
         throw(ServerListen::CannotSetServerToListen());
     }
 }

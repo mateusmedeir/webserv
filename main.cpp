@@ -1,5 +1,10 @@
 #include "includes/RunTime.hpp"
 
+void signalHandler(int signum) {
+    if (signum == SIGINT)
+        RunTime::deleteInstance();
+}
+
 int	verifyArgs(int ac, char **av)
 {
 	if (ac > 2)
@@ -35,98 +40,14 @@ void	printBlock(std::vector<ServerBlock> serverBlocks, std::vector<ServerListen>
     }
 }
 
-void clientSocketIsReady(struct epoll_event &clientSocket, int clientFd) {
-    std::map<int, Client>::iterator it = RunTime::getClients().find(clientFd);
-    if (it == RunTime::getClients().end()) {
-        std::cerr << "Client not found in the map." << std::endl;
-        return;
-    }
-    Client &client = it->second; 
-    char buffer[5] = {0};
-    int count = 0;
-
-    if (clientSocket.events & EPOLLIN) {
-        if ((count = read(clientFd, buffer, 1)) > 0) {
-            client.concatenateRequestData(buffer);
-            if (client.isRequestComplete()) {
-                std::cout << "================== REQUEST COMPLETE =================" << std::endl;
-                std::cout << client.request.getMethod() << std::endl;
-                std::cout << client.request.getUri() << std::endl;
-                std::map<std::string, std::string> headers = client.request.getHeaders();
-                for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); it++) {
-                    std::cout << it->first << ": " << it->second << std::endl;
-                }
-                std::cout << "Body: " << client.request.getBody() << std::endl;
-                std::cout << "=====================================================" << std::endl;
-                client.response.dispatchRequest(client.request);
-                std::string responseStr = client.response.toString();
-                std::cout << "=================== RESPONSE SEND ===================" << std::endl;
-                std::cout << responseStr << std::endl;
-                std::cout << "=====================================================" << std::endl;
-                send(clientFd, responseStr.c_str(), responseStr.size(), 0);
-                RunTime::deleteClient(clientFd);
-            }
-        } else if (count == 0) {
-            std::cout << "Client closed the connection." << std::endl;
-            std::cout << client.getRawRequest() << std::endl;
-            RunTime::deleteClient(clientFd);
-        }
-    }
-    if (clientSocket.events & EPOLLRDHUP) {
-        std::cout << "Erro capturado pelo epoll." << std::endl;
-        std::cout << client.getRawRequest() << std::endl;
-        RunTime::deleteClient(clientFd);
-    }
-}
-
-void serverSocketIsReady(int serverFd) {
-    while (true) {
-        struct sockaddr_in clientSocketAddr;
-        socklen_t clientSocketLength = sizeof(clientSocketAddr);
-        int clientFd = accept(serverFd, (struct sockaddr *)&clientSocketAddr, &clientSocketLength);
-
-        if (clientFd == -1) {
-            //EAGAIN or EWOULDBLOCK
-            //The socket is marked nonblocking and no connections are
-            //present to be accepted (nao ha mais conexoes para serem aceitas)
-            if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                // std::cout << "BREAK;" << std::endl;
-                break;
-            }
-        } else {
-            try {
-                set_nonblocking(clientFd);
-                RunTime::getClients().insert(
-                    std::make_pair(clientFd, Client(clientFd, RunTime::getElementInServerList(serverFd)))
-                );
-                std::cout << "inseriu novo client no map." << std::endl;
-                RunTime::getEpoll().manipInterestList(EPOLL_CTL_ADD, EPOLLIN | EPOLLRDHUP, clientFd, 0);
-            }
-            catch (const std::exception &e) {
-                std::cerr << e.what() << std::endl;
-                close(clientFd);
-            }
-        }
-        return ;
-    }
-}
-
 void epollReadyListLoop(int numberOfReadySockets) {
     if (numberOfReadySockets) {
         for (int i = 0; i < numberOfReadySockets; i++) {
-            struct epoll_event &socketReady = RunTime::getEpoll().getElementFromReadyList(i);
-            struct epollUserData *data = (struct epollUserData *)socketReady.data.ptr;
-    
-            if (data->isServerSocket) {
-                std::cout << "Evento ocorreu no serverSocket." << std::endl;
-                std::cout << "O FD e: " << data->fd << std::endl;
-                serverSocketIsReady(data->fd);
-                return;
-            }
-            else {
-                std::cout << "Evento ocorreu com um clientSocket." << std::endl;
-                std::cout << "O FD e: " << data->fd << std::endl;
-                clientSocketIsReady(socketReady, data->fd);
+            struct epoll_event &data = RunTime::getEpoll().getElementFromReadyList(i);
+            
+            EpollHandler *handler = static_cast<EpollHandler *>(data.data.ptr);
+            if (handler) {
+                handler->handleEvent(data);
             }
         }
     }
@@ -148,14 +69,16 @@ void serverMainLoop() {
 int main(int ac, char **av) {
     if (!verifyArgs(ac, av))
         return (1);
-    
+
+    signal(SIGINT, signalHandler);
+
     try {
         RunTime::initializeRuntime(ac, av);
         printBlock(RunTime::getConfig().getServerBlocks(), RunTime::getServerListeners());
         serverMainLoop();
-    }
-    catch (const std::exception &e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << std::endl;
+        RunTime::deleteInstance();
         return (-1);
     }
     RunTime::deleteInstance();

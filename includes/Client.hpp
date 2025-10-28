@@ -4,10 +4,9 @@
 
 class ServerListen;
 
-class Client {
+class Client : public EpollHandler {
     private:
         int             _state;
-        int             _clientFd;
         std::string     _rawRequest;
         ServerListen    &_serverListen;
     public:
@@ -19,6 +18,7 @@ class Client {
         Client &operator=(const Client &src);
         ~Client(void);
 
+        virtual void handleEpollIn(void);
         void concatenateRequestData(std::string data);
         bool isRequestComplete(void);
         

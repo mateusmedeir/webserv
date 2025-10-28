@@ -6,6 +6,7 @@ FLAGS = -Wall -Werror -Wextra -std=c++98
 
 SRC =	main.cpp \
 		source/ConfigFile.cpp \
+		source/EpollHandler.cpp \
 		source/EpollInstance.cpp \
 		source/HttpRequest.cpp \
 		source/HttpResponse.cpp \

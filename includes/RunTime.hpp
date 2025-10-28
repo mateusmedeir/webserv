@@ -30,6 +30,7 @@ class RunTime {
         static RunTime &getInstance(void);
         static ConfigFile &getConfig(void);
         static EpollInstance &getEpoll(void);
+        static Client &getClient(int clientFd);
         static std::map<int, Client> &getClients(void);
         static std::vector<ServerListen> &getServerListeners(void);
 };
