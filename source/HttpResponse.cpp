@@ -1,4 +1,5 @@
 #include "../includes/WebservHeader.hpp"
+#include "../includes/CookieHandler.hpp"
 
 HttpResponse::HttpResponse(){
 	this->_http_version = "HTTP/1.0";
@@ -106,11 +107,13 @@ std::string	HttpResponse::toString() const{
 				<< _status_code << " "
 				<< _status_message << "\r\n";
 
-	// Headers
 	for (std::map<std::string, std::string>::const_iterator it = _headers.begin();
 			it != _headers.end(); ++it) {
 		response << it->first << ": " << it->second << "\r\n";
 	}
+	
+	for (size_t i = 0; i < _setCookieHeaders.size(); i++)
+		response << "Set-Cookie: " << _setCookieHeaders[i] << "\r\n";
 
 	// Linha em branco
 	response << "\r\n";
@@ -281,4 +284,20 @@ void HttpResponse::handleCgi(const HttpRequest &req, const std::string &scriptPa
 	std::cout << "[HttpResponse] CGI validation OK, client will handle execution" << std::endl;
 	
 	(void)req;  // Silenciar warning de variável não usada
+}
+
+void HttpResponse::setCookie(const std::string &name, const std::string &value, const std::string &path, int maxAge)
+{
+	std::string cookieHeader = CookieHandler::buildSetCookieHeader(name, value, path, maxAge);
+	_setCookieHeaders.push_back(cookieHeader);
+	
+	std::cout << "[HttpResponse] Set-Cookie added: " << cookieHeader << std::endl;
+}
+
+void HttpResponse::clearCookie(const std::string &name)
+{
+	//| Max-Age=0 faz o navegador deletar o cookie
+	setCookie(name, "", "/", 0);
+	
+	std::cout << "[HttpResponse] Cookie cleared: " << name << std::endl;
 }

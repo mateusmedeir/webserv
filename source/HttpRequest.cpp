@@ -1,4 +1,5 @@
 #include "../includes/WebservHeader.hpp"
+#include "../includes/CookieHandler.hpp"
 
 HttpRequest::HttpRequest(){}
 
@@ -50,6 +51,9 @@ void HttpRequest::parseHeaders(const std::string &rawRequest) {
 				value.erase(0, 1);
 
 			this->headers[key] = value;
+			
+			if (key == "Cookie")
+				this->cookies = CookieHandler::parseCookieHeader(value);
 		}
 	}
 }
@@ -95,3 +99,15 @@ std::string HttpRequest::getHeaderValue(const std::string &key) const {
 std::string HttpRequest::getBody() const {
 		return body;
 }
+
+const std::map<std::string, std::string> &HttpRequest::getCookies() const {  return cookies; }
+
+std::string HttpRequest::getCookie(const std::string &name) const
+{
+	std::map<std::string, std::string>::const_iterator it = cookies.find(name);
+	if (it != cookies.end())
+		return it->second;
+	return "";
+}
+
+bool HttpRequest::hasCookie(const std::string &name) const { return cookies.find(name) != cookies.end(); }

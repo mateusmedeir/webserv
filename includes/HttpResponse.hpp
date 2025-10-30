@@ -10,6 +10,7 @@ class HttpResponse {
 		std::string 												_status_message;
 		std::map<std::string, std::string>	_headers;
 		std::string 												_body;
+		std::vector<std::string>						_setCookieHeaders;
 	public:
 		HttpResponse();
 		~HttpResponse();
@@ -30,7 +31,11 @@ class HttpResponse {
 	std::string		uriToPath(const std::string &uri) const;
 	std::string		getMimeType(const std::string &path) const;
 	
-	// CGI helpers
+	//| CGI helpers
 	bool isCgiRequest(const std::string &uri) const;
 	std::string getCgiScriptPath(const std::string &uri) const;
+	
+	//| Cookies
+	void setCookie(const std::string &name, const std::string &value, const std::string &path = "/", int maxAge = -1);
+	void clearCookie(const std::string &name);
 };

@@ -29,6 +29,7 @@
 # include "HttpResponse.hpp"
 # include "ServerBlock.hpp"
 # include "ConfigFile.hpp"
+# include "CookieHandler.hpp"
 # include "EpollHandler.hpp"
 # include "EpollInstance.hpp"
 # include "LocationBlock.hpp"

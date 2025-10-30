@@ -9,6 +9,7 @@ class HttpRequest {
     std::string                         version;
     std::map<std::string, std::string>  headers;
     std::string                         body;
+    std::map<std::string, std::string>  cookies;
 
     
     public:
@@ -25,4 +26,8 @@ class HttpRequest {
     std::map<std::string, std::string> getHeaders() const;
     std::string getHeaderValue(const std::string &key) const;
     std::string getBody() const;
+    
+    const std::map<std::string, std::string> &getCookies() const;
+    std::string getCookie(const std::string &name) const;
+    bool hasCookie(const std::string &name) const;
 };

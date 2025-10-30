@@ -8,6 +8,7 @@ SRC =	main.cpp \
 		source/Cgi.cpp \
 		source/Client.cpp \
 		source/ConfigFile.cpp \
+		source/CookieHandler.cpp \
 		source/EpollHandler.cpp \
 		source/EpollInstance.cpp \
 		source/HttpRequest.cpp \

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍪 Testes de Cookies - WebServ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .info-box {
+            background: #e8f4f8;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 5px;
+        }
+        
+        .info-box h2 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .test-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 2px solid #e9ecef;
+        }
+        
+        .test-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            border-color: #667eea;
+        }
+        
+        .test-card h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+        
+        .test-card p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        .test-card .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-align: center;
+        }
+        
+        .test-card .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+        
+        .features {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 5px;
+        }
+        
+        .features h3 {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+        
+        .features ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .features li {
+            padding: 5px 0;
+            color: #856404;
+        }
+        
+        .features li::before {
+            content: "✅ ";
+            margin-right: 10px;
+        }
+        
+        footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+        }
+        
+        footer a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🍪 Testes de Cookies</h1>
+            <p>Teste completo da implementação do Bônus 2 - WebServ 42</p>
+        </header>
+        
+        <div class="content">
+            <div class="info-box">
+                <h2>📋 Sobre esta página</h2>
+                <p>Esta página contém todos os testes para validar a implementação de cookies no WebServ. Use os botões abaixo para testar diferentes cenários.</p>
+            </div>
+            
+            <div class="features">
+                <h3>🎯 O que foi implementado:</h3>
+                <ul>
+                    <li>Classe <code>CookieHandler</code> para manipulação de cookies</li>
+                    <li>Parse de header <code>Cookie</code> (cliente → servidor)</li>
+                    <li>Geração de header <code>Set-Cookie</code> (servidor → cliente)</li>
+                    <li>Integração com CGI via variável <code>HTTP_COOKIE</code></li>
+                    <li>Suporte a múltiplos cookies</li>
+                    <li>Atributos: Path, Max-Age, HttpOnly, Secure</li>
+                </ul>
+            </div>
+            
+            <h2 style="margin-top: 40px; margin-bottom: 20px; color: #333;">🧪 Testes Disponíveis</h2>
+            
+            <div class="test-grid">
+                <div class="test-card">
+                    <div class="icon">🍪</div>
+                    <h3>Teste Simples</h3>
+                    <p>Teste básico de Set-Cookie e leitura de cookies. Perfeito para começar!</p>
+                    <a href="/cgi-bin/cookie_simple.py" class="btn">Testar Agora</a>
+                </div>
+                
+                <div class="test-card">
+                    <div class="icon">🔢</div>
+                    <h3>Contador de Visitas</h3>
+                    <p>Demonstra persistência de cookies entre requisições. Cada visita incrementa o contador.</p>
+                    <a href="/cgi-bin/counter.py" class="btn">Testar Agora</a>
+                </div>
+                
+                <div class="test-card">
+                    <div class="icon">🎨</div>
+                    <h3>Múltiplos Cookies</h3>
+                    <p>Testa o envio de vários cookies simultaneamente (user, theme, language, timestamp).</p>
+                    <a href="/cgi-bin/multi_cookie.py" class="btn">Testar Agora</a>
+                </div>
+                
+                <div class="test-card">
+                    <div class="icon">🗑️</div>
+                    <h3>Deletar Cookies</h3>
+                    <p>Remove todos os cookies setando Max-Age=0. Use para limpar os testes.</p>
+                    <a href="/cgi-bin/cookie_delete.py" class="btn">Testar Agora</a>
+                </div>
+            </div>
+            
+            <div class="info-box" style="margin-top: 40px;">
+                <h2>🧪 Como testar via curl:</h2>
+                <pre style="background: #f4f4f4; padding: 15px; border-radius: 5px; overflow-x: auto;">
+# 1. Testar Set-Cookie
+curl -v http://localhost:8080/cgi-bin/cookie_simple.py
+
+# 2. Enviar cookie
+curl -b "test_cookie=hello" http://localhost:8080/cgi-bin/cookie_simple.py
+
+# 3. Contador (salvar cookies)
+curl -c cookies.txt http://localhost:8080/cgi-bin/counter.py
+
+# 4. Contador (usar cookies salvos)
+curl -b cookies.txt http://localhost:8080/cgi-bin/counter.py
+
+# 5. Múltiplos cookies
+curl -v http://localhost:8080/cgi-bin/multi_cookie.py
+
+# 6. Deletar todos
+curl http://localhost:8080/cgi-bin/cookie_delete.py
+                </pre>
+            </div>
+            
+            <div class="info-box" style="background: #d4edda; border-color: #28a745;">
+                <h2 style="color: #155724;">✅ Como verificar no navegador:</h2>
+                <ol style="color: #155724; padding-left: 20px;">
+                    <li>Pressione <strong>F12</strong> para abrir DevTools</li>
+                    <li>Vá para a aba <strong>Application</strong> (Chrome) ou <strong>Storage</strong> (Firefox)</li>
+                    <li>No menu lateral, clique em <strong>Cookies</strong> → <strong>http://localhost:8080</strong></li>
+                    <li>Você verá todos os cookies setados (nome, valor, path, expiry)</li>
+                    <li>Teste modificar, deletar ou adicionar cookies manualmente</li>
+                </ol>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Implementação do <strong>Bônus 2 - Cookies</strong> | WebServ 42</p>
+            <p><a href="/">← Voltar para Home</a> | <a href="/cgi_test.html">Ver outros testes CGI</a></p>
+        </footer>
+    </div>
+</body>
+</html>
+
