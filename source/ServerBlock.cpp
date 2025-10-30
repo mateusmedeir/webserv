@@ -89,9 +89,22 @@ void ServerBlock::printServerBlock()
 
 bool ServerBlock::isUriValid(const std::string uri)
 {
+    // Verificar se URI exato existe
     std::map<std::string, LocationBlock>::iterator it = this->_locations.find(uri);
     if (it != this->_locations.end())
         return (true);
+    
+    // Verificar se URI começa com alguma location válida
+    // Ex: /cgi-bin/hello.py deve casar com location /
+    for (it = this->_locations.begin(); it != this->_locations.end(); ++it)
+    {
+        std::string locationPath = it->first;
+        // Verificar se URI começa com este location path
+        if (uri.find(locationPath) == 0) {
+            return (true);
+        }
+    }
+    
     return (false);
 }
 

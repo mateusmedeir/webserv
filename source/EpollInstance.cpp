@@ -63,7 +63,7 @@ void EpollInstance::manipInterestList(int operation, EpollHandler *handler) {
 
 int EpollInstance::manipEpollWait(void) {
     int numberOfReadyFds = 0;
-    numberOfReadyFds = epoll_wait(this->_epollFd, this->_readyList, MAX_EVENTS, 0);
+    numberOfReadyFds = epoll_wait(this->_epollFd, this->_readyList, MAX_EVENTS, -1);
     return (numberOfReadyFds);
 }
 

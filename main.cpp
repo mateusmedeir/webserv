@@ -1,8 +1,14 @@
 #include "includes/RunTime.hpp"
 
 void signalHandler(int signum) {
-    if (signum == SIGINT)
+    if (signum == SIGINT) {
+        std::cout << "\n[Signal] SIGINT received, shutting down gracefully..." << std::endl;
         RunTime::deleteInstance();
+    }
+    else if (signum == SIGPIPE) {
+        //| Ignorar SIGPIPE - evita que o servidor crash quando cliente desconecta durante write
+        std::cerr << "[Signal] SIGPIPE received and ignored (client disconnected during write)" << std::endl;
+    }
 }
 
 int	verifyArgs(int ac, char **av)
@@ -51,6 +57,43 @@ void epollReadyListLoop(int numberOfReadySockets) {
             }
         }
     }
+    
+    //| Verificar CGIs em execução e clientes inativos
+    //| Coletar FDs a serem deletados
+    std::vector<int> fdsToDelete;
+    std::map<int, Client> &clients = RunTime::getClients();
+    
+    for (std::map<int, Client>::iterator it = clients.begin(); it != clients.end(); ++it) {
+        Client &client = it->second;
+        int clientFd = client.getSocketFd();
+        
+        //| 1. Verificar timeout de clientes inativos (30 segundos)
+        if (client.isTimedOut(30)) {
+            std::cout << "[Timeout] Client " << clientFd << " inactive for >30s, closing connection" << std::endl;
+            fdsToDelete.push_back(clientFd);
+            continue;
+        }
+        
+        //| 2. Se client está executando CGI, verificar se completou
+        if (client.getState() == EXECUTING_CGI) {
+            client.checkCgiCompletion();
+            
+            //| Se CGI completou, enviar resposta
+            if (client.getState() == COMPLETE) {
+                std::string responseStr = client.getResponse().toString();
+                std::cout << "============ CGI RESPONSE SEND ============" << std::endl;
+                std::cout << responseStr << std::endl;
+                std::cout << "===========================================" << std::endl;
+                send(clientFd, responseStr.c_str(), responseStr.size(), 0);
+                fdsToDelete.push_back(clientFd);
+            }
+        }
+    }
+    
+    //| Deletar clientes coletados
+    for (size_t i = 0; i < fdsToDelete.size(); ++i) {
+        RunTime::deleteClient(fdsToDelete[i]);
+    }
 }
 
 void serverMainLoop() {
@@ -70,7 +113,9 @@ int main(int ac, char **av) {
     if (!verifyArgs(ac, av))
         return (1);
 
+    //| Registrar signal handlers
     signal(SIGINT, signalHandler);
+    signal(SIGPIPE, signalHandler);  //| Evitar crash quando cliente desconecta durante write
 
     try {
         RunTime::initializeRuntime(ac, av);

@@ -40,6 +40,13 @@ void ServerListen::handleEpollIn(void) {
         } else {
             try {
                 set_nonblocking(clientFd);
+                
+                // ✅ Habilitar TCP_NODELAY para reduzir latência (desabilita algoritmo de Nagle)
+                int flag = 1;
+                if (setsockopt(clientFd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int)) < 0) {
+                    std::cerr << "[Warning] Failed to set TCP_NODELAY on client socket" << std::endl;
+                }
+                
                 RunTime::getClients().insert(
                     std::make_pair(clientFd, Client(clientFd, RunTime::getElementInServerList(this->getSocketFd())))
                 );
@@ -51,7 +58,6 @@ void ServerListen::handleEpollIn(void) {
                 close(clientFd);
             }
         }
-        return ;
     }
 }
 
@@ -80,6 +86,17 @@ void ServerListen::createServerSocket(int socketDomain, int socketType) {
     if (this->getSocketFd() == -1) {
         throw(ServerListen::CannotInitServerSocket());
     }
+    
+    //| Otimização para testes de carga, permite reusar endereço/porta imediatamente
+    int opt = 1;
+    if (setsockopt(this->getSocketFd(), SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1) {
+        std::cerr << "Warning: SO_REUSEADDR failed" << std::endl;
+    }
+    #ifdef SO_REUSEPORT
+    if (setsockopt(this->getSocketFd(), SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)) == -1) {
+        std::cerr << "Warning: SO_REUSEPORT failed" << std::endl;
+    }
+    #endif
 }
 
 void ServerListen::bindServerSocket(void) {

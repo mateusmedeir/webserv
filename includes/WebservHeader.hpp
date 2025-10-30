@@ -5,6 +5,7 @@
 # include <iostream> //| Para testes, remover depois
 # include <sys/socket.h>
 # include <netinet/in.h>
+# include <netinet/tcp.h>  // Para TCP_NODELAY
 # include <unistd.h>
 # include <fcntl.h>
 # include <sys/epoll.h>
@@ -34,11 +35,13 @@
 # include "ServerInstance.hpp"
 # include "ServerListen.hpp"
 # include "Client.hpp"
+# include "Cgi.hpp"
 
 enum clientBufferState {
-    READING_HEADER = 9, //Lendo o header da request ainda
-    READING_BODY = 10, //Lendo o conteudo da request ainda
-    COMPLETE = 11, //Ja lemos todo o conteudo da request
+    READING_HEADER = 9,  //Lendo o header da request ainda
+    READING_BODY = 10,   //Lendo o conteudo da request ainda
+    EXECUTING_CGI = 11,  //Executando script CGI (aguardando)
+    COMPLETE = 12,       //Ja lemos todo o conteudo da request
 };
 
 void set_nonblocking(int sockfd);
