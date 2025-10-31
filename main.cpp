@@ -1,8 +1,13 @@
 #include "includes/RunTime.hpp"
 
 void signalHandler(int signum) {
-    if (signum == SIGINT)
+    if (signum == SIGINT) {
+        std::cout << "\n[Signal] SIGINT received, shutting down gracefully..." << std::endl;
         RunTime::deleteInstance();
+    }
+    else if (signum == SIGPIPE) {
+        std::cerr << "[Signal] SIGPIPE received and ignored (client disconnected during write)" << std::endl;
+    }
 }
 
 int	verifyArgs(int ac, char **av)
@@ -62,6 +67,22 @@ void serverMainLoop() {
         }
         else {
             epollReadyListLoop(numberOfReadySockets);
+            
+            // Verificar timeouts de clientes inativos (30 segundos)
+            std::map<int, Client> &clients = RunTime::getClients();
+            std::vector<int> fdsToDelete;
+            
+            for (std::map<int, Client>::iterator it = clients.begin(); it != clients.end(); ++it) {
+                if (it->second.isTimedOut(30)) {
+                    std::cout << "[Timeout] Client " << it->first << " inactive for >30s, closing connection" << std::endl;
+                    fdsToDelete.push_back(it->first);
+                }
+            }
+            
+            // Deletar clientes com timeout
+            for (size_t i = 0; i < fdsToDelete.size(); ++i) {
+                RunTime::deleteClient(fdsToDelete[i]);
+            }
         }
     }
 }
@@ -71,6 +92,7 @@ int main(int ac, char **av) {
         return (1);
 
     signal(SIGINT, signalHandler);
+    signal(SIGPIPE, signalHandler);
 
     try {
         RunTime::initializeRuntime(ac, av);

@@ -7,18 +7,12 @@ EpollHandler::EpollHandler(int socketFd, uint32_t interestedEvents) : _socketFd(
 EpollHandler::~EpollHandler() {}
 
 int EpollHandler::handleEvent(struct epoll_event &event) {
-    switch (event.events) {
-        case EPOLLIN:
-            this->handleEpollIn();
-            break;
-        case EPOLLRDHUP:
-            this->handleEpollIn();
-            break;
-        case EPOLLOUT:
-            this->handleEpollOut();
-            break;
-        default:
-            return (-1);
+    // Tratar eventos múltiplos (EPOLLIN | EPOLLOUT podem ocorrer simultaneamente)
+    if (event.events & (EPOLLIN | EPOLLRDHUP)) {
+        this->handleEpollIn();
+    }
+    if (event.events & EPOLLOUT) {
+        this->handleEpollOut();
     }
     return (0);
 }
@@ -33,4 +27,8 @@ int EpollHandler::getSocketFd() const {
 
 uint32_t EpollHandler::getInterestedEvents() const {
     return (this->_interestedEvents);
+}
+
+void EpollHandler::setInterestedEvents(uint32_t events) {
+    this->_interestedEvents = events;
 }

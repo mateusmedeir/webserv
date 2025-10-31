@@ -5,6 +5,7 @@
 # include <iostream> //| Para testes, remover depois
 # include <sys/socket.h>
 # include <netinet/in.h>
+# include <netinet/tcp.h>
 # include <unistd.h>
 # include <fcntl.h>
 # include <sys/epoll.h>
@@ -17,6 +18,7 @@
 # include <utility>
 # include <cstddef>
 # include <cstdlib>
+# include <ctime>
 # include <fstream>
 # include <sstream>
 # include <cctype>

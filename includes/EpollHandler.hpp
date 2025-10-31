@@ -19,4 +19,5 @@ class EpollHandler {
         virtual void setSocketFd(int socketFd);
         virtual int getSocketFd() const;
         virtual uint32_t getInterestedEvents() const;
+        virtual void setInterestedEvents(uint32_t events);
 };

@@ -27,4 +27,5 @@ class HttpResponse {
 		std::string		toString() const;
 		std::string		intToString(int n) const;
 		std::string		uriToPath(const std::string &uri) const;
+		std::string		getMimeType(const std::string &path) const;
 };

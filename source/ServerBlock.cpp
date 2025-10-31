@@ -89,9 +89,22 @@ void ServerBlock::printServerBlock()
 
 bool ServerBlock::isUriValid(const std::string uri)
 {
+    // Verificar se URI exato existe
     std::map<std::string, LocationBlock>::iterator it = this->_locations.find(uri);
     if (it != this->_locations.end())
         return (true);
+    
+    // Verificar se URI começa com alguma location válida
+    // Ex: /test.css deve casar com location /
+    for (it = this->_locations.begin(); it != this->_locations.end(); ++it)
+    {
+        std::string locationPath = it->first;
+        // Verificar se URI começa com este location path
+        if (uri.find(locationPath) == 0) {
+            return (true);
+        }
+    }
+    
     return (false);
 }
 
@@ -99,6 +112,8 @@ bool ServerBlock::isLocationValid(const std::string uri, const std::string metho
 {
     if (method != "GET" && method != "POST" && method != "DELETE")
         return (false);
+    
+    // Verificar se URI exato existe
     std::map<std::string, LocationBlock>::iterator it = this->_locations.find(uri);
     if (it != this->_locations.end())
     {
@@ -112,6 +127,26 @@ bool ServerBlock::isLocationValid(const std::string uri, const std::string metho
         }
         return (false);
     }
+    
+    // Verificar se URI começa com alguma location válida
+    // Ex: /test.css deve casar com location /
+    for (it = this->_locations.begin(); it != this->_locations.end(); ++it)
+    {
+        std::string locationPath = it->first;
+        // Verificar se URI começa com este location path
+        if (uri.find(locationPath) == 0) {
+            std::vector<std::string> allowedMethods = it->second.getAllowMethods();
+            if (allowedMethods.empty())
+                return (true);
+            for (size_t i = 0; i < allowedMethods.size(); i++)
+            {
+                if (allowedMethods[i] == method)
+                    return (true);
+            }
+            return (false);
+        }
+    }
+    
     return (false);
 }
 

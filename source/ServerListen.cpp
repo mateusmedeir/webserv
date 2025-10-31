@@ -40,6 +40,13 @@ void ServerListen::handleEpollIn(void) {
         } else {
             try {
                 set_nonblocking(clientFd);
+                
+                // TCP_NODELAY: Reduz latência para requisições pequenas
+                int flag = 1;
+                if (setsockopt(clientFd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int)) < 0) {
+                    std::cerr << "[Warning] Failed to set TCP_NODELAY on client socket" << std::endl;
+                }
+                
                 RunTime::getClients().insert(
                     std::make_pair(clientFd, Client(clientFd, RunTime::getElementInServerList(this->getSocketFd())))
                 );
@@ -51,7 +58,6 @@ void ServerListen::handleEpollIn(void) {
                 close(clientFd);
             }
         }
-        return ;
     }
 }
 
