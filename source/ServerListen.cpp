@@ -108,9 +108,18 @@ void ServerListen::listenServerSocket(void) {
     }
 }
 
+void ServerListen::allowAddrReuse(void) {
+    int option = 1;
+
+    if (setsockopt(this->getSocketFd(), SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option)) == -1) {
+        throw(ServerListen::CannotAllowAddrReuse());
+    }
+}
+
 void ServerListen::initServerSocket(int socketDomain, int socketType) {
     this->createServerSocket(socketDomain, socketType);
     this->setServerAddr(socketDomain);
+    this->allowAddrReuse();
     this->bindServerSocket();
     this->updateToNonBlocking();
     this->listenServerSocket();
@@ -130,4 +139,8 @@ const char * ServerListen::CannotUpdateServerToNonBlocking::what() const throw()
 
 const char * ServerListen::CannotSetServerToListen::what() const throw() {
     return ("Error: error in setting the server to listen with listen().");
+}
+
+const char * ServerListen::CannotAllowAddrReuse::what() const throw() {
+    return ("Error: error in allowing address reuse with setsockopt().");
 }

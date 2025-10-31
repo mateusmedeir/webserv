@@ -24,6 +24,7 @@ class ServerListen : public EpollHandler {
         void setServerAddr(int socketDomain);
         void createServerSocket(int socketDomain, int socketType);
         void bindServerSocket(void);
+        void allowAddrReuse(void);
         void updateToNonBlocking(void);
         void listenServerSocket(void);
         void initServerSocket(int socketDomain, int socketType);
@@ -44,6 +45,11 @@ class ServerListen : public EpollHandler {
         };
 
         class CannotSetServerToListen : public std::exception {
+            public:
+                virtual const char *what() const throw();
+        };
+
+        class CannotAllowAddrReuse : public std::exception {
             public:
                 virtual const char *what() const throw();
         };
