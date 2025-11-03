@@ -1,6 +1,6 @@
 #include "../includes/WebservHeader.hpp"
 
-LocationBlock::LocationBlock(ConfigFile &config) : _config(config), _autoIndex(false), _canUpload(false), _uploadPath("./") {
+LocationBlock::LocationBlock(ConfigFile &config) : _config(config), _autoIndex(false), _canUpload(false), _uploadPath("./"), _cookiesEnabled(false) {
     this->_uri = this->_config.getTokens()[0];
     
     this->_config.removeTokens(2); //| Remove o token de URI e '{'
@@ -25,6 +25,8 @@ LocationBlock::LocationBlock(ConfigFile &config) : _config(config), _autoIndex(f
 			addCgiExtensions();
 		else if (tokens[0] == "allow_methods")
 			addAllowMethods();
+		else if (tokens[0] == "cookies_enabled")
+			addCookiesEnabled();
 		else if (tokens[0] == "}")
         {
             this->_config.removeTokens(1);
@@ -49,6 +51,7 @@ LocationBlock &LocationBlock::operator=(const LocationBlock &src) {
         this->_index = src._index;
         this->_cgiExtensions = src._cgiExtensions;
         this->_allowMethods = src._allowMethods;
+        this->_cookiesEnabled = src._cookiesEnabled;
     }
     return *this;
 }
@@ -62,6 +65,7 @@ std::string LocationBlock::getUploadPath() const { return this->_uploadPath; }
 std::vector<std::string> LocationBlock::getIndex() const { return this->_index; }
 std::vector<std::string> LocationBlock::getCgiExtensions() const { return this->_cgiExtensions; }
 std::vector<std::string> LocationBlock::getAllowMethods() const { return this->_allowMethods; }
+bool LocationBlock::getCookiesEnabled() const { return this->_cookiesEnabled; }
 
 void LocationBlock::printLocationBlock()
 {
@@ -242,5 +246,23 @@ void LocationBlock::addAllowMethods()
         this->_allowMethods.push_back(*it);
 
     this->_config.verifyToken(DIFF_SEMICOLON, "Configuração inválida: allow_methods: esperava um ponto e vírgula no final de allow_methods");
+    this->_config.removeTokens(1); //| Removendo o ponto e vírgula
+}
+
+void LocationBlock::addCookiesEnabled()
+{
+    this->_config.removeTokens(1); //| Remove o token 'cookies_enabled'
+    this->_config.verifyToken(SEMICOLON, "Configuração inválida: cookies_enabled: não foi encontrado nenhum cookies_enabled");
+
+    std::vector<std::string> tokens = this->_config.getTokens();
+    if (tokens[0] == "on")
+        this->_cookiesEnabled = true;
+    else if (tokens[0] == "off")
+        this->_cookiesEnabled = false;
+    else
+        throw std::runtime_error("Configuração inválida: cookies_enabled: deve ser 'on' ou 'off'");
+
+    this->_config.removeTokens(1); //| Removendo o argumento de cookies_enabled
+    this->_config.verifyToken(DIFF_SEMICOLON, "Configuração inválida: cookies_enabled: esperava um ponto e vírgula no final de cookies_enabled");
     this->_config.removeTokens(1); //| Removendo o ponto e vírgula
 }

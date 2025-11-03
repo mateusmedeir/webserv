@@ -48,6 +48,29 @@ void Client::handleEpollIn(void) {
             std::cout << "Body: " << this->request.getBody() << std::endl;
             std::cout << "=====================================================" << std::endl;
             this->response.dispatchRequest(this->request);
+            
+            // Process cookies if enabled for this location
+            std::string uri = this->request.getUri();
+            ServerBlock serverBlock = this->_serverListen.getServerBlock();
+            std::map<std::string, LocationBlock> locations = serverBlock.getLocations();
+            
+            // Find best matching location (prefix match, longest wins)
+            std::string bestMatch = "";
+            for (std::map<std::string, LocationBlock>::const_iterator it = locations.begin();
+                 it != locations.end(); ++it) {
+                const std::string &path = it->first;
+                if (uri.compare(0, path.size(), path) == 0) {
+                    if (path.size() > bestMatch.size()) {
+                        bestMatch = path;
+                    }
+                }
+            }
+            
+            if (!bestMatch.empty()) {
+                LocationBlock location = locations.find(bestMatch)->second;
+                this->response.processCookies(this->request, location);
+            }
+            
             std::string responseStr = this->response.toString();
             std::cout << "=================== RESPONSE SEND ===================" << std::endl;
             std::cout << responseStr << std::endl;
