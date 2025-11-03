@@ -299,7 +299,8 @@ bool Client::isTimedOut(int timeoutSeconds) const {
 }
 
 // main.cpp (loop principal)
-for (auto it = clients.begin(); it != clients.end(); ) {
+std::map<int, Client>::iterator it = clients.begin();
+for (; it != clients.end(); ) {
     if (it->second.isTimedOut(30)) {
         std::cout << "[Timeout] Client inactive for >30s, closing" << std::endl;
         RunTime::deleteClient(it->first);
