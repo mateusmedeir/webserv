@@ -9,7 +9,6 @@ class Client : public EpollHandler {
         int             _state;
         std::string     _rawRequest;
         ServerListen    &_serverListen;
-        time_t          _lastActivity;  // Timestamp da última atividade
         std::string     _pendingResponse;  // Resposta pendente de envio (caso send() parcial)
         size_t          _responseOffset;   // Offset atual da resposta sendo enviada
     public:
@@ -23,6 +22,8 @@ class Client : public EpollHandler {
 
         virtual void handleEpollIn(void);
         virtual void handleEpollOut(void);  // Para envio assíncrono quando socket está pronto
+        virtual void deleteHandler(void);
+
         void concatenateRequestData(std::string data);
         bool isRequestComplete(void);
         bool sendResponse(const std::string &responseStr);  // Envia resposta com tratamento correto de erros
@@ -33,8 +34,4 @@ class Client : public EpollHandler {
         HttpResponse &getResponse(void);
 
         void setState(int state);
-        
-        // Timeout management
-        bool isTimedOut(int timeoutSeconds) const;
-        void updateActivity(void);
 };
