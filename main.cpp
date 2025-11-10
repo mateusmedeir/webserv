@@ -1,4 +1,5 @@
 #include "includes/RunTime.hpp"
+#include "includes/CgiHandler.hpp"
 
 void signalHandler(int signum) {
     if (signum == SIGINT) {
@@ -67,6 +68,15 @@ void serverMainLoop() {
         }
         else {
             epollReadyListLoop(numberOfReadySockets);
+            
+            // Limpar processos zumbis CGI
+            CgiHandler::cleanupZombieProcesses();
+            
+            // Verificar processos CGI pendentes (entrada fechada mas ainda rodando)
+            CgiHandler::checkPendingProcesses();
+            
+            // Verificar timeouts de processos CGI (2 segundos)
+            CgiHandler::checkTimeouts();
             
             // Verificar timeouts de clientes inativos (30 segundos)
             std::map<int, Client> &clients = RunTime::getClients();

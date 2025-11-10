@@ -17,7 +17,10 @@ SRC =	main.cpp \
 		source/ServerInstance.cpp \
 		source/Client.cpp \
 		source/Utils.cpp \
-		source/CookieHandler.cpp
+		source/CookieHandler.cpp \
+		source/CgiProcess.cpp \
+		source/CgiHandler.cpp \
+		source/CgiPipeHandler.cpp
 
 OBJ = $(SRC:.cpp=.o)
 

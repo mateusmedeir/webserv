@@ -14,6 +14,10 @@ int EpollHandler::handleEvent(struct epoll_event &event) {
     if (event.events & EPOLLOUT) {
         this->handleEpollOut();
     }
+    // EPOLLHUP indica que o peer fechou a conexão/pipe
+    if (event.events & EPOLLHUP) {
+        this->handleEpollIn(); // Processar como leitura para detectar EOF
+    }
     return (0);
 }
 
