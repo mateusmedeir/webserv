@@ -5,7 +5,7 @@ ServerListen::ServerListen(unsigned int host, int port, const ServerBlock &serve
     : EpollHandler(EPOLLIN | EPOLLRDHUP), _host(host), _port(port), _serverBlock(serverBlock) {}
 
 ServerListen::ServerListen(const ServerListen &src)
-    : EpollHandler(src.getSocketFd(), src.getInterestedEvents()), _host(src._host), _port(src._port), _serverBlock(src._serverBlock) {}
+    : EpollHandler(src.getInterestedEvents(), src.getSocketFd()), _host(src._host), _port(src._port), _serverBlock(src._serverBlock) {}
 
 ServerListen &ServerListen::operator=(const ServerListen &src) {
     if (this != &src) {
@@ -40,18 +40,24 @@ void ServerListen::handleEpollIn(void) {
         } else {
             try {
                 set_nonblocking(clientFd);
+                
+                // TCP_NODELAY: Reduz latência para requisições pequenas
+                int flag = 1;
+                if (setsockopt(clientFd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int)) < 0) {
+                    std::cerr << "[Warning] Failed to set TCP_NODELAY on client socket" << std::endl;
+                }
+                
                 RunTime::getClients().insert(
                     std::make_pair(clientFd, Client(clientFd, RunTime::getElementInServerList(this->getSocketFd())))
                 );
                 std::cout << "inseriu novo client no map." << std::endl;
-                RunTime::getEpoll().manipInterestList(EPOLL_CTL_ADD, &RunTime::getClient(clientFd));
+                EpollInstance::manipInterestList(EPOLL_CTL_ADD, &RunTime::getClient(clientFd));
             }
             catch (const std::exception &e) {
                 std::cerr << e.what() << std::endl;
                 close(clientFd);
             }
         }
-        return ;
     }
 }
 

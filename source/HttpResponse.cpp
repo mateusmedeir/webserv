@@ -15,12 +15,14 @@ void HttpResponse::handleGet(const HttpRequest &req) {
 	if (!file) {
 		this->setStatus(404, "Not Found");
 		this->setBody("<h1>404 Not Found</h1>", "text/html");
+		return;
 	}
 
 	std::ostringstream buffer;
 	buffer << file.rdbuf();
 	this->setStatus(200, "OK");
-	this->setBody(buffer.str(), "text/html"); // simplificado (todo: detectar mime-type)
+	std::string mimeType = getMimeType(path);
+	this->setBody(buffer.str(), mimeType);
 };
 
 void HttpResponse::handlePost(const HttpRequest &req){
@@ -114,13 +116,69 @@ std::string HttpResponse::uriToPath(const std::string &uri) const {
     std::string path = uri;
 
     if (path[path.size() - 1] == '/') {
-    path += "index";
+        path += "index.html";
     }
-    if (path[0] != '/')
-    path = "/" + path;
+    if (path[0] != '/') {
+        path = "/" + path;
+    }
 
-    std::cout << "Converted URI to path: " << "./www" + path + ".html" << std::endl;
-    return "./www" + path + ".html";
+    std::cout << "Converted URI to path: " << "./www" + path << std::endl;
+    return "./www" + path;
+}
+
+std::string HttpResponse::getMimeType(const std::string &path) const {
+    // Encontrar a extensão
+    size_t dotPos = path.rfind('.');
+    if (dotPos == std::string::npos) {
+        return "application/octet-stream"; // Tipo binário genérico
+    }
+    
+    std::string ext = path.substr(dotPos);
+    
+    // HTML e XML
+    if (ext == ".html" || ext == ".htm") return "text/html";
+    if (ext == ".xml") return "application/xml";
+    
+    // Texto
+    if (ext == ".txt") return "text/plain";
+    if (ext == ".css") return "text/css";
+    
+    // JavaScript
+    if (ext == ".js") return "application/javascript";
+    if (ext == ".json") return "application/json";
+    
+    // Imagens
+    if (ext == ".png") return "image/png";
+    if (ext == ".jpg" || ext == ".jpeg") return "image/jpeg";
+    if (ext == ".gif") return "image/gif";
+    if (ext == ".svg") return "image/svg+xml";
+    if (ext == ".ico") return "image/x-icon";
+    if (ext == ".webp") return "image/webp";
+    
+    // Fontes
+    if (ext == ".woff") return "font/woff";
+    if (ext == ".woff2") return "font/woff2";
+    if (ext == ".ttf") return "font/ttf";
+    if (ext == ".otf") return "font/otf";
+    
+    // Documentos
+    if (ext == ".pdf") return "application/pdf";
+    if (ext == ".zip") return "application/zip";
+    if (ext == ".tar") return "application/x-tar";
+    if (ext == ".gz") return "application/gzip";
+    
+    // Vídeo
+    if (ext == ".mp4") return "video/mp4";
+    if (ext == ".webm") return "video/webm";
+    if (ext == ".avi") return "video/x-msvideo";
+    
+    // Áudio
+    if (ext == ".mp3") return "audio/mpeg";
+    if (ext == ".wav") return "audio/wav";
+    if (ext == ".ogg") return "audio/ogg";
+    
+    // Default
+    return "application/octet-stream";
 }
 
 void		HttpResponse::setErrorPage(int code){

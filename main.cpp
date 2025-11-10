@@ -1,8 +1,13 @@
 #include "includes/RunTime.hpp"
 
 void signalHandler(int signum) {
-    if (signum == SIGINT)
+    if (signum == SIGINT) {
+        std::cout << "\n[Signal] SIGINT received, shutting down gracefully..." << std::endl;
         RunTime::deleteInstance();
+    }
+    else if (signum == SIGPIPE) {
+        std::cerr << "[Signal] SIGPIPE received and ignored (client disconnected during write)" << std::endl;
+    }
 }
 
 int	verifyArgs(int ac, char **av)
@@ -43,7 +48,7 @@ void	printBlock(std::vector<ServerBlock> serverBlocks, std::vector<ServerListen>
 void epollReadyListLoop(int numberOfReadySockets) {
     if (numberOfReadySockets) {
         for (int i = 0; i < numberOfReadySockets; i++) {
-            struct epoll_event &data = RunTime::getEpoll().getElementFromReadyList(i);
+            struct epoll_event &data = EpollInstance::getElementFromReadyList(i);
             
             EpollHandler *handler = static_cast<EpollHandler *>(data.data.ptr);
             if (handler) {
@@ -53,15 +58,24 @@ void epollReadyListLoop(int numberOfReadySockets) {
     }
 }
 
+void epollValidationLoop() {
+    std::map<int, EpollHandler*> &handlers = EpollInstance::getHandlers();
+    for (std::map<int, EpollHandler*>::iterator it = handlers.begin(); it != handlers.end(); ++it) {
+        std::cout << "Checking timeout for FD: " << it->first << std::endl;
+        it->second->handleTimeout();
+    }
+}
+
 void serverMainLoop() {
     while (true) {
-        int numberOfReadySockets = RunTime::getEpoll().manipEpollWait();
+        int numberOfReadySockets = EpollInstance::manipEpollWait();
         if (numberOfReadySockets == -1) {
             std::cerr << "Error: erro ao manipular o epoll_wait()." << std::endl;
             break;
         }
         else {
             epollReadyListLoop(numberOfReadySockets);
+            epollValidationLoop();
         }
     }
 }
@@ -71,6 +85,7 @@ int main(int ac, char **av) {
         return (1);
 
     signal(SIGINT, signalHandler);
+    signal(SIGPIPE, signalHandler);
 
     try {
         RunTime::initializeRuntime(ac, av);
