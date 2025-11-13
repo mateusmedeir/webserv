@@ -1,8 +1,6 @@
 #pragma once
 
-#include "Logger.hpp"
-#include <ctime>
-#include <fstream>
+# include "WebservHeader.hpp"
 
 class FileLogHandler : public LogHandler {
     private:

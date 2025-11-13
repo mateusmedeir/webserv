@@ -1,4 +1,5 @@
-#include "StdLogHandler.hpp"
+#include "../includes/WebservHeader.hpp"
+
 
 // StdLogHandler();
 StdLogHandler::StdLogHandler(): LogHandler() {}
@@ -10,7 +11,7 @@ StdLogHandler::~StdLogHandler() {}
 void StdLogHandler::handleDebug(t_logEvent event) {
     std::time_t timestamp = std::time(NULL);
     std::string result = std::ctime(&timestamp);
-    int pos = result.find("\n");
+    long unsigned int pos = result.find("\n");
 
     if (pos == std::string::npos) {
         std::cout << "[DEBUG] " << event.message << std::endl;
@@ -31,7 +32,7 @@ void StdLogHandler::handleDebug(t_logEvent event) {
 void StdLogHandler::handleError(t_logEvent event) {
     std::time_t timestamp = std::time(NULL);
     std::string result = std::ctime(&timestamp);
-    int pos = result.find("\n");
+    long unsigned int pos = result.find("\n");
 
     if (pos == std::string::npos) {
         std::cout << "[ERROR] " << event.message << std::endl;
@@ -49,7 +50,8 @@ void StdLogHandler::handleError(t_logEvent event) {
 void StdLogHandler::handleInfo(t_logEvent event) {
     std::time_t timestamp = std::time(NULL);
     std::string result = std::ctime(&timestamp);
-    int pos = result.find("\n");
+    long unsigned int pos = result.find("\n");
+
 
     if (pos == std::string::npos) {
         std::cout << "[INFO] " << event.message << std::endl;
@@ -67,7 +69,7 @@ void StdLogHandler::handleInfo(t_logEvent event) {
 void StdLogHandler::handleWarning(t_logEvent event) {
     std::time_t timestamp = std::time(NULL);
     std::string result = std::ctime(&timestamp);
-    int pos = result.find("\n");
+    long unsigned int pos = result.find("\n");
 
     if (pos == std::string::npos) {
         std::cout << "[WARNING] " << event.message << std::endl;

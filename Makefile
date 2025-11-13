@@ -20,7 +20,10 @@ SRC =	main.cpp \
 		source/CookieHandler.cpp \
 		source/CgiProcess.cpp \
 		source/CgiHandler.cpp \
-		source/CgiPipeHandler.cpp
+		source/CgiPipeHandler.cpp \
+		source/Logger.cpp \
+		source/StdLogHandler.cpp \
+		source/FileLogHandler.cpp
 
 OBJ = $(SRC:.cpp=.o)
 

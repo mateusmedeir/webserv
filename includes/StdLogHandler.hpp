@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Logger.hpp"
-#include <ctime>
+# include "WebservHeader.hpp"
 
 class StdLogHandler : public LogHandler {
     public:

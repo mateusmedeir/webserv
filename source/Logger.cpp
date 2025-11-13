@@ -1,8 +1,13 @@
-#include "Logger.hpp"
+#include "../includes/WebservHeader.hpp"
+
 
 Logger *Logger::_instance = NULL;
 
 Logger::Logger(void) {}
+
+LogHandler::LogHandler(void) {}
+
+LogHandler::~LogHandler(void) {}
 
 Logger::Logger(enum LogLevel level, LogHandler *handler): _level(level), _handler(handler) {}
 

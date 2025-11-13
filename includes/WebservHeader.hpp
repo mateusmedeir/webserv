@@ -22,9 +22,20 @@
 # include <fstream>
 # include <sstream>
 # include <cctype>
-#include <set>
-#include <csignal>
+# include <set>
+# include <csignal>
 
+enum    LogLevel {
+    DEBUG,
+    INFO,
+    WARNING,
+    ERROR
+};
+
+typedef struct s_logEvent {
+    enum LogLevel   level;
+    std::string     message;
+}t_logEvent;
 
 # include "HttpRequest.hpp"
 # include "HttpResponse.hpp"
@@ -40,11 +51,16 @@
 # include "CgiProcess.hpp"
 # include "CgiHandler.hpp"
 # include "CgiPipeHandler.hpp"
+# include "Logger.hpp"
+# include "StdLogHandler.hpp"
+# include "FileLogHandler.hpp"
 
 enum clientBufferState {
     READING_HEADER = 9, //Lendo o header da request ainda
     READING_BODY = 10, //Lendo o conteudo da request ainda
     COMPLETE = 11, //Ja lemos todo o conteudo da request
 };
+
+
 
 void set_nonblocking(int sockfd);
