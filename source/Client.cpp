@@ -279,6 +279,18 @@ void Client::updateActivity(void) {
     this->_lastActivity = time(NULL);
 }
 
+static std::string ipv4ToStr(unsigned int ip)
+{
+    std::ostringstream ss;
+
+    ss << ((ip >> 24) & 0xFF) << "."
+       << ((ip >> 16) & 0xFF) << "."
+       << ((ip >> 8)  & 0xFF) << "."
+       << (ip & 0xFF);
+
+    return ss.str();
+}
+
 // std::string toString(void) const;
 std::string Client::toString(void) const {
     std::ostringstream result;
@@ -298,8 +310,8 @@ std::string Client::toString(void) const {
     // Protocolo usado
     // +
     // Status da response
-    result << this->_serverListen.getHost() << " " //Precisamos converter esse int para o IP que o socket ouve
-            << this->request.getMethod() << " "
+    result << ipv4ToStr(this->_serverListen.getHost()) << ": [" //Precisamos converter esse int para o IP que o socket ouve
+            << this->request.getMethod() << "] "
             << this->request.getUri() << " "
             << this->response.getHttpVersion() << " "
             << this->response.getStatusCode() << "\n";
