@@ -38,6 +38,9 @@ void Client::handleEpollIn(void) {
     if ((count = read(this->getSocketFd(), buffer, sizeof(buffer))) > 0) {
         this->concatenateRequestData(std::string(buffer, count));
         if (this->isRequestComplete()) {
+            // Quando acabarmos de ler a request, vamos printar no STDOUT o log da requisicao.
+            // Se printarmos em toda chamada de epollin, vai printar mais de uma vez a mesma request.
+            // 
             std::cout << "================== REQUEST COMPLETE =================" << std::endl;
             std::cout << this->request.getMethod() << std::endl;
             std::cout << this->request.getUri() << std::endl;
@@ -85,6 +88,10 @@ void Client::handleEpollIn(void) {
             std::cout << "=================== RESPONSE SEND ===================" << std::endl;
             std::cout << responseStr << std::endl;
             std::cout << "=====================================================" << std::endl;
+            std::cout << "===== Metodo toString() do client para o Logger =====" << std::endl;
+            Logger::info(toString());
+            std::cout << "=====================================================" << std::endl;
+
             
             // Enviar resposta com tratamento correto de erros (conforme régua de avaliação)
             if (!sendResponse(responseStr)) {
@@ -270,4 +277,32 @@ bool Client::isTimedOut(int timeoutSeconds) const {
 
 void Client::updateActivity(void) {
     this->_lastActivity = time(NULL);
+}
+
+// std::string toString(void) const;
+std::string Client::toString(void) const {
+    std::ostringstream result;
+
+    // Data/hora/dia/mes/ano "Isso ja tem no logger"
+    // +
+    // [tipo] "Isso ja tem no logger"
+    // +
+    // Mensagem passada para o Logger::metodo(mensagem);
+
+    // IP do socket onde foi feito a request
+    // +
+    // Metodo http
+    // +
+    // URI desejada
+    // +
+    // Protocolo usado
+    // +
+    // Status da response
+    result << this->_serverListen.getHost() << " " //Precisamos converter esse int para o IP que o socket ouve
+            << this->request.getMethod() << " "
+            << this->request.getUri() << " "
+            << this->response.getHttpVersion() << " "
+            << this->response.getStatusCode() << "\n";
+    
+            return(result.str());
 }

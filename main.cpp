@@ -104,6 +104,8 @@ int main(int ac, char **av) {
     signal(SIGINT, signalHandler);
     signal(SIGPIPE, signalHandler);
 
+    Logger::initLogger(DEBUG, new StdLogHandler());
+
     try {
         RunTime::initializeRuntime(ac, av);
         printBlock(RunTime::getConfig().getServerBlocks(), RunTime::getServerListeners());

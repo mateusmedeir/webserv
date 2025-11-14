@@ -36,6 +36,7 @@ class HttpResponse {
 	std::string		intToString(int n) const;
 	std::string		uriToPath(const std::string &uri) const;
 	std::string		getMimeType(const std::string &path) const;
+	std::string 	getHttpVersion() const;
 	
 	int getStatusCode() const;
 	std::string getStatusMessage() const;
