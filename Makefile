@@ -14,7 +14,6 @@ SRC =	main.cpp \
 		source/RunTime.cpp \
 		source/ServerBlock.cpp \
 		source/ServerListen.cpp \
-		source/ServerInstance.cpp \
 		source/Client.cpp \
 		source/Utils.cpp \
 		source/CookieHandler.cpp \
