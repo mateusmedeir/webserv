@@ -44,7 +44,6 @@ typedef struct s_logEvent {
 # include "EpollHandler.hpp"
 # include "EpollInstance.hpp"
 # include "LocationBlock.hpp"
-# include "ServerInstance.hpp"
 # include "ServerListen.hpp"
 # include "Client.hpp"
 # include "CookieHandler.hpp"
