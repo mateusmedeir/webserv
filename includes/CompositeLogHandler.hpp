@@ -2,13 +2,15 @@
 
 # include "WebservHeader.hpp"
 
-class FileLogHandler : public LogHandler {
+class CompositeLogHandler : public LogHandler {
     private:
-        std::ofstream _logFile;
-
+        std::vector<LogHandler *> _handlers; 
     public:
-        FileLogHandler(std::string filename);
-        virtual ~FileLogHandler(void);
+        CompositeLogHandler(void);
+        virtual ~CompositeLogHandler(void);
+
+        void    addHandler(LogHandler *newHandler);
+
         virtual void handleDebug(t_logEvent event);
         virtual void handleError(t_logEvent event);
         virtual void handleInfo(t_logEvent event);

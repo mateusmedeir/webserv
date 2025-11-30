@@ -22,7 +22,8 @@ SRC =	main.cpp \
 		source/CgiPipeHandler.cpp \
 		source/Logger.cpp \
 		source/StdLogHandler.cpp \
-		source/FileLogHandler.cpp
+		source/FileLogHandler.cpp \
+		source/CompositeLogHandler.cpp
 
 OBJ = $(SRC:.cpp=.o)
 

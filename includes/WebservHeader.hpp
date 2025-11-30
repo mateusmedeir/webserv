@@ -53,6 +53,7 @@ typedef struct s_logEvent {
 # include "Logger.hpp"
 # include "StdLogHandler.hpp"
 # include "FileLogHandler.hpp"
+# include "CompositeLogHandler.hpp"
 
 enum clientBufferState {
     READING_HEADER = 9, //Lendo o header da request ainda
@@ -60,6 +61,5 @@ enum clientBufferState {
     COMPLETE = 11, //Ja lemos todo o conteudo da request
 };
 
-
-
+// void initAllLogHandlers(void);
 void set_nonblocking(int sockfd);
