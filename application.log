@@ -1,2 +1,42 @@
 Sun Nov 30 08:50:27 2025 [INFO] 127.0.0.1: [GET] /aaaAAAAAaaa HTTP/1.0 404
 
+Tue Dec  2 09:01:20 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 200
+
+Tue Dec  2 09:01:20 2025 [INFO] 127.0.0.1: [GET] /favicon.ico HTTP/1.0 404
+
+Tue Dec  2 09:01:40 2025 [INFO] 127.0.0.1: [GET] /config-tests/black HTTP/1.0 200
+
+Tue Dec  2 09:02:12 2025 [INFO] 127.0.0.1: [GET] /config-tests/black/index.html HTTP/1.0 200
+
+Tue Dec  2 09:02:12 2025 [INFO] 127.0.0.1: [GET] /config-tests/black/favicon.ico HTTP/1.0 200
+
+Tue Dec  2 09:02:36 2025 [INFO] 127.0.0.1: [GET] /config-tests/black/index.html HTTP/1.0 200
+
+Tue Dec  2 09:02:51 2025 [INFO] 127.0.0.1: [GET] /config-tests/white/index.html HTTP/1.0 200
+
+Tue Dec  2 09:02:51 2025 [INFO] 127.0.0.1: [GET] /config-tests/white/favicon.ico HTTP/1.0 200
+
+Tue Dec  2 09:02:56 2025 [INFO] 127.0.0.1: [GET] /config-tests/white/index.html HTTP/1.0 200
+
+Tue Dec  2 09:05:42 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 404
+
+Tue Dec  2 09:05:46 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 404
+
+Tue Dec  2 09:05:51 2025 [INFO] 127.0.0.1: [GET] /aaaAAAAAaaa HTTP/1.0 404
+
+Tue Dec  2 09:06:00 2025 [INFO] 127.0.0.1: [GET] /config-tests/ HTTP/1.0 404
+
+Tue Dec  2 09:06:05 2025 [INFO] 127.0.0.1: [GET] /config-tests/black/ HTTP/1.0 404
+
+Tue Dec  2 09:06:14 2025 [INFO] 127.0.0.1: [GET] /config-tests/black/index.html HTTP/1.0 404
+
+Tue Dec  2 09:06:24 2025 [INFO] 127.0.0.1: [GET] /config-tests/black/index.html HTTP/1.0 404
+
+Tue Dec  2 09:06:37 2025 [INFO] 127.0.0.1: [GET] /www/config-tests/black/index.html HTTP/1.0 404
+
+Tue Dec  2 09:06:44 2025 [INFO] 127.0.0.1: [GET] /www/config-tests/black/ HTTP/1.0 404
+
+Tue Dec  2 09:06:47 2025 [INFO] 127.0.0.1: [GET] /www/config-tests/black HTTP/1.0 404
+
+Tue Dec  2 09:06:52 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 404
+
