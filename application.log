@@ -40,3 +40,123 @@ Tue Dec  2 09:06:47 2025 [INFO] 127.0.0.1: [GET] /www/config-tests/black HTTP/1.
 
 Tue Dec  2 09:06:52 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 404
 
+Wed Dec  3 19:10:04 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 404
+
+Wed Dec  3 19:10:30 2025 [INFO] 127.0.0.1: [GET] /www/config-tests/black/index.html HTTP/1.0 404
+
+Wed Dec  3 19:10:41 2025 [INFO] 127.0.0.1: [GET] /www/config-tests/black HTTP/1.0 404
+
+Wed Dec  3 19:10:43 2025 [INFO] 127.0.0.1: [GET] /www/config-tests/black/ HTTP/1.0 404
+
+Wed Dec  3 19:10:54 2025 [INFO] 127.0.0.1: [GET] /config-tests/black/ HTTP/1.0 404
+
+Wed Dec  3 19:12:04 2025 [INFO] 127.0.0.1: [GET] /config-tests/green/ HTTP/1.0 404
+
+Wed Dec  3 19:13:21 2025 [INFO] 127.0.0.1: [GET] /config-tests/black/ HTTP/1.0 200
+
+Wed Dec  3 19:13:32 2025 [INFO] 127.0.0.1: [GET] /config-tests/green/ HTTP/1.0 404
+
+Wed Dec  3 19:13:45 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 404
+
+Wed Dec  3 19:13:53 2025 [INFO] 127.0.0.1: [GET] /config-tests/black/index.html HTTP/1.0 200
+
+Wed Dec  3 19:13:59 2025 [INFO] 127.0.0.1: [GET] /config-tests/ HTTP/1.0 404
+
+Wed Dec  3 19:14:51 2025 [INFO] 127.0.0.1: [GET] /config-tests/ HTTP/1.0 404
+
+Wed Dec  3 19:14:57 2025 [INFO] 127.0.0.1: [GET] /config-tests/green HTTP/1.0 200
+
+Wed Dec  3 19:15:05 2025 [INFO] 127.0.0.1: [GET] /config-tests/green/ HTTP/1.0 200
+
+Wed Dec  3 19:15:05 2025 [INFO] 127.0.0.1: [GET] /config-tests/green/favicon.ico HTTP/1.0 200
+
+Wed Dec  3 19:15:15 2025 [INFO] 127.0.0.1: [GET] /config-tests/gold/ HTTP/1.0 200
+
+Wed Dec  3 19:15:15 2025 [INFO] 127.0.0.1: [GET] /config-tests/gold/favicon.ico HTTP/1.0 200
+
+Wed Dec  3 19:17:36 2025 [INFO] 127.0.0.1: [GET] /config-tests/gold/teste/ HTTP/1.0 404
+
+Wed Dec  3 19:17:46 2025 [INFO] 127.0.0.1: [GET] /config-tests/gold/ HTTP/1.0 200
+
+Thu Dec  4 08:31:57 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 404
+
+Thu Dec  4 08:32:07 2025 [INFO] 127.0.0.1: [GET] /config-tests/black/ HTTP/1.0 200
+
+Thu Dec  4 08:32:14 2025 [INFO] 127.0.0.1: [GET] /config-tests/white/ HTTP/1.0 404
+
+Thu Dec  4 08:32:34 2025 [INFO] 127.0.0.1: [GET] /config-tests/white/ HTTP/1.0 404
+
+Thu Dec  4 08:32:39 2025 [INFO] 127.0.0.1: [GET] /config-tests/black/ HTTP/1.0 200
+
+Thu Dec  4 08:33:07 2025 [INFO] 127.0.0.10: [GET] /config-tests/white/ HTTP/1.0 200
+
+Thu Dec  4 08:33:07 2025 [INFO] 127.0.0.10: [GET] /config-tests/white/favicon.ico HTTP/1.0 200
+
+Thu Dec  4 08:33:13 2025 [INFO] 127.0.0.10: [GET] /config-tests/black/ HTTP/1.0 404
+
+Thu Dec  4 08:33:13 2025 [INFO] 127.0.0.10: [GET] /favicon.ico HTTP/1.0 404
+
+Thu Dec  4 08:33:19 2025 [INFO] 127.0.0.10: [GET] /config-tests/white/ HTTP/1.0 200
+
+Thu Dec  4 08:34:38 2025 [INFO] 127.0.0.10: [GET] /config-tests/white/ HTTP/1.0 404
+
+Thu Dec  4 08:34:38 2025 [INFO] 127.0.0.10: [GET] /favicon.ico HTTP/1.0 404
+
+Thu Dec  4 08:35:00 2025 [INFO] 127.0.0.10: [GET] /config-tests/black/ HTTP/1.0 200
+
+Thu Dec  4 08:35:00 2025 [INFO] 127.0.0.10: [GET] /config-tests/black/favicon.ico HTTP/1.0 200
+
+Thu Dec  4 08:35:10 2025 [INFO] 127.0.0.1: [GET] /config-tests/black/ HTTP/1.0 404
+
+Thu Dec  4 08:35:10 2025 [INFO] 127.0.0.1: [GET] /favicon.ico HTTP/1.0 404
+
+Thu Dec  4 08:35:15 2025 [INFO] 127.0.0.1: [GET] /config-tests/white/ HTTP/1.0 200
+
+Thu Dec  4 08:35:15 2025 [INFO] 127.0.0.1: [GET] /config-tests/white/favicon.ico HTTP/1.0 200
+
+Thu Dec  4 08:35:50 2025 [INFO] 127.0.0.1: [GET] /config-tests/white/ HTTP/1.0 200
+
+Thu Dec  4 08:35:58 2025 [INFO] 127.0.0.1: [GET] /config-tests/black/ HTTP/1.0 404
+
+Thu Dec  4 08:36:21 2025 [INFO] 127.0.0.1: [GET] /config-tests/black/ HTTP/1.0 404
+
+Thu Dec  4 08:36:26 2025 [INFO] 127.0.0.10: [GET] /config-tests/black/ HTTP/1.0 200
+
+Thu Dec  4 08:38:13 2025 [INFO] 127.0.0.1: [GET] /config-tests/gold/ HTTP/1.0 200
+
+Thu Dec  4 08:38:24 2025 [INFO] 127.0.0.1: [GET] /config-tests/green/ HTTP/1.0 404
+
+Thu Dec  4 08:38:29 2025 [INFO] 127.0.0.1: [GET] /config-tests/green/ HTTP/1.0 200
+
+Thu Dec  4 08:38:29 2025 [INFO] 127.0.0.1: [GET] /config-tests/green/favicon.ico HTTP/1.0 200
+
+Thu Dec  4 08:38:38 2025 [INFO] 127.0.0.1: [GET] /config-tests/green/ HTTP/1.0 404
+
+Thu Dec  4 08:38:38 2025 [INFO] 127.0.0.1: [GET] /favicon.ico HTTP/1.0 404
+
+Thu Dec  4 08:38:47 2025 [INFO] 127.0.0.1: [GET] /config-tests/black/ HTTP/1.0 200
+
+Thu Dec  4 08:38:47 2025 [INFO] 127.0.0.1: [GET] /config-tests/black/favicon.ico HTTP/1.0 200
+
+Thu Dec  4 08:38:57 2025 [INFO] 127.0.0.1: [GET] /config-tests/white/ HTTP/1.0 404
+
+Thu Dec  4 08:39:02 2025 [INFO] 127.0.0.1: [GET] /config-tests/white/ HTTP/1.0 200
+
+Thu Dec  4 08:39:02 2025 [INFO] 127.0.0.1: [GET] /config-tests/white/favicon.ico HTTP/1.0 200
+
+Thu Dec  4 08:39:08 2025 [INFO] 127.0.0.1: [GET] /config-tests/gold/ HTTP/1.0 404
+
+Thu Dec  4 08:39:08 2025 [INFO] 127.0.0.1: [GET] /favicon.ico HTTP/1.0 404
+
+Thu Dec  4 08:39:14 2025 [INFO] 127.0.0.1: [GET] /config-tests/gold/ HTTP/1.0 200
+
+Thu Dec  4 08:40:22 2025 [INFO] 127.0.0.1: [GET] /config-tests/white/ HTTP/1.0 200
+
+Thu Dec  4 08:40:28 2025 [INFO] 127.0.0.1: [GET] /config-tests/black/ HTTP/1.0 404
+
+Thu Dec  4 08:40:55 2025 [INFO] 127.0.0.1: [GET] /config-tests/green/ HTTP/1.0 404
+
+Thu Dec  4 08:41:00 2025 [INFO] 127.0.0.1: [GET] /config-tests/gold/ HTTP/1.0 404
+
+Thu Dec  4 08:41:05 2025 [INFO] 127.0.0.1: [GET] /config-tests/white/ HTTP/1.0 200
+
