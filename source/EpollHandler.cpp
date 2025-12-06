@@ -1,12 +1,12 @@
 #include "../includes/WebservHeader.hpp"
 
-EpollHandler::EpollHandler(uint32_t interestedEvents) : _socketFd(-1), _interestedEvents(interestedEvents) {}
 
-EpollHandler::EpollHandler(int socketFd, uint32_t interestedEvents) : _socketFd(socketFd), _interestedEvents(interestedEvents) {}
+EpollHandler::EpollHandler(uint32_t interestedEvents, int socketFd, int maxTimeoutSecs) : _socketFd(socketFd), _interestedEvents(interestedEvents), _maxTimeoutSecs(maxTimeoutSecs), _lastActiveTime(time(NULL)) {}
 
 EpollHandler::~EpollHandler() {}
 
 int EpollHandler::handleEvent(struct epoll_event &event) {
+    this->_lastActiveTime = time(NULL);
     // Tratar eventos múltiplos (EPOLLIN | EPOLLOUT podem ocorrer simultaneamente)
     if (event.events & (EPOLLIN | EPOLLRDHUP)) {
         this->handleEpollIn();
@@ -15,6 +15,17 @@ int EpollHandler::handleEvent(struct epoll_event &event) {
         this->handleEpollOut();
     }
     return (0);
+}
+
+void EpollHandler::handleTimeout(void) {
+    if (this->_maxTimeoutSecs < 0) {
+        return;
+    }
+
+    time_t currentTime = time(NULL);
+    if (currentTime - this->_lastActiveTime > this->_maxTimeoutSecs) {
+        EpollInstance::deleteElementFromHandlers(this->_socketFd);
+    }
 }
 
 void EpollHandler::setSocketFd(int socketFd) {
@@ -29,6 +40,14 @@ uint32_t EpollHandler::getInterestedEvents() const {
     return (this->_interestedEvents);
 }
 
+int EpollHandler::getMaxTimeoutSecs() const {
+    return (this->_maxTimeoutSecs);
+}
+
 void EpollHandler::setInterestedEvents(uint32_t events) {
     this->_interestedEvents = events;
+}
+
+void EpollHandler::setMaxTimeoutSecs(int maxTimeoutSecs) {
+    this->_maxTimeoutSecs = maxTimeoutSecs;
 }
