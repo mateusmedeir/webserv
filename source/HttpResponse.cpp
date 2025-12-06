@@ -1,4 +1,5 @@
 #include "../includes/WebservHeader.hpp"
+#include "../includes/CookieHandler.hpp"
 
 HttpResponse::HttpResponse(){
 	this->_http_version = "HTTP/1.0";
@@ -193,4 +194,10 @@ void		HttpResponse::setErrorPage(int code){
 	buffer << file.rdbuf();
 	setStatus(code, "Error");
 	setBody(buffer.str(),"text/html");
+}
+
+void HttpResponse::processCookies(const HttpRequest &req, const LocationBlock &location) {
+	if (location.getCookiesEnabled()) {
+		CookieHandler::handleCookie(*this, req);
+	}
 }

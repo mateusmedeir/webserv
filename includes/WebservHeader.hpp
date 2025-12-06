@@ -36,6 +36,7 @@
 # include "ServerInstance.hpp"
 # include "ServerListen.hpp"
 # include "Client.hpp"
+# include "CookieHandler.hpp"
 
 enum clientBufferState {
     READING_HEADER = 9, //Lendo o header da request ainda

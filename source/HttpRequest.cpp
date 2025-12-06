@@ -85,11 +85,41 @@ std::map<std::string, std::string> HttpRequest::getHeaders() const {
 }
 
 std::string HttpRequest::getHeaderValue(const std::string &key) const {
-	std::map<std::string, std::string>::const_iterator it = headers.find(key);
-	if (it != headers.end()) {
-		return it->second;
+	std::string lowerKey = key;
+	for (size_t i = 0; i < lowerKey.size(); ++i) {
+		lowerKey[i] = std::tolower(lowerKey[i]);
+	}
+	
+	for (std::map<std::string, std::string>::const_iterator it = headers.begin();
+		 it != headers.end(); ++it) {
+		std::string lowerHeader = it->first;
+		for (size_t i = 0; i < lowerHeader.size(); ++i) {
+			lowerHeader[i] = std::tolower(lowerHeader[i]);
+		}
+		if (lowerHeader == lowerKey) {
+			return it->second;
+		}
 	}
 	return "";
+}
+
+bool HttpRequest::hasHeader(const std::string &key) const {
+	std::string lowerKey = key;
+	for (size_t i = 0; i < lowerKey.size(); ++i) {
+		lowerKey[i] = std::tolower(lowerKey[i]);
+	}
+	
+	for (std::map<std::string, std::string>::const_iterator it = headers.begin();
+		 it != headers.end(); ++it) {
+		std::string lowerHeader = it->first;
+		for (size_t i = 0; i < lowerHeader.size(); ++i) {
+			lowerHeader[i] = std::tolower(lowerHeader[i]);
+		}
+		if (lowerHeader == lowerKey) {
+			return true;
+		}
+	}
+	return false;
 }
 
 std::string HttpRequest::getBody() const {

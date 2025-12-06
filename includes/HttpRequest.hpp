@@ -24,5 +24,6 @@ class HttpRequest {
     std::string getUri() const;
     std::map<std::string, std::string> getHeaders() const;
     std::string getHeaderValue(const std::string &key) const;
+    bool hasHeader(const std::string &key) const;
     std::string getBody() const;
 };

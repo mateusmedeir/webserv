@@ -16,6 +16,7 @@ class LocationBlock {
         std::vector<std::string>    _index;
         std::vector<std::string>    _cgiExtensions;
         std::vector<std::string>    _allowMethods;
+        bool                        _cookiesEnabled;
 
         
         void addAutoIndex();
@@ -27,6 +28,7 @@ class LocationBlock {
         void addIndex();
         void addCgiExtensions();
         void addAllowMethods();
+        void addCookiesEnabled();
         
     public:
         LocationBlock(ConfigFile &config);
@@ -47,4 +49,5 @@ class LocationBlock {
         std::vector<std::string> getIndex() const;
         std::vector<std::string> getCgiExtensions() const;
         std::vector<std::string> getAllowMethods() const;
+        bool getCookiesEnabled() const;
 };

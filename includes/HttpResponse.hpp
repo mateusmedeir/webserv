@@ -2,6 +2,7 @@
 
 # include "WebservHeader.hpp"
 
+class LocationBlock;
 
 class HttpResponse {
 	private:
@@ -23,6 +24,7 @@ class HttpResponse {
 		void setHeader(const std::string &key, const std::string &value);
 		void setBody(const std::string &b, const std::string &contentType);
 		void setErrorPage(int code);
+		void processCookies(const HttpRequest &req, const LocationBlock &location);
 
 		std::string		toString() const;
 		std::string		intToString(int n) const;
