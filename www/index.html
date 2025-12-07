@@ -51,8 +51,16 @@
 			</div>
 			
 			<div class="form-group">
-				<label for="post-data">Dados (Body):</label>
-				<textarea id="post-data" placeholder='{"nome": "Bruno", "mensagem": "Olá WebServ!"}'></textarea>
+				<!-- <label for="post-data">Dados (Body):</label>
+				<textarea id="post-data" placeholder='{"nome": "Bruno", "mensagem": "Olá WebServ!"}'></textarea> -->
+				<form id="form">
+					<label for="post-data-name">Nome:</label>
+					<input type="text" name="name" id="post-data-name">
+					<label for="post-data-email">Email:</label>
+					<input type="text" name="email" id="post-data-email">
+					<label for="post-data-file">Insira o arquivo:</label>
+					<input type="file" name="file" id="post-data-file">
+				</form>
 			</div>
 			
 			<button onclick="testPost()">Executar POST</button>
@@ -143,15 +151,14 @@
 		
 		async function testPost() {
 			const url = document.getElementById('post-url').value;
-			const data = document.getElementById('post-data').value;
-			
+			// const data = document.getElementById('post-data').value;
+			const form = document.querySelector("#form")
+			const formData = new FormData(form)
+
 			try {
 				const response = await fetch(url, {
 					method: 'POST',
-					headers: {
-						'Content-Type': 'text/plain'
-					},
-					body: data
+					body: formData
 				});
 				
 				const body = await response.text();
@@ -159,6 +166,21 @@
 			} catch (error) {
 				showResponse('post', 0, 'Erro: ' + error.message);
 			}
+			
+			// try {
+			// 	const response = await fetch(url, {
+			// 		method: 'POST',
+			// 		headers: {
+			// 			'Content-Type': 'text/plain'
+			// 		},
+			// 		body: data
+			// 	});
+				
+			// 	const body = await response.text();
+			// 	showResponse('post', response.status, body);
+			// } catch (error) {
+			// 	showResponse('post', 0, 'Erro: ' + error.message);
+			// }
 		}
 		
 		async function testDelete() {
