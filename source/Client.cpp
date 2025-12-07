@@ -45,6 +45,13 @@ void Client::handleEpollIn(void) {
             for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); it++) {
                 std::cout << it->first << ": " << it->second << std::endl;
             }
+            std::cout << "Boundary: " << this->request.getStartBoudary() << std::endl;
+            std::cout << "End Boundary: " << this->request.getEndBoudary() << std::endl;
+            if (this->request.isUploadRequest()) {
+                std::cout << "=========================UPLOAD========================" << std::endl;
+                std::cout << "File name: " << this->request.getUploadFileName() << std::endl;
+            }
+            std::cout << "=======================BODY===========================" << std::endl;
             std::cout << "Body: " << this->request.getBody() << std::endl;
             std::cout << "=====================================================" << std::endl;
             
@@ -205,6 +212,8 @@ void Client::concatenateRequestData(std::string data) {
     if (this->_state == COMPLETE) {
         return;
     }
+    std::cout << "------------concatenate request-----------------" << std::endl;
+    std::cout << data << std::endl;
 
     this->_rawRequest.append(data);
 
@@ -237,9 +246,10 @@ void Client::concatenateRequestData(std::string data) {
             int contentLength = std::atoi(contentLengthStr.c_str());
             size_t bodyStartPos = this->_rawRequest.find("\r\n\r\n") + 4;
             size_t bodyLength = this->_rawRequest.size() - bodyStartPos;
+            std::string onlyBody = this->_rawRequest.substr(bodyStartPos, bodyLength);
             
             if (bodyLength >= static_cast<size_t>(contentLength)) {
-                this->request.parseBody(this->_rawRequest);
+                this->request.parseBody(this->_rawRequest, onlyBody);
                 this->setState(COMPLETE);
             }
         } else {
