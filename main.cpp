@@ -93,6 +93,14 @@ int main(int ac, char **av) {
     signal(SIGINT, signalHandler);
     signal(SIGPIPE, signalHandler);
 
+    // Logger::initLogger(DEBUG, new StdLogHandler());
+    CompositeLogHandler compositeHandler;
+
+    compositeHandler.addHandler(new StdLogHandler());
+    compositeHandler.addHandler(new FileLogHandler("application.log"));
+
+    Logger::initLogger(DEBUG, &compositeHandler);
+
     try {
         RunTime::initializeRuntime(ac, av);
         printBlock(RunTime::getConfig().getServerBlocks(), RunTime::getServerListeners());

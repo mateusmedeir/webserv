@@ -377,6 +377,11 @@ std::string HttpResponse::findBestLocationMatch(const std::string& uri,
 	return bestMatch;
 }
 
+// std::string 	getHttpVersion() const;
+std::string HttpResponse::getHttpVersion() const {
+	return _http_version;
+}
+
 int HttpResponse::getStatusCode() const {
 	return _status_code;
 }

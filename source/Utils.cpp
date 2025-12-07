@@ -9,3 +9,12 @@ void set_nonblocking(int sockfd) {
         throw(ServerListen::CannotUpdateServerToNonBlocking());
     }
 }
+
+// void initAllLogHandlers(void) {
+//     CompositeLogHandler compositeHandler;
+
+//     compositeHandler.addHandler(new StdLogHandler());
+//     compositeHandler.addHandler(new FileLogHandler("../application.log"));
+
+//     Logger::initLogger(DEBUG, new CompositeLogHandler());
+// }

@@ -14,13 +14,16 @@ SRC =	main.cpp \
 		source/RunTime.cpp \
 		source/ServerBlock.cpp \
 		source/ServerListen.cpp \
-		source/ServerInstance.cpp \
 		source/Client.cpp \
 		source/Utils.cpp \
 		source/CookieHandler.cpp \
 		source/CgiProcess.cpp \
 		source/CgiHandler.cpp \
-		source/CgiPipeHandler.cpp
+		source/CgiPipeHandler.cpp \
+		source/Logger.cpp \
+		source/StdLogHandler.cpp \
+		source/FileLogHandler.cpp \
+		source/CompositeLogHandler.cpp
 
 OBJ = $(SRC:.cpp=.o)
 
