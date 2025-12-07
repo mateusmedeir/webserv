@@ -322,25 +322,22 @@ bool CgiHandler::executeCgiAsync(const HttpRequest& req,
     _activeProcesses[process->getPid()] = process;
     _clientToProcess[clientFd] = process;
     
-    // Criar handlers para os pipes e adicionar ao epoll
-    EpollInstance& epoll = RunTime::getEpoll();
-    
     // Handler para pipe de entrada (escrita) - apenas se houver body E pipe ainda aberto
     if (process->getPipeInFd() != -1 && !req.getBody().empty()) {
         CgiPipeHandler* inputHandler = new CgiPipeHandler(process->getPipeInFd(), clientFd, true);
         _pipeHandlers[process->getPipeInFd()] = inputHandler;
-        epoll.manipInterestList(EPOLL_CTL_ADD, inputHandler);
+        EpollInstance::manipInterestList(EPOLL_CTL_ADD, inputHandler);
         
         // Adicionar evento EPOLLOUT imediatamente pois há body para enviar
         inputHandler->setInterestedEvents(EPOLLOUT);
-        epoll.manipInterestList(EPOLL_CTL_MOD, inputHandler);
+        EpollInstance::manipInterestList(EPOLL_CTL_MOD, inputHandler);
     }
     
     // Handler para pipe de saída (leitura) - sempre necessário
     if (process->getPipeOutFd() != -1) {
         CgiPipeHandler* outputHandler = new CgiPipeHandler(process->getPipeOutFd(), clientFd, false);
         _pipeHandlers[process->getPipeOutFd()] = outputHandler;
-        epoll.manipInterestList(EPOLL_CTL_ADD, outputHandler);
+        EpollInstance::manipInterestList(EPOLL_CTL_ADD, outputHandler);
         std::cout << "CGI: Output handler registered with EPOLLIN for fd " << process->getPipeOutFd() << std::endl;
     }
     
@@ -377,8 +374,7 @@ void CgiHandler::handleCgiPipeIn(int fd, Client* client) {
                 if (it != _pipeHandlers.end()) {
                     CgiPipeHandler* handler = it->second;
                     handler->setInterestedEvents(0);
-                    EpollInstance& epoll = RunTime::getEpoll();
-                    epoll.manipInterestList(EPOLL_CTL_MOD, handler);
+                    EpollInstance::manipInterestList(EPOLL_CTL_MOD, handler);
                 }
             }
             
@@ -428,8 +424,7 @@ void CgiHandler::handleCgiPipeIn(int fd, Client* client) {
         if (it != _pipeHandlers.end()) {
             CgiPipeHandler* handler = it->second;
             handler->setInterestedEvents(0);
-            EpollInstance& epoll = RunTime::getEpoll();
-            epoll.manipInterestList(EPOLL_CTL_MOD, handler);
+            EpollInstance::manipInterestList(EPOLL_CTL_MOD, handler);
         }
     }
 }
@@ -550,8 +545,7 @@ void CgiHandler::cleanupPipeHandler(int pipeFd) {
         CgiPipeHandler* handler = it->second;
         
         // Remover do epoll
-        EpollInstance& epoll = RunTime::getEpoll();
-        epoll.manipInterestList(EPOLL_CTL_DEL, handler);
+        EpollInstance::manipInterestList(EPOLL_CTL_DEL, handler);
         
         // Deletar handler
         delete handler;

@@ -4,7 +4,7 @@ RunTime *RunTime::_instance = NULL;
 
 RunTime::RunTime(void) {}
 
-RunTime::RunTime(int ac, char **av): _config(ac, av), _epoll() {
+RunTime::RunTime(int ac, char **av): _config(ac, av) {
     std::cout << "Novo construtor RunTime..." << std::endl;
 }
 
@@ -14,7 +14,6 @@ RunTime::RunTime(const RunTime &src) {
 
 RunTime &RunTime::operator=(const RunTime &src) {
     if (this != &src) {
-        this->_epoll = src._epoll;
         this->_config = src._config;
     }
     return (*this);
@@ -25,6 +24,7 @@ RunTime::~RunTime(void) {}
 void RunTime::initializeRuntime(int ac, char **av) {
     if (_instance == NULL) {
         _instance = new RunTime(ac, av);
+        EpollInstance::initializeInstance();
         _instance->loadServerListeners();
         _instance->initServerSockets(AF_INET, SOCK_STREAM);
     }
@@ -33,6 +33,7 @@ void RunTime::initializeRuntime(int ac, char **av) {
 void RunTime::deleteInstance(void) {
     if (_instance != NULL) {
         delete _instance;
+        EpollInstance::deleteInstance();
         _instance = NULL;
     }
 }
@@ -65,7 +66,7 @@ void RunTime::loadServerListeners(void) {
 void RunTime::initServerSockets(int socketDomain, int socketType) {
     for (unsigned int i = 0; i < _instance->_serverListeners.size(); i++) {
         _instance->_serverListeners[i].initServerSocket(socketDomain, socketType);
-        _instance->_epoll.manipInterestList(EPOLL_CTL_ADD, &_instance->_serverListeners[i]);
+        EpollInstance::manipInterestList(EPOLL_CTL_ADD, &_instance->_serverListeners[i]);
     }
 }
 
@@ -97,13 +98,6 @@ ConfigFile &RunTime::getConfig(void) {
         throw std::runtime_error("RunTime instance is not initialized.");
     }
     return (_instance->_config);
-}
-
-EpollInstance &RunTime::getEpoll(void) {
-    if (_instance == NULL) {
-        throw std::runtime_error("RunTime instance is not initialized.");
-    }
-    return (_instance->_epoll);
 }
 
 Client &RunTime::getClient(int clientFd) {
