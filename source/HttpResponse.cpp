@@ -28,19 +28,56 @@ void HttpResponse::handleGet(const HttpRequest &req) {
 };
 
 void HttpResponse::handlePost(const HttpRequest &req){
-	std::string path = "./uploads/upload.txt";
-
-	std::ofstream file(path.c_str());
-	if (!file) {
-		this->setStatus(500, "Internal Server Error");
-		this->setBody("<h1>500 Internal Server Error</h1>", "text/html");
+	//checar se a URI termina com '/'
+	std::string uri = req.getUri();
+	if (uri.empty() || uri[uri.size() - 1] != '/') {
+		// Erro na URI
+		Logger::error("Error na URI. 400 bad request");
+		this->setErrorPage(400);
+		this->setStatus(400, "Bad Request");
+		return ;
 	}
-
-	file << req.getBody();
-	file.close();
-
+	// checar se temos acesso na URI
+	// Aqui precisamos da questao do ROOT
+	if (uri.empty() || access(uri.c_str(), R_OK | W_OK) != 0) {
+		Logger::error("Error no acesso. 403 forbidden");
+		this->setErrorPage(403);
+		this->setStatus(403, "Forbidden");
+		return ;
+	}
+	// checar se a location aceita POST
+	// Isso vai precisar ser validado la no client...
+	// Se chegar ate aqui, podemos criar o arquivo e escrever o conteudo dentro dele.
+	std::string	uploadFilePath = std::string("./uploads" + uri) + req.getUploadFileName();
+	std::ofstream	newFile(uploadFilePath.c_str());
+	if (!newFile.is_open()) {
+		// Logger::error("Nao foi possivel criar o arquivo.");
+		// this->setErrorPage(400);
+		// this->setStatus(400, "Bad Request");
+		// return ;
+		throw std::runtime_error("Could not create posted file");
+	}
 	this->setStatus(201, "Created");
-	this->setBody("<h1>File uploaded successfully!</h1>", "text/html");
+	this->setHeader("Access-Control-Allow-Origin", "*");
+	this->setBody("<h1>File named " + req.getUploadFileName() + " was uploaded successfully!</h1>", "text/html");
+	size_t endHeader = req.getBody().find("\r\n\r\n") + 4;
+	size_t endFormData = req.getBody().find(req.getEndBoudary());
+	newFile << req.getBody().substr(endHeader, endFormData - endHeader - 2);
+	newFile.close();
+
+	// std::string path = "./uploads/upload.txt";
+
+	// std::ofstream file(path.c_str());
+	// if (!file) {
+	// 	this->setStatus(500, "Internal Server Error");
+	// 	this->setBody("<h1>500 Internal Server Error</h1>", "text/html");
+	// }
+
+	// file << req.getBody();
+	// file.close();
+
+	// this->setStatus(201, "Created");
+	// this->setBody("<h1>File uploaded successfully!</h1>", "text/html");
 };
 
 void HttpResponse::handleDelete(const HttpRequest &req){

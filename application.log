@@ -282,3 +282,44 @@ Sun Dec  7 10:11:09 2025 [INFO] 127.0.0.1: [GET] /style.css HTTP/1.0 200
 
 Sun Dec  7 10:11:31 2025 [INFO] 127.0.0.1: [POST] /upload HTTP/1.0 201
 
+Sun Dec  7 14:28:30 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 200
+
+Sun Dec  7 14:28:30 2025 [INFO] 127.0.0.1: [GET] /style.css HTTP/1.0 200
+
+Sun Dec  7 14:28:44 2025 [INFO] 127.0.0.1: [POST] / HTTP/1.0 403
+
+Sun Dec  7 14:29:19 2025 [INFO] 127.0.0.1: [POST] /upload HTTP/1.0 400
+
+Sun Dec  7 14:29:23 2025 [INFO] 127.0.0.1: [POST] /uploads HTTP/1.0 400
+
+Sun Dec  7 14:29:26 2025 [INFO] 127.0.0.1: [POST] /uploads/ HTTP/1.0 403
+
+Sun Dec  7 14:31:30 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 200
+
+Sun Dec  7 14:31:30 2025 [INFO] 127.0.0.1: [GET] /style.css HTTP/1.0 200
+
+Sun Dec  7 14:31:37 2025 [ERROR] Error na URI. 400 bad request
+Sun Dec  7 14:31:37 2025 [INFO] 127.0.0.1: [POST] /uploads HTTP/1.0 400
+
+Sun Dec  7 14:31:51 2025 [ERROR] Error no acesso. 403 forbidden
+Sun Dec  7 14:31:51 2025 [INFO] 127.0.0.1: [POST] /uploads/ HTTP/1.0 403
+
+Sun Dec  7 14:38:56 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 200
+
+Sun Dec  7 14:38:56 2025 [INFO] 127.0.0.1: [GET] /style.css HTTP/1.0 200
+
+Sun Dec  7 14:39:01 2025 [ERROR] Error na URI. 400 bad request
+Sun Dec  7 14:39:01 2025 [INFO] 127.0.0.1: [POST] /uploads HTTP/1.0 400
+
+Sun Dec  7 14:39:05 2025 [ERROR] Nao foi possivel criar o arquivo.
+Sun Dec  7 14:39:05 2025 [INFO] 127.0.0.1: [POST] /uploads/ HTTP/1.0 400
+
+Sun Dec  7 14:39:18 2025 [ERROR] Nao foi possivel criar o arquivo.
+Sun Dec  7 14:39:18 2025 [INFO] 127.0.0.1: [POST] /www/uploads/ HTTP/1.0 400
+
+Sun Dec  7 14:39:50 2025 [ERROR] Nao foi possivel criar o arquivo.
+Sun Dec  7 14:39:50 2025 [INFO] 127.0.0.1: [POST] /www/uploads/ HTTP/1.0 400
+
+Sun Dec  7 14:40:20 2025 [ERROR] Nao foi possivel criar o arquivo.
+Sun Dec  7 14:40:20 2025 [INFO] 127.0.0.1: [POST] /www/uploads/ HTTP/1.0 400
+

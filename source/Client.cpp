@@ -241,8 +241,13 @@ void Client::concatenateRequestData(std::string data) {
     }
 
     if (this->_state == READING_BODY) {
+        // Quando estivermos lendo o body, nao podemos nos basear apenas no content length.
+        // Pois esse header nao e obrigatorio. Entao, dessa forma, nao e garantia de nada.
+        // E, quando o contne type for multipart, o client pode mandar o encoding como chunked.
+        // E, caso ele mande esse encoding diferente, o content length nao vem tambem.
+        // e o body vem com um formato diferente, onde a string "0\r\n\r\n" indica o final do body.
         std::string contentLengthStr = this->request.getHeaderValue("Content-Length");
-        if (!contentLengthStr.empty()) {
+        if (!contentLengthStr.empty()) { // caso tenha content length. Que e 99% dos casos
             int contentLength = std::atoi(contentLengthStr.c_str());
             size_t bodyStartPos = this->_rawRequest.find("\r\n\r\n") + 4;
             size_t bodyLength = this->_rawRequest.size() - bodyStartPos;
@@ -252,6 +257,13 @@ void Client::concatenateRequestData(std::string data) {
                 this->request.parseBody(this->_rawRequest, onlyBody);
                 this->setState(COMPLETE);
             }
+        } else if (this->_rawRequest.find("0\r\n\r\n") != std::string::npos) { //caso tenha outro encoding (chunked)
+            // caso entre aqui, o body da request ja ta todo pronto.
+            size_t bodyStartPos = this->_rawRequest.find("\r\n\r\n") + 4;
+            size_t bodyEndPos = this->_rawRequest.find("0\r\n\r\n") + 4;
+            std::string onlyBody = this->_rawRequest.substr(bodyStartPos, bodyEndPos);
+            this->request.parseBody(this->_rawRequest, onlyBody);
+            this->setState(COMPLETE);
         } else {
             this->setState(COMPLETE);
         }
