@@ -4,7 +4,7 @@
 #include "../includes/Client.hpp"
 
 CgiPipeHandler::CgiPipeHandler(int pipeFd, int clientFd, bool isInputPipe)
-    : EpollHandler(pipeFd, isInputPipe ? EPOLLOUT : EPOLLIN),
+    : EpollHandler(isInputPipe ? EPOLLOUT : EPOLLIN, pipeFd),
       _clientFd(clientFd), _isInputPipe(isInputPipe) {
 }
 

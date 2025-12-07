@@ -1,18 +1,17 @@
 #include "../includes/WebservHeader.hpp"
 #include "../includes/RunTime.hpp"
 
-Client::Client(int clientFd, ServerListen &serverListen) : EpollHandler(clientFd, EPOLLIN), _serverListen(serverListen) {
+Client::Client(int clientFd, ServerListen &serverListen) : EpollHandler(EPOLLIN, clientFd, 30), _serverListen(serverListen) {
     std::cout << "Client got created..." << std::endl;
     this->_state = READING_HEADER;
     this->_rawRequest = "";
     this->request = HttpRequest();
     this->response = HttpResponse();
-    this->_lastActivity = time(NULL);
     this->_pendingResponse = "";
     this->_responseOffset = 0;
 }
 
-Client::Client(const Client &src) : EpollHandler(src.getSocketFd(), src.getInterestedEvents()), _serverListen(src._serverListen) {
+Client::Client(const Client &src) : EpollHandler(src.getInterestedEvents(), src.getSocketFd(), src.getMaxTimeoutSecs()), _serverListen(src._serverListen) {
     *this = src;
 }
 
@@ -21,7 +20,6 @@ Client &Client::operator=(const Client &src) {
         this->request = src.request;
         this->response = src.response;
         this->_state = src._state;
-        this->_lastActivity = src._lastActivity;
         this->_pendingResponse = src._pendingResponse;
         this->_responseOffset = src._responseOffset;
     }
@@ -31,7 +29,6 @@ Client &Client::operator=(const Client &src) {
 Client::~Client(void) {}
 
 void Client::handleEpollIn(void) {
-    this->updateActivity();  // Atualizar timestamp de atividade
     char buffer[4096] = {0};
     int count = 0;
 
@@ -126,7 +123,7 @@ void Client::handleEpollOut(void) {
         uint32_t events = this->getInterestedEvents();
         events &= ~EPOLLOUT;
         this->setInterestedEvents(events);
-        RunTime::getEpoll().manipInterestList(EPOLL_CTL_MOD, this);
+        EpollInstance::manipInterestList(EPOLL_CTL_MOD, this);
         return;
     }
     
@@ -142,10 +139,15 @@ void Client::handleEpollOut(void) {
         uint32_t events = this->getInterestedEvents();
         events &= ~EPOLLOUT;
         this->setInterestedEvents(events);
-        RunTime::getEpoll().manipInterestList(EPOLL_CTL_MOD, this);
+        EpollInstance::manipInterestList(EPOLL_CTL_MOD, this);
         
         RunTime::deleteClient(this->getSocketFd());
     }
+}
+
+void Client::deleteHandler(void) {
+    std::cout << "Deleting client handler for FD: " << this->getSocketFd() << std::endl;
+    close(this->getSocketFd());
 }
 
 bool Client::sendResponse(const std::string &responseStr) {
@@ -175,7 +177,7 @@ bool Client::sendResponse(const std::string &responseStr) {
         uint32_t events = this->getInterestedEvents();
         events |= EPOLLOUT;
         this->setInterestedEvents(events);
-        RunTime::getEpoll().manipInterestList(EPOLL_CTL_MOD, this);
+        EpollInstance::manipInterestList(EPOLL_CTL_MOD, this);
         return true;
     } else if (sent == 0) {
         // send() retornou 0 - conexão fechada pelo peer
@@ -192,7 +194,7 @@ bool Client::sendResponse(const std::string &responseStr) {
             uint32_t events = this->getInterestedEvents();
             events |= EPOLLOUT;
             this->setInterestedEvents(events);
-            RunTime::getEpoll().manipInterestList(EPOLL_CTL_MOD, this);
+            EpollInstance::manipInterestList(EPOLL_CTL_MOD, this);
         }
         
         return true;
@@ -268,15 +270,6 @@ HttpResponse &Client::getResponse(void) {
 
 void Client::setState(int state) {
     this->_state = state;
-}
-
-bool Client::isTimedOut(int timeoutSeconds) const {
-    time_t now = time(NULL);
-    return (now - _lastActivity) > timeoutSeconds;
-}
-
-void Client::updateActivity(void) {
-    this->_lastActivity = time(NULL);
 }
 
 static std::string ipv4ToStr(unsigned int ip)

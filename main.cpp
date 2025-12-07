@@ -49,7 +49,7 @@ void	printBlock(std::vector<ServerBlock> serverBlocks, std::vector<ServerListen>
 void epollReadyListLoop(int numberOfReadySockets) {
     if (numberOfReadySockets) {
         for (int i = 0; i < numberOfReadySockets; i++) {
-            struct epoll_event &data = RunTime::getEpoll().getElementFromReadyList(i);
+            struct epoll_event &data = EpollInstance::getElementFromReadyList(i);
             
             EpollHandler *handler = static_cast<EpollHandler *>(data.data.ptr);
             if (handler) {
@@ -59,9 +59,17 @@ void epollReadyListLoop(int numberOfReadySockets) {
     }
 }
 
+void epollValidationLoop() {
+    std::map<int, EpollHandler*> &handlers = EpollInstance::getHandlers();
+    for (std::map<int, EpollHandler*>::iterator it = handlers.begin(); it != handlers.end(); ++it) {
+        std::cout << "Checking timeout for FD: " << it->first << std::endl;
+        it->second->handleTimeout();
+    }
+}
+
 void serverMainLoop() {
     while (true) {
-        int numberOfReadySockets = RunTime::getEpoll().manipEpollWait();
+        int numberOfReadySockets = EpollInstance::manipEpollWait();
         if (numberOfReadySockets == -1) {
             std::cerr << "Error: erro ao manipular o epoll_wait()." << std::endl;
             break;
@@ -69,30 +77,11 @@ void serverMainLoop() {
         else {
             epollReadyListLoop(numberOfReadySockets);
             
-            // Limpar processos zumbis CGI
             CgiHandler::cleanupZombieProcesses();
-            
-            // Verificar processos CGI pendentes (entrada fechada mas ainda rodando)
             CgiHandler::checkPendingProcesses();
-            
-            // Verificar timeouts de processos CGI (2 segundos)
             CgiHandler::checkTimeouts();
             
-            // Verificar timeouts de clientes inativos (30 segundos)
-            std::map<int, Client> &clients = RunTime::getClients();
-            std::vector<int> fdsToDelete;
-            
-            for (std::map<int, Client>::iterator it = clients.begin(); it != clients.end(); ++it) {
-                if (it->second.isTimedOut(30)) {
-                    std::cout << "[Timeout] Client " << it->first << " inactive for >30s, closing connection" << std::endl;
-                    fdsToDelete.push_back(it->first);
-                }
-            }
-            
-            // Deletar clientes com timeout
-            for (size_t i = 0; i < fdsToDelete.size(); ++i) {
-                RunTime::deleteClient(fdsToDelete[i]);
-            }
+            epollValidationLoop();
         }
     }
 }
