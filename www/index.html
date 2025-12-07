@@ -1,1 +1,200 @@
-<h1>Index</h1>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="style.css">
+	<title>Teste de Métodos HTTP - WebServ</title>
+	
+</head>
+<body>
+	<div class="container">
+		<h1>🚀 Teste de Métodos HTTP - WebServ</h1>
+		
+		<!-- Seção GET -->
+		<div class="test-section">
+			<h2>
+				Método
+				<span class="method-badge badge-get">GET</span>
+			</h2>
+			<div class="info-box">
+				<strong>Descrição:</strong> Recupera recursos do servidor. Teste buscando arquivos existentes ou o script CGI Python.
+			</div>
+			
+			<div class="form-group">
+				<label for="get-url">URL do Recurso:</label>
+				<input type="text" id="get-url" placeholder="/index.html ou /test.py?nome=Bruno" value="/">
+			</div>
+			
+			<button onclick="testGet()">Executar GET</button>
+			
+			<div id="get-response" class="response">
+				<h3>Resposta:</h3>
+				<div id="get-status"></div>
+				<pre id="get-body"></pre>
+			</div>
+		</div>
+		
+		<!-- Seção POST -->
+		<div class="test-section">
+			<h2>
+				Método
+				<span class="method-badge badge-post">POST</span>
+			</h2>
+			<div class="info-box">
+				<strong>Descrição:</strong> Envia dados ao servidor. Teste enviando dados para upload ou para scripts CGI.
+			</div>
+			
+			<div class="form-group">
+				<label for="post-url">URL do Recurso:</label>
+				<input type="text" id="post-url" placeholder="/upload ou /test.py" value="/upload">
+			</div>
+			
+			<div class="form-group">
+				<label for="post-data">Dados (Body):</label>
+				<textarea id="post-data" placeholder='{"nome": "Bruno", "mensagem": "Olá WebServ!"}'></textarea>
+			</div>
+			
+			<button onclick="testPost()">Executar POST</button>
+			
+			<div id="post-response" class="response">
+				<h3>Resposta:</h3>
+				<div id="post-status"></div>
+				<pre id="post-body"></pre>
+			</div>
+		</div>
+		
+		<!-- Seção DELETE -->
+		<div class="test-section">
+			<h2>
+				Método
+				<span class="method-badge badge-delete">DELETE</span>
+			</h2>
+			<div class="info-box">
+				<strong>Descrição:</strong> Remove recursos do servidor. ⚠️ Cuidado! Esta operação é destrutiva.
+			</div>
+			
+			<div class="form-group">
+				<label for="delete-url">URL do Recurso:</label>
+				<input type="text" id="delete-url" placeholder="/arquivo-para-deletar.txt" value="/test-delete.txt">
+			</div>
+			
+			<button onclick="testDelete()">Executar DELETE</button>
+			
+			<div id="delete-response" class="response">
+				<h3>Resposta:</h3>
+				<div id="delete-status"></div>
+				<pre id="delete-body"></pre>
+			</div>
+		</div>
+		
+		<!-- Seção CGI Python -->
+		<div class="test-section">
+			<h2>
+				Teste CGI Python
+				<span class="method-badge badge-get">GET</span>
+			</h2>
+			<div class="info-box">
+				<strong>Descrição:</strong> Teste o script CGI Python com parâmetros de query string.
+			</div>
+			
+			<div class="form-group">
+				<label for="cgi-params">Parâmetros (Query String):</label>
+				<input type="text" id="cgi-params" placeholder="nome=Bruno&idade=25" value="nome=Bruno&mensagem=Teste">
+			</div>
+			
+			<button onclick="testCGI()">Executar CGI</button>
+			
+			<div id="cgi-response" class="response">
+				<h3>Resposta:</h3>
+				<div id="cgi-status"></div>
+				<pre id="cgi-body"></pre>
+			</div>
+		</div>
+	</div>
+	
+	<script>
+		function showResponse(sectionId, status, body) {
+			const responseDiv = document.getElementById(sectionId + '-response');
+			const statusDiv = document.getElementById(sectionId + '-status');
+			const bodyPre = document.getElementById(sectionId + '-body');
+			
+			const statusClass = status >= 200 && status < 300 ? 'status-success' : 'status-error';
+			statusDiv.innerHTML = `<span class="${statusClass}">Status: ${status}</span>`;
+			bodyPre.textContent = body;
+			
+			responseDiv.classList.add('show');
+		}
+		
+		async function testGet() {
+			const url = document.getElementById('get-url').value;
+			
+			try {
+				const response = await fetch(url, {
+					method: 'GET'
+				});
+				
+				const body = await response.text();
+				showResponse('get', response.status, body);
+			} catch (error) {
+				showResponse('get', 0, 'Erro: ' + error.message);
+			}
+		}
+		
+		async function testPost() {
+			const url = document.getElementById('post-url').value;
+			const data = document.getElementById('post-data').value;
+			
+			try {
+				const response = await fetch(url, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'text/plain'
+					},
+					body: data
+				});
+				
+				const body = await response.text();
+				showResponse('post', response.status, body);
+			} catch (error) {
+				showResponse('post', 0, 'Erro: ' + error.message);
+			}
+		}
+		
+		async function testDelete() {
+			const url = document.getElementById('delete-url').value;
+			
+			if (!confirm('Tem certeza que deseja deletar este recurso?')) {
+				return;
+			}
+			
+			try {
+				const response = await fetch(url, {
+					method: 'DELETE'
+				});
+				
+				const body = await response.text();
+				showResponse('delete', response.status, body);
+			} catch (error) {
+				showResponse('delete', 0, 'Erro: ' + error.message);
+			}
+		}
+		
+		async function testCGI() {
+			const params = document.getElementById('cgi-params').value;
+			const url = '/test.py' + (params ? '?' + params : '');
+			
+			try {
+				const response = await fetch(url, {
+					method: 'GET'
+				});
+				
+				const body = await response.text();
+				showResponse('cgi', response.status, body);
+			} catch (error) {
+				showResponse('cgi', 0, 'Erro: ' + error.message);
+			}
+		}
+	</script>
+</body>
+</html>
