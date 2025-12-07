@@ -63,25 +63,25 @@ std::string decodeChunkedBody(std::string& chunkedBody) {
 
 	std::string line;
 	while (std::getline(stream, line)) {
-		// Convert the chunk size to an integer
+		//Converter o chunk para inteiro.
 		std::stringstream sizeStream(line);
 		size_t chunkSize;
 		sizeStream >> std::hex >> chunkSize;
 		
-		// If the chunk size is 0, it's the end of the message
+		//caso chegue em 0, e o final do chunked body.
 		if (chunkSize == 0) {
 			break;
 		}
 		
-		// Read the chunk data
+		//ler o pedaco do chunk body
 		std::vector<char> data(chunkSize);
 		stream.read(data.data(), chunkSize);
 		
-		// Read and discard the newline after the chunk data
+		//discartamos as linhas em branco
 		stream.ignore(2, '\r');
 		stream.ignore(2, '\n');
 		
-		// Append the chunk data to the result
+		//concatenando o conteudo
 		result.write(data.data(), chunkSize);
 	}
 	return result.str();
@@ -100,7 +100,6 @@ void HttpRequest::parseBody(const std::string &rawRequest, std::string onlyBody)
 	if (isMultipart) {
 		std::cout << "IS MULTIPART FORM-DATA !!" << std::endl;
 		this->isUpload = true;
-		//get the boundary
 		size_t boundaryStartPos = rawRequest.find("boundary=") + std::strlen("boundary=");
 		size_t boundaryEndPos = rawRequest.find("\r\n", boundaryStartPos);
 		this->startBoundary = rawRequest.substr(boundaryStartPos, (boundaryEndPos - boundaryStartPos));
@@ -116,17 +115,6 @@ void HttpRequest::parseBody(const std::string &rawRequest, std::string onlyBody)
 	}
 	std::cout << "---------------BODY UNCHUNKED-----------------" << std::endl;
 	std::cout << this->getBody() << std::endl;
-
-	// while (std::getline(stream, line)) {
-	// 	if (!pastHeaders) {
-	// 		if (line == "\r" || line == "") {
-	// 			pastHeaders = true;
-	// 		}
-	// 		continue;
-	// 	}
-
-	// 	body += line + "\n";
-	// }
 }
 
 std::string HttpRequest::getMethod() const {
