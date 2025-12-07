@@ -19,6 +19,7 @@
 # include <cstddef>
 # include <cstdlib>
 # include <ctime>
+# include <cstring>
 # include <fstream>
 # include <sstream>
 # include <cctype>
