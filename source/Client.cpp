@@ -44,11 +44,21 @@ void Client::handleEpollIn(void) {
             }
             std::cout << "Body: " << this->request.getBody() << std::endl;
             std::cout << "=====================================================" << std::endl;
-            this->response.dispatchRequest(this->request);
+            
+            // Process request with ServerBlock for CGI support
+            ServerBlock serverBlock = this->_serverListen.getServerBlock();
+            
+            // Usar execução assíncrona para CGI
+            bool responseReady = this->response.dispatchRequestAsync(this->request, serverBlock, this->getSocketFd());
+            
+            // Se resposta não está pronta (CGI assíncrono), não processar cookies ainda
+            if (!responseReady) {
+                // CGI assíncrono ativo - a resposta será processada quando o processo terminar
+                return;
+            }
             
             // Process cookies if enabled for this location
             std::string uri = this->request.getUri();
-            ServerBlock serverBlock = this->_serverListen.getServerBlock();
             std::map<std::string, LocationBlock> locations = serverBlock.getLocations();
             
             // Find best matching location (prefix match, longest wins)

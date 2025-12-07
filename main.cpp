@@ -1,4 +1,5 @@
 #include "includes/RunTime.hpp"
+#include "includes/CgiHandler.hpp"
 
 void signalHandler(int signum) {
     if (signum == SIGINT) {
@@ -75,6 +76,11 @@ void serverMainLoop() {
         }
         else {
             epollReadyListLoop(numberOfReadySockets);
+            
+            CgiHandler::cleanupZombieProcesses();
+            CgiHandler::checkPendingProcesses();
+            CgiHandler::checkTimeouts();
+            
             epollValidationLoop();
         }
     }

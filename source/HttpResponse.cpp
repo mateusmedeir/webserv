@@ -1,5 +1,6 @@
 #include "../includes/WebservHeader.hpp"
 #include "../includes/CookieHandler.hpp"
+#include "../includes/CgiHandler.hpp"
 
 HttpResponse::HttpResponse(){
 	this->_http_version = "HTTP/1.0";
@@ -115,6 +116,12 @@ std::string	HttpResponse::intToString(int n) const{
 
 std::string HttpResponse::uriToPath(const std::string &uri) const {
     std::string path = uri;
+    
+    // Remover query string se houver
+    size_t queryPos = path.find('?');
+    if (queryPos != std::string::npos) {
+        path = path.substr(0, queryPos);
+    }
 
     if (path[path.size() - 1] == '/') {
         path += "index.html";
@@ -200,4 +207,199 @@ void HttpResponse::processCookies(const HttpRequest &req, const LocationBlock &l
 	if (location.getCookiesEnabled()) {
 		CookieHandler::handleCookie(*this, req);
 	}
+}
+
+void HttpResponse::dispatchRequest(const HttpRequest &req, const ServerBlock &serverBlock) {
+	std::cout << "Dispatching request for method: " << req.getMethod() << std::endl;
+	if (this->_status_code != 200)
+		return;
+	
+	// Encontrar melhor match de location
+	std::map<std::string, LocationBlock> locations = serverBlock.getLocations();
+	std::string bestMatch = "";
+	const LocationBlock* locationPtr = NULL;
+	
+	for (std::map<std::string, LocationBlock>::const_iterator it = locations.begin();
+		 it != locations.end(); ++it) {
+		const std::string &path = it->first;
+		if (req.getUri().compare(0, path.size(), path) == 0) {
+			if (path.size() > bestMatch.size()) {
+				bestMatch = path;
+				locationPtr = &(it->second);
+			}
+		}
+	}
+	
+	// Verificar se precisa executar CGI
+	if (!bestMatch.empty() && locationPtr && CgiHandler::shouldExecuteCgi(req.getUri(), *locationPtr)) {
+		// Executar CGI
+		std::string cgiOutput;
+		
+		if (CgiHandler::executeCgi(req, serverBlock, *locationPtr, cgiOutput)) {
+			processCgiResponse(cgiOutput);
+		} else {
+			setStatus(502, "Bad Gateway");
+			setBody("<h1>502 Bad Gateway</h1>", "text/html");
+		}
+		return;
+	}
+	
+	// Processamento normal
+	if(req.getMethod() == "GET")
+		return handleGet(req);
+	else if(req.getMethod() == "POST")
+		return handlePost(req);
+	else if(req.getMethod() == "DELETE")
+		return handleDelete(req);
+	else 
+		this->setErrorPage(405);
+}
+
+bool HttpResponse::dispatchRequestAsync(const HttpRequest &req, const ServerBlock &serverBlock, int clientFd) {
+	std::cout << "Dispatching request async for method: " << req.getMethod() << std::endl;
+	if (this->_status_code != 200)
+		return true; // Resposta pronta (erro)
+	
+	// Encontrar melhor match de location
+	std::map<std::string, LocationBlock> locations = serverBlock.getLocations();
+	std::string bestMatch = "";
+	const LocationBlock* locationPtr = NULL;
+	
+	for (std::map<std::string, LocationBlock>::const_iterator it = locations.begin();
+		 it != locations.end(); ++it) {
+		const std::string &path = it->first;
+		if (req.getUri().compare(0, path.size(), path) == 0) {
+			if (path.size() > bestMatch.size()) {
+				bestMatch = path;
+				locationPtr = &(it->second);
+			}
+		}
+	}
+	
+	// Verificar se precisa executar CGI
+	if (!bestMatch.empty() && locationPtr && CgiHandler::shouldExecuteCgi(req.getUri(), *locationPtr)) {
+		// Executar CGI assíncrono
+		if (CgiHandler::executeCgiAsync(req, serverBlock, *locationPtr, clientFd)) {
+			return false; // Resposta não está pronta - será processada assincronamente
+		} else {
+			setStatus(502, "Bad Gateway");
+			setBody("<h1>502 Bad Gateway</h1>", "text/html");
+			return true; // Resposta pronta (erro)
+		}
+	}
+	
+	// Processamento normal (síncrono)
+	dispatchRequest(req, serverBlock);
+	return true; // Resposta pronta
+}
+
+void HttpResponse::processCgiResponse(const std::string& cgiOutput) {
+	size_t headerEnd = cgiOutput.find("\r\n\r\n");
+	
+	if (headerEnd == std::string::npos) {
+		// Não encontrou separador - tratar como erro
+		setStatus(502, "Bad Gateway");
+		setBody("<h1>502 Bad Gateway</h1>", "text/html");
+		return;
+	}
+	
+	// Extrair headers
+	std::string headersStr = cgiOutput.substr(0, headerEnd);
+	std::string body = cgiOutput.substr(headerEnd + 4);
+	
+	// Parsear headers
+	std::istringstream headerStream(headersStr);
+	std::string line;
+	
+	while (std::getline(headerStream, line)) {
+		if (line.empty() || line == "\r")
+			break;
+		
+		// Remover \r
+		if (!line.empty() && line[line.size() - 1] == '\r')
+			line.erase(line.size() - 1);
+		
+		size_t colonPos = line.find(':');
+		if (colonPos != std::string::npos) {
+			std::string key = line.substr(0, colonPos);
+			std::string value = line.substr(colonPos + 1);
+			
+			// Remover espaços do início do value
+			while (!value.empty() && value[0] == ' ')
+				value.erase(0, 1);
+			
+			// Status especial
+			std::string lowerKey = key;
+			for (size_t i = 0; i < lowerKey.size(); i++) {
+				lowerKey[i] = std::tolower(lowerKey[i]);
+			}
+			
+			if (lowerKey == "status") {
+				int statusCode = std::atoi(value.substr(0, 3).c_str());
+				std::string statusMsg = value.substr(4);
+				setStatus(statusCode, statusMsg);
+			} else {
+				setHeader(key, value);
+			}
+		}
+	}
+	
+	// Se não há status code nos headers, usar padrão
+	if (this->_status_code == 200) {
+		setStatus(200, "OK");
+	}
+	
+	// Adicionar body
+	std::string contentType = getHeaderValue("Content-Type");
+	if (contentType.empty()) {
+		contentType = "text/html";
+	}
+	setBody(body, contentType);
+}
+
+std::string HttpResponse::findBestLocationMatch(const std::string& uri,
+                                                   const ServerBlock& serverBlock,
+                                                   LocationBlock& location) const {
+	std::map<std::string, LocationBlock> locations = serverBlock.getLocations();
+	std::string bestMatch = "";
+	
+	for (std::map<std::string, LocationBlock>::const_iterator it = locations.begin();
+		 it != locations.end(); ++it) {
+		const std::string &path = it->first;
+		if (uri.compare(0, path.size(), path) == 0) {
+			if (path.size() > bestMatch.size()) {
+				bestMatch = path;
+				location = it->second;
+			}
+		}
+	}
+	
+	return bestMatch;
+}
+
+int HttpResponse::getStatusCode() const {
+	return _status_code;
+}
+
+std::string HttpResponse::getStatusMessage() const {
+	return _status_message;
+}
+
+std::string HttpResponse::getHeaderValue(const std::string &key) const {
+	std::string lowerKey = key;
+	for (size_t i = 0; i < lowerKey.size(); ++i) {
+		lowerKey[i] = std::tolower(lowerKey[i]);
+	}
+	
+	for (std::map<std::string, std::string>::const_iterator it = _headers.begin();
+		 it != _headers.end(); ++it) {
+		std::string lowerHeader = it->first;
+		for (size_t i = 0; i < lowerHeader.size(); ++i) {
+			lowerHeader[i] = std::tolower(lowerHeader[i]);
+		}
+		if (lowerHeader == lowerKey) {
+			return it->second;
+		}
+	}
+	return "";
 }
