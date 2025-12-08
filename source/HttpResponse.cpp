@@ -28,33 +28,28 @@ void HttpResponse::handleGet(const HttpRequest &req) {
 };
 
 void HttpResponse::handlePost(const HttpRequest &req){
-	//checar se a URI termina com '/'
-	std::string uri = req.getUri();
-	if (uri.empty() || uri[uri.size() - 1] != '/') {
-		// Erro na URI
-		Logger::error("Error na URI. 400 bad request");
-		this->setErrorPage(400);
-		this->setStatus(400, "Bad Request");
-		return ;
-	}
-	// checar se temos acesso na URI
-	// Aqui precisamos da questao do ROOT
-	if (uri.empty() || access(uri.c_str(), R_OK | W_OK) != 0) {
+	// Validar se a location permite POST
+	// O upload na location esta liberado?
+	// determinar o diretorio de upload
+	std::string uploadDir = "./www/upload";
+	// o diretorio e "gravavel"?
+	if (access(uploadDir.c_str(), W_OK) != 0) {
 		Logger::error("Error no acesso. 403 forbidden");
 		this->setErrorPage(403);
 		this->setStatus(403, "Forbidden");
 		return ;
 	}
-	// checar se a location aceita POST
-	// Isso vai precisar ser validado la no client...
-	// Se chegar ate aqui, podemos criar o arquivo e escrever o conteudo dentro dele.
-	std::string	uploadFilePath = std::string("./uploads" + uri) + req.getUploadFileName();
-	std::ofstream	newFile(uploadFilePath.c_str());
+	// montar o caminho final
+	std::string fullPath = uploadDir + "/" + req.getUploadFileName();
+	// Criar o arquivo
+	// escrever o conteudo no arquivo criado
+	// montar a response
+	std::ofstream	newFile(fullPath.c_str());
 	if (!newFile.is_open()) {
-		// Logger::error("Nao foi possivel criar o arquivo.");
-		// this->setErrorPage(400);
-		// this->setStatus(400, "Bad Request");
-		// return ;
+		Logger::error("Nao foi possivel criar o arquivo.");
+		this->setErrorPage(400);
+		this->setStatus(400, "Bad Request");
+		return ;
 		throw std::runtime_error("Could not create posted file");
 	}
 	this->setStatus(201, "Created");
@@ -64,6 +59,45 @@ void HttpResponse::handlePost(const HttpRequest &req){
 	size_t endFormData = req.getBody().find(req.getEndBoudary());
 	newFile << req.getBody().substr(endHeader, endFormData - endHeader - 2);
 	newFile.close();
+
+
+	//checar se a URI termina com '/'
+	// std::string uri = req.getUri();
+	// if (uri.empty() || uri[uri.size() - 1] != '/') {
+	// 	// Erro na URI
+	// 	Logger::debug(uri);
+	// 	Logger::error("Error na URI. 400 bad request");
+	// 	this->setErrorPage(400);
+	// 	this->setStatus(400, "Bad Request");
+	// 	return ;
+	// }
+	// checar se temos acesso na URI
+	// Aqui precisamos da questao do ROOT
+	// if (uri.empty() || access(uri.c_str(), R_OK | W_OK) != 0) {
+	// 	Logger::error("Error no acesso. 403 forbidden");
+	// 	this->setErrorPage(403);
+	// 	this->setStatus(403, "Forbidden");
+	// 	return ;
+	// }
+	// checar se a location aceita POST
+	// Isso vai precisar ser validado la no client...
+	// Se chegar ate aqui, podemos criar o arquivo e escrever o conteudo dentro dele.
+	// std::string	uploadFilePath = std::string("./uploads" + uri) + req.getUploadFileName();
+	// std::ofstream	newFile(uploadFilePath.c_str());
+	// if (!newFile.is_open()) {
+	// 	// Logger::error("Nao foi possivel criar o arquivo.");
+	// 	// this->setErrorPage(400);
+	// 	// this->setStatus(400, "Bad Request");
+	// 	// return ;
+	// 	throw std::runtime_error("Could not create posted file");
+	// }
+	// this->setStatus(201, "Created");
+	// this->setHeader("Access-Control-Allow-Origin", "*");
+	// this->setBody("<h1>File named " + req.getUploadFileName() + " was uploaded successfully!</h1>", "text/html");
+	// size_t endHeader = req.getBody().find("\r\n\r\n") + 4;
+	// size_t endFormData = req.getBody().find(req.getEndBoudary());
+	// newFile << req.getBody().substr(endHeader, endFormData - endHeader - 2);
+	// newFile.close();
 
 	// std::string path = "./uploads/upload.txt";
 
@@ -81,15 +115,21 @@ void HttpResponse::handlePost(const HttpRequest &req){
 };
 
 void HttpResponse::handleDelete(const HttpRequest &req){
-		std::string path = uriToPath(req.getUri());
+	// Precisamos fazer algumas validacoes antes de deletar o arquivo selecionado.
+	// Checar o acesso ao recurso
+	// Checar se a location suporta DELETE
+	// Checar se nao e um diretorio
+	// Deletar o arquivo selecionado na URI
 
-		if (std::remove(path.c_str()) == 0) {
-			this->setStatus(200, "OK");
-			this->setBody("<h1>File deleted successfully</h1>", "text/html");
-		} else {
-			this->setStatus(404, "Not Found");
-			this->setBody("<h1>404 Not Found</h1>", "text/html");
-		}
+	std::string path = uriToPath(req.getUri());
+
+	if (std::remove(path.c_str()) == 0) {
+		this->setStatus(200, "OK");
+		this->setBody("<h1>File deleted successfully</h1>", "text/html");
+	} else {
+		this->setStatus(404, "Not Found");
+		this->setBody("<h1>404 Not Found</h1>", "text/html");
+	}
 };
 
 void HttpResponse::dispatchRequest(const HttpRequest &req){
