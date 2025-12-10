@@ -108,46 +108,69 @@ bool ServerBlock::isUriValid(const std::string uri)
     return (false);
 }
 
-bool ServerBlock::isLocationValid(const std::string uri, const std::string method)
+const LocationBlock *ServerBlock::getValidLocation(const std::string uri, const std::string method) const
 {
+    const LocationBlock *location = NULL;
+    std::cout << "------------------------------------------------------------------------" << std::endl;
+
     if (method != "GET" && method != "POST" && method != "DELETE")
-        return (false);
-    
+        return location;
+
     // Verificar se URI exato existe
-    std::map<std::string, LocationBlock>::iterator it = this->_locations.find(uri);
+    std::map<std::string, LocationBlock>::const_iterator it = this->_locations.find(uri);
     if (it != this->_locations.end())
     {
         std::vector<std::string> allowedMethods = it->second.getAllowMethods();
-        if (allowedMethods.empty())
-            return (true);
+        if (allowedMethods.empty()) {
+            return &(it->second);
+        }
         for (size_t i = 0; i < allowedMethods.size(); i++)
         {
             if (allowedMethods[i] == method)
-                return (true);
+                return &(it->second);
         }
-        return (false);
+        return NULL;
     }
+    std::cout << "No exact match for URI '" << uri << "'. Checking for prefix matches..." << std::endl;
     
     // Verificar se URI começa com alguma location válida
     // Ex: /test.css deve casar com location /
-    for (it = this->_locations.begin(); it != this->_locations.end(); ++it)
+    std::string bestMatch = "";
+    for (std::map<std::string, LocationBlock>::const_iterator it = this->_locations.begin(); it != this->_locations.end(); ++it)
     {
         std::string locationPath = it->first;
         // Verificar se URI começa com este location path
-        if (uri.find(locationPath) == 0) {
-            std::vector<std::string> allowedMethods = it->second.getAllowMethods();
-            if (allowedMethods.empty())
-                return (true);
-            for (size_t i = 0; i < allowedMethods.size(); i++)
-            {
-                if (allowedMethods[i] == method)
-                    return (true);
+        if (uri.compare(0, locationPath.size(), locationPath) == 0) {
+            if (locationPath.size() > bestMatch.size()) {
+                bool methodAllowed = false;
+                std::cout << "Found a better prefix match: " << locationPath << std::endl;
+                bestMatch = locationPath;
+                location = &(it->second);
+
+                std::vector<std::string> allowedMethods = it->second.getAllowMethods();
+                if (allowedMethods.empty()) {
+                    methodAllowed = true;
+                } else {
+                    for (size_t i = 0; i < allowedMethods.size(); i++)
+                    {
+                        std::cout << "Checking allowed method: " << allowedMethods[i] << std::endl;
+                        if (allowedMethods[i] == method) {
+                            methodAllowed = true;
+                            break;
+                        }
+                    }
+                }
+                if (!methodAllowed) {
+                    std::cout << "Method " << method << " not allowed for location " << locationPath << std::endl;
+                    bestMatch = "";
+                    location = NULL;
+                }
             }
-            return (false);
         }
     }
+    std::cout << "Best prefix match for URI '" << uri << "': " << bestMatch << std::endl;
     
-    return (false);
+    return location;
 }
 
 static bool isAllNumber(std::string s)

@@ -2,7 +2,12 @@
 
 CompositeLogHandler::CompositeLogHandler(void): LogHandler() {}
 
-CompositeLogHandler::~CompositeLogHandler(void) {}
+CompositeLogHandler::~CompositeLogHandler(void) {
+    for (size_t i = 0; i < _handlers.size(); i++) {
+        delete _handlers[i];
+    }
+    _handlers.clear();
+}
 
 void CompositeLogHandler::handleDebug(t_logEvent event) {
     for (size_t i = 0; i < _handlers.size(); i++)

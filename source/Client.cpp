@@ -26,9 +26,14 @@ Client &Client::operator=(const Client &src) {
     return (*this);
 }
 
-Client::~Client(void) {}
+Client::~Client(void) {
+    std::cout << "Deleting client handler for FD: " << this->getSocketFd() << std::endl;
+    if (this->getSocketFd() != -1)
+        close(this->getSocketFd());
+}
 
 void Client::handleEpollIn(void) {
+    std::cout << "Handling EPOLLIN event for client FD: " << this->getSocketFd() << std::endl;
     char buffer[4096] = {0};
     int count = 0;
 
@@ -67,34 +72,13 @@ void Client::handleEpollIn(void) {
                 return;
             }
             
-            // Process cookies if enabled for this location
-            std::string uri = this->request.getUri();
-            std::map<std::string, LocationBlock> locations = serverBlock.getLocations();
-            
-            // Find best matching location (prefix match, longest wins)
-            std::string bestMatch = "";
-            for (std::map<std::string, LocationBlock>::const_iterator it = locations.begin();
-                 it != locations.end(); ++it) {
-                const std::string &path = it->first;
-                if (uri.compare(0, path.size(), path) == 0) {
-                    if (path.size() > bestMatch.size()) {
-                        bestMatch = path;
-                    }
-                }
-            }
-            
-            if (!bestMatch.empty()) {
-                LocationBlock location = locations.find(bestMatch)->second;
-                this->response.processCookies(this->request, location);
-            }
-            
             std::string responseStr = this->response.toString();
-            std::cout << "=================== RESPONSE SEND ===================" << std::endl;
+            /* std::cout << "=================== RESPONSE SEND ===================" << std::endl;
             std::cout << responseStr << std::endl;
             std::cout << "=====================================================" << std::endl;
-            std::cout << "===== Metodo toString() do client para o Logger =====" << std::endl;
+            std::cout << "===== Metodo toString() do client para o Logger =====" << std::endl; */
             Logger::info(toString());
-            std::cout << "=====================================================" << std::endl;
+            /* std::cout << "=====================================================" << std::endl; */
 
             
             // Enviar resposta com tratamento correto de erros (conforme régua de avaliação)
@@ -106,6 +90,7 @@ void Client::handleEpollIn(void) {
             // Se toda a resposta foi enviada, deletar cliente
             if (this->_responseOffset >= responseStr.size()) {
                 RunTime::deleteClient(this->getSocketFd());
+                return;
             }
         }
     } else if (count == 0) {
@@ -113,6 +98,7 @@ void Client::handleEpollIn(void) {
         std::cout << "Client closed the connection." << std::endl;
         std::cout << this->getRawRequest() << std::endl;
         RunTime::deleteClient(this->getSocketFd());
+        return;
     }
     // count < 0: erro no read() ou EAGAIN
     // Em non-blocking, -1 pode ser EAGAIN/EWOULDBLOCK (normal) ou erro real
@@ -149,12 +135,12 @@ void Client::handleEpollOut(void) {
         EpollInstance::manipInterestList(EPOLL_CTL_MOD, this);
         
         RunTime::deleteClient(this->getSocketFd());
+        return;
     }
 }
 
 void Client::deleteHandler(void) {
-    std::cout << "Deleting client handler for FD: " << this->getSocketFd() << std::endl;
-    close(this->getSocketFd());
+    RunTime::deleteClient(this->getSocketFd());
 }
 
 bool Client::sendResponse(const std::string &responseStr) {
@@ -227,11 +213,7 @@ void Client::concatenateRequestData(std::string data) {
             return;
         }
         if (
-            !this->_serverListen.getServerBlock()
-            .isLocationValid(
-                this->request.getUri(),
-                this->request.getMethod()
-            )
+            !this->_serverListen.getServerBlock().getValidLocation(this->request.getUri(), this->request.getMethod())
         ) {
             this->response.setErrorPage(405);
             this->setState(COMPLETE);

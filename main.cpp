@@ -62,7 +62,6 @@ void epollReadyListLoop(int numberOfReadySockets) {
 void epollValidationLoop() {
     std::map<int, EpollHandler*> &handlers = EpollInstance::getHandlers();
     for (std::map<int, EpollHandler*>::iterator it = handlers.begin(); it != handlers.end(); ++it) {
-        std::cout << "Checking timeout for FD: " << it->first << std::endl;
         it->second->handleTimeout();
     }
 }
@@ -94,12 +93,12 @@ int main(int ac, char **av) {
     signal(SIGPIPE, signalHandler);
 
     // Logger::initLogger(DEBUG, new StdLogHandler());
-    CompositeLogHandler compositeHandler;
+    CompositeLogHandler* compositeHandler = new CompositeLogHandler();
 
-    compositeHandler.addHandler(new StdLogHandler());
-    compositeHandler.addHandler(new FileLogHandler("application.log"));
+    compositeHandler->addHandler(new StdLogHandler());
+    compositeHandler->addHandler(new FileLogHandler("application.log"));
 
-    Logger::initLogger(DEBUG, &compositeHandler);
+    Logger::initLogger(DEBUG, compositeHandler);
 
     try {
         RunTime::initializeRuntime(ac, av);

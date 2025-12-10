@@ -16,10 +16,9 @@ class HttpResponse {
 		HttpResponse();
 		~HttpResponse();
 
-	void handleGet(const HttpRequest &req);
+	void handleGet(const ServerBlock &serverBlock, const LocationBlock *location);
 	void handlePost(const HttpRequest &req);
-	void handleDelete(const HttpRequest &req);
-	void dispatchRequest(const HttpRequest &req);
+	void handleDelete(const ServerBlock &serverBlock, const LocationBlock *location);
 	void dispatchRequest(const HttpRequest &req, const ServerBlock &serverBlock);
 	bool dispatchRequestAsync(const HttpRequest &req, const ServerBlock &serverBlock, int clientFd);
 
@@ -34,7 +33,7 @@ class HttpResponse {
 
 	std::string		toString() const;
 	std::string		intToString(int n) const;
-	std::string		uriToPath(const std::string &uri) const;
+	bool					validatePath(const std::string &path) const;
 	std::string		getMimeType(const std::string &path) const;
 	std::string 	getHttpVersion() const;
 	

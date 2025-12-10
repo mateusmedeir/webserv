@@ -266,3 +266,45 @@ void LocationBlock::addCookiesEnabled()
     this->_config.verifyToken(DIFF_SEMICOLON, "Configuração inválida: cookies_enabled: esperava um ponto e vírgula no final de cookies_enabled");
     this->_config.removeTokens(1); //| Removendo o ponto e vírgula
 }
+
+bool LocationBlock::validatePath(const std::string &path) const {
+    bool isValid = false;
+    std::ifstream file(path.c_str(), std::ios::binary);
+
+    isValid = file.good();
+    file.close();
+    return isValid;
+}
+
+std::string LocationBlock::getPath(std::string root) const
+{
+    std::string uri = this->getUri();
+    std::vector<std::string> indexes = this->getIndex();
+    std::string fullPath = root;
+    std::string validPath = "";
+
+    if (indexes.empty())
+        indexes.push_back("index.html");
+    
+    if (uri[0] != '/' && (root.empty() || root[root.size() - 1] != '/')) {
+        fullPath += "/";
+    } else if (uri[0] == '/' && !root.empty() && root[root.size() - 1] == '/') {
+        fullPath = fullPath.substr(0, fullPath.size() - 1);
+    }
+    fullPath += uri;
+
+    for (size_t i = 0; i < indexes.size(); i++) {
+        std::string testPath = fullPath;
+        if (testPath[testPath.size() - 1] != '/')
+            testPath += "/";
+
+        testPath += indexes[i];
+        std::cout << "Testing path: " << testPath << std::endl;
+        if (validatePath(testPath)) {
+            validPath = testPath;
+            break;
+        }
+    }
+
+    return validPath;
+}

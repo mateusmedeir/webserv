@@ -10,8 +10,8 @@ HttpResponse::HttpResponse(){
 
 HttpResponse::~HttpResponse(){};
 
-void HttpResponse::handleGet(const HttpRequest &req) {
-	std::string path = uriToPath(req.getUri());
+void HttpResponse::handleGet(const ServerBlock &serverBlock, const LocationBlock *location){
+	std::string path = location->getPath(serverBlock.getRoot().second);
 
 	std::ifstream file(path.c_str(), std::ios::binary);
 	if (!file) {
@@ -43,8 +43,8 @@ void HttpResponse::handlePost(const HttpRequest &req){
 	this->setBody("<h1>File uploaded successfully!</h1>", "text/html");
 };
 
-void HttpResponse::handleDelete(const HttpRequest &req){
-		std::string path = uriToPath(req.getUri());
+void HttpResponse::handleDelete(const ServerBlock &serverBlock, const LocationBlock *location){
+		std::string path = location->getPath(serverBlock.getRoot().second);
 
 		if (std::remove(path.c_str()) == 0) {
 			this->setStatus(200, "OK");
@@ -55,17 +55,31 @@ void HttpResponse::handleDelete(const HttpRequest &req){
 		}
 };
 
-void HttpResponse::dispatchRequest(const HttpRequest &req){
+void HttpResponse::dispatchRequest(const HttpRequest &req, const ServerBlock &serverBlock) {
 	std::cout << "Dispatching request for method: " << req.getMethod() << std::endl;
 	if (this->_status_code != 200)
 		return;
-
+	
+	const LocationBlock* locationPtr = serverBlock.getValidLocation(req.getUri(), req.getMethod());
+    if (!locationPtr) {
+        this->setErrorPage(404);
+        return;
+    }
+    if (!locationPtr->getReturn().empty()) {
+				std::cout << "Redirecting to: " << locationPtr->getReturn() << " ServerBlock::dispatchRequest " << serverBlock.getListen()[0].port << std::endl;
+        this->setStatus(301, "Moved Permanently");
+        this->setHeader("Location", locationPtr->getReturn());
+        this->setBody("<h1>301 Moved Permanently</h1>", "text/html");
+        return;
+    }
+	
+	// Processamento normal
 	if(req.getMethod() == "GET")
-		return handleGet(req);
+		return handleGet(serverBlock, locationPtr);
 	else if(req.getMethod() == "POST")
 		return handlePost(req);
 	else if(req.getMethod() == "DELETE")
-		return handleDelete(req);
+		return handleDelete(serverBlock, locationPtr);
 	else 
 		this->setErrorPage(405);
 }
@@ -114,24 +128,9 @@ std::string	HttpResponse::intToString(int n) const{
 	return oss.str();
 }
 
-std::string HttpResponse::uriToPath(const std::string &uri) const {
-    std::string path = uri;
-    
-    // Remover query string se houver
-    size_t queryPos = path.find('?');
-    if (queryPos != std::string::npos) {
-        path = path.substr(0, queryPos);
-    }
-
-    if (path[path.size() - 1] == '/') {
-        path += "index.html";
-    }
-    if (path[0] != '/') {
-        path = "/" + path;
-    }
-
-    std::cout << "Converted URI to path: " << "./www" + path << std::endl;
-    return "./www" + path;
+bool HttpResponse::validatePath(const std::string &path) const {
+    std::ifstream file(path.c_str(), std::ios::binary);
+    return file.good();
 }
 
 std::string HttpResponse::getMimeType(const std::string &path) const {
@@ -209,75 +208,20 @@ void HttpResponse::processCookies(const HttpRequest &req, const LocationBlock &l
 	}
 }
 
-void HttpResponse::dispatchRequest(const HttpRequest &req, const ServerBlock &serverBlock) {
-	std::cout << "Dispatching request for method: " << req.getMethod() << std::endl;
-	if (this->_status_code != 200)
-		return;
-	
-	// Encontrar melhor match de location
-	std::map<std::string, LocationBlock> locations = serverBlock.getLocations();
-	std::string bestMatch = "";
-	const LocationBlock* locationPtr = NULL;
-	
-	for (std::map<std::string, LocationBlock>::const_iterator it = locations.begin();
-		 it != locations.end(); ++it) {
-		const std::string &path = it->first;
-		if (req.getUri().compare(0, path.size(), path) == 0) {
-			if (path.size() > bestMatch.size()) {
-				bestMatch = path;
-				locationPtr = &(it->second);
-			}
-		}
-	}
-	
-	// Verificar se precisa executar CGI
-	if (!bestMatch.empty() && locationPtr && CgiHandler::shouldExecuteCgi(req.getUri(), *locationPtr)) {
-		// Executar CGI
-		std::string cgiOutput;
-		
-		if (CgiHandler::executeCgi(req, serverBlock, *locationPtr, cgiOutput)) {
-			processCgiResponse(cgiOutput);
-		} else {
-			setStatus(502, "Bad Gateway");
-			setBody("<h1>502 Bad Gateway</h1>", "text/html");
-		}
-		return;
-	}
-	
-	// Processamento normal
-	if(req.getMethod() == "GET")
-		return handleGet(req);
-	else if(req.getMethod() == "POST")
-		return handlePost(req);
-	else if(req.getMethod() == "DELETE")
-		return handleDelete(req);
-	else 
-		this->setErrorPage(405);
-}
-
 bool HttpResponse::dispatchRequestAsync(const HttpRequest &req, const ServerBlock &serverBlock, int clientFd) {
 	std::cout << "Dispatching request async for method: " << req.getMethod() << std::endl;
 	if (this->_status_code != 200)
 		return true; // Resposta pronta (erro)
 	
 	// Encontrar melhor match de location
-	std::map<std::string, LocationBlock> locations = serverBlock.getLocations();
-	std::string bestMatch = "";
-	const LocationBlock* locationPtr = NULL;
-	
-	for (std::map<std::string, LocationBlock>::const_iterator it = locations.begin();
-		 it != locations.end(); ++it) {
-		const std::string &path = it->first;
-		if (req.getUri().compare(0, path.size(), path) == 0) {
-			if (path.size() > bestMatch.size()) {
-				bestMatch = path;
-				locationPtr = &(it->second);
-			}
-		}
-	}
-	
+	const LocationBlock* locationPtr = serverBlock.getValidLocation(req.getUri(), req.getMethod());
+    if (!locationPtr) {
+        this->setErrorPage(404);
+        return true; // Resposta pronta (erro)
+    }
+
 	// Verificar se precisa executar CGI
-	if (!bestMatch.empty() && locationPtr && CgiHandler::shouldExecuteCgi(req.getUri(), *locationPtr)) {
+	if (locationPtr && CgiHandler::shouldExecuteCgi(req.getUri(), *locationPtr)) {
 		// Executar CGI assíncrono
 		if (CgiHandler::executeCgiAsync(req, serverBlock, *locationPtr, clientFd)) {
 			return false; // Resposta não está pronta - será processada assincronamente
@@ -289,6 +233,7 @@ bool HttpResponse::dispatchRequestAsync(const HttpRequest &req, const ServerBloc
 	}
 	
 	// Processamento normal (síncrono)
+	processCookies(req, *locationPtr);
 	dispatchRequest(req, serverBlock);
 	return true; // Resposta pronta
 }

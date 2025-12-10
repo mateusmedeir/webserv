@@ -61,15 +61,18 @@ void EpollInstance::manipInterestList(int operation, EpollHandler *handler) {
     }
     struct epoll_event data;
     data.events = handler->getInterestedEvents();
+    int fd = handler->getSocketFd();
 
-    std::cout << "Dentro do manipInterest. FD: " << handler->getSocketFd() << std::endl;
+    std::cout << "Dentro do manipInterest. FD: " << fd << std::endl;
 
     data.data.ptr = handler;
-    if (operation == EPOLL_CTL_ADD) {
-        _instance->_handlers[handler->getSocketFd()] = handler;
+    if (operation == EPOLL_CTL_ADD || operation == EPOLL_CTL_MOD) {
+        _instance->_handlers[fd] = handler;
+    } else if (operation == EPOLL_CTL_DEL) {
+        _instance->_handlers.erase(fd);
     }
-    if (epoll_ctl(_instance->_epollFd, operation, handler->getSocketFd(), &data) == -1) {
-        std::cerr << "epoll_ctl failed: op=" << operation << " fd=" << handler->getSocketFd()
+    if (epoll_ctl(_instance->_epollFd, operation, fd, &data) == -1) {
+        std::cerr << "epoll_ctl failed: op=" << operation << " fd=" << fd
               << " errno=" << errno << " (" << strerror(errno) << ")\n";
         throw(EpollInstance::CannotManipulateEpollInstance());
     }
@@ -94,7 +97,7 @@ void EpollInstance::deleteElementFromHandlers(int socketFd) {
     std::map<int, EpollHandler*>::iterator it = _instance->_handlers.find(socketFd);
     if (it != _instance->_handlers.end()) {
         it->second->deleteHandler();
-        _instance->_handlers.erase(it);
+        EpollInstance::manipInterestList(EPOLL_CTL_DEL, it->second);
     }
 }
 

@@ -76,6 +76,6 @@ workflow : $(OBJ)
 	@$(COMPILER) $(FLAGS) $(OBJ) -o $(NAME)
 
 supp: re
-		valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./$(NAME) config.conf
+		valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./$(NAME) $(CONFIG_FILE)
 
 .PHONY: all clean fclean re

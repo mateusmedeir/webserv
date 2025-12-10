@@ -135,6 +135,7 @@ std::vector<std::string> ConfigFile::tokenizeContent(const std::string &content)
 
 void ConfigFile::parser(const std::string &filename)
 {
+	std::cout << "Parsing configuration file: " << filename << std::endl;
 	std::string content;
 	cleanFile(filename, content);
 	tokenizeContent(content);

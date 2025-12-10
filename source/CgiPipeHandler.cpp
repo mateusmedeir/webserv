@@ -15,8 +15,10 @@ void CgiPipeHandler::handleEpollIn(void) {
     if (!_isInputPipe) {
         // É pipe de saída - ler dados do CGI
         try {
-            Client& client = RunTime::getClient(_clientFd);
-            CgiHandler::handleCgiPipeOut(this->getSocketFd(), &client);
+            Client* client = RunTime::getClient(_clientFd);
+            if (client) {
+                CgiHandler::handleCgiPipeOut(this->getSocketFd(), client);
+            }
         } catch (...) {
             // Cliente não existe mais - limpar processo
             CgiHandler::cleanupClientProcess(_clientFd);
@@ -28,8 +30,10 @@ void CgiPipeHandler::handleEpollOut(void) {
     if (_isInputPipe) {
         // É pipe de entrada - escrever dados no CGI
         try {
-            Client& client = RunTime::getClient(_clientFd);
-            CgiHandler::handleCgiPipeIn(this->getSocketFd(), &client);
+            Client* client = RunTime::getClient(_clientFd);
+            if (client) {
+                CgiHandler::handleCgiPipeIn(this->getSocketFd(), client);
+            }
         } catch (...) {
             // Cliente não existe mais - limpar processo
             CgiHandler::cleanupClientProcess(_clientFd);

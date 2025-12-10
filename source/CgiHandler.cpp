@@ -208,7 +208,7 @@ std::string CgiHandler::findBestLocationMatch(const std::string& uri,
     return bestMatch;
 }
 
-bool CgiHandler::executeCgi(const HttpRequest& req,
+/* bool CgiHandler::executeCgi(const HttpRequest& req,
                             const ServerBlock& serverBlock,
                             const LocationBlock& location,
                             std::string& output) {
@@ -268,7 +268,7 @@ bool CgiHandler::executeCgi(const HttpRequest& req,
     delete process;
     
     return true;
-}
+} */
 
 bool CgiHandler::executeCgiAsync(const HttpRequest& req,
                                   const ServerBlock& serverBlock,
@@ -599,9 +599,11 @@ void CgiHandler::checkTimeouts() {
             // Enviar erro 504 ao cliente se possível
             if (clientFd != -1) {
                 try {
-                    Client& client = RunTime::getClient(clientFd);
-                    client.getResponse().setStatus(504, "Gateway Timeout");
-                    client.getResponse().setBody("<h1>504 Gateway Timeout</h1>", "text/html");
+                    Client* client = RunTime::getClient(clientFd);
+                    if (client) {
+                        client->getResponse().setStatus(504, "Gateway Timeout");
+                        client->getResponse().setBody("<h1>504 Gateway Timeout</h1>", "text/html");
+                    }
                 } catch (...) {
                     // Cliente não existe mais
                 }
@@ -650,15 +652,16 @@ void CgiHandler::checkPendingProcesses() {
                 int clientFd = process->getClientFd();
                 
                 try {
-                    Client& client = RunTime::getClient(clientFd);
-                    
-                    std::string cgiOutput = process->getOutput();
-                    if (!cgiOutput.empty()) {
-                        std::cout << "CGI: Got response from pending process " << process->getPid() << std::endl;
-                        client.getResponse().processCgiResponse(cgiOutput);
-                        std::string responseStr = client.getResponse().toString();
-                        cleanupClientProcess(clientFd);
-                        client.sendResponse(responseStr);
+                    Client* client = RunTime::getClient(clientFd);
+                    if (client) {
+                        std::string cgiOutput = process->getOutput();
+                        if (!cgiOutput.empty()) {
+                            std::cout << "CGI: Got response from pending process " << process->getPid() << std::endl;
+                            client->getResponse().processCgiResponse(cgiOutput);
+                            std::string responseStr = client->getResponse().toString();
+                            cleanupClientProcess(clientFd);
+                            client->sendResponse(responseStr);
+                        }
                     }
                 } catch (...) {
                     // Cliente não existe mais - limpar processo
@@ -674,15 +677,16 @@ void CgiHandler::checkPendingProcesses() {
                     
                     int clientFd = process->getClientFd();
                     try {
-                        Client& client = RunTime::getClient(clientFd);
-                        
-                        std::string cgiOutput = process->getOutput();
-                        if (!cgiOutput.empty()) {
-                            std::cout << "CGI: Process terminated, got response from pending process" << std::endl;
-                            client.getResponse().processCgiResponse(cgiOutput);
-                            std::string responseStr = client.getResponse().toString();
-                            cleanupClientProcess(clientFd);
-                            client.sendResponse(responseStr);
+                        Client* client = RunTime::getClient(clientFd);
+                        if (client) {
+                            std::string cgiOutput = process->getOutput();
+                            if (!cgiOutput.empty()) {
+                                std::cout << "CGI: Process terminated, got response from pending process" << std::endl;
+                                client->getResponse().processCgiResponse(cgiOutput);
+                                std::string responseStr = client->getResponse().toString();
+                                cleanupClientProcess(clientFd);
+                                client->sendResponse(responseStr);
+                            }
                         }
                     } catch (...) {
                         cleanupProcess(process->getPid());

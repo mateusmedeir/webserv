@@ -5,6 +5,13 @@ Logger *Logger::_instance = NULL;
 
 Logger::Logger(void) {}
 
+Logger::~Logger(void) {
+    if (_handler != NULL) {
+        delete _handler;
+        _handler = NULL;
+    }
+}
+
 LogHandler::LogHandler(void) {}
 
 LogHandler::~LogHandler(void) {}

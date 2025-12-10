@@ -6,7 +6,7 @@ class RunTime {
     private:
         static RunTime              *_instance;
         ConfigFile                  _config;
-        std::map <int, Client>      _clients;
+        std::map <int, Client*>      _clients;
         std::vector<ServerListen>   _serverListeners;
 
         RunTime(void);
@@ -28,7 +28,7 @@ class RunTime {
         
         static RunTime &getInstance(void);
         static ConfigFile &getConfig(void);
-        static Client &getClient(int clientFd);
-        static std::map<int, Client> &getClients(void);
+        static Client *getClient(int clientFd);
+        static std::map<int, Client*> &getClients(void);
         static std::vector<ServerListen> &getServerListeners(void);
 };

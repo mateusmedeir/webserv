@@ -28,6 +28,7 @@ class Logger {
 
         Logger(enum LogLevel level, LogHandler *handler);
     public:
+        ~Logger(void);
         static int      initLogger(enum LogLevel level, LogHandler *handler);
         static void     debug(std::string message);
         static void     error(std::string message);

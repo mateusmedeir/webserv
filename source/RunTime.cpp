@@ -19,7 +19,15 @@ RunTime &RunTime::operator=(const RunTime &src) {
     return (*this);
 }
 
-RunTime::~RunTime(void) {}
+RunTime::~RunTime(void) {
+    // Clean up allocated clients
+    std::map<int, Client*>::iterator it = _clients.begin();
+    while (it != _clients.end()) {
+        delete it->second;
+        it++;
+    }
+    _clients.clear();
+}
 
 void RunTime::initializeRuntime(int ac, char **av) {
     if (_instance == NULL) {
@@ -42,8 +50,11 @@ void RunTime::deleteClient(int clientFd) {
     if (_instance == NULL) {
         throw std::runtime_error("RunTime instance is not initialized.");
     }
-    _instance->_clients.erase(clientFd);
-    close(clientFd);
+    std::map<int, Client*>::iterator it = _instance->_clients.find(clientFd);
+    if (it != _instance->_clients.end()) {
+        delete it->second;
+        _instance->_clients.erase(it);
+    }
 }
 
 void RunTime::loadServerListeners(void) {
@@ -100,18 +111,18 @@ ConfigFile &RunTime::getConfig(void) {
     return (_instance->_config);
 }
 
-Client &RunTime::getClient(int clientFd) {
+Client *RunTime::getClient(int clientFd) {
     if (_instance == NULL) {
         throw std::runtime_error("RunTime instance is not initialized.");
     }
-    std::map<int, Client>::iterator it = _instance->_clients.find(clientFd);
+    std::map<int, Client*>::iterator it = _instance->_clients.find(clientFd);
     if (it == _instance->_clients.end()) {
         throw std::runtime_error("Client not found for the given client FD.");
     }
     return (it->second);
 }
 
-std::map<int, Client> &RunTime::getClients(void) {
+std::map<int, Client*> &RunTime::getClients(void) {
     if (_instance == NULL) {
         throw std::runtime_error("RunTime instance is not initialized.");
     }

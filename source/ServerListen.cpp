@@ -46,12 +46,11 @@ void ServerListen::handleEpollIn(void) {
                 if (setsockopt(clientFd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int)) < 0) {
                     std::cerr << "[Warning] Failed to set TCP_NODELAY on client socket" << std::endl;
                 }
-                
-                RunTime::getClients().insert(
-                    std::make_pair(clientFd, Client(clientFd, RunTime::getElementInServerList(this->getSocketFd())))
-                );
+
+                Client* newClient = new Client(clientFd, RunTime::getElementInServerList(this->getSocketFd()));
+                RunTime::getClients().insert(std::make_pair(clientFd, newClient));
                 std::cout << "inseriu novo client no map." << std::endl;
-                EpollInstance::manipInterestList(EPOLL_CTL_ADD, &RunTime::getClient(clientFd));
+                EpollInstance::manipInterestList(EPOLL_CTL_ADD, newClient);
             }
             catch (const std::exception &e) {
                 std::cerr << e.what() << std::endl;
