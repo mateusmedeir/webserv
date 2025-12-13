@@ -341,3 +341,162 @@ Mon Dec  8 09:22:41 2025 [INFO] 127.0.0.1: [GET] /style.css HTTP/1.0 200
 
 Mon Dec  8 09:22:46 2025 [INFO] 127.0.0.1: [POST] /upload HTTP/1.0 201
 
+Thu Dec 11 09:40:40 2025 [ERROR] Erro nas validacoes dos metodos da request...
+Thu Dec 11 09:41:35 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 200
+
+Thu Dec 11 09:41:36 2025 [INFO] 127.0.0.1: [GET] /style.css HTTP/1.0 200
+
+Thu Dec 11 09:42:15 2025 [INFO] 127.0.0.1: [POST] / HTTP/1.0 201
+
+Thu Dec 11 09:42:28 2025 [INFO] 127.0.0.1: [POST] / HTTP/1.0 201
+
+Thu Dec 11 18:35:26 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 200
+
+Thu Dec 11 18:35:26 2025 [INFO] 127.0.0.1: [GET] /style.css HTTP/1.0 200
+
+Thu Dec 11 18:35:59 2025 [INFO] 127.0.0.1: [POST] / HTTP/1.0 201
+
+Thu Dec 11 18:36:27 2025 [ERROR] Location /teste nao aceita o metodo POST.
+Thu Dec 11 18:36:27 2025 [ERROR] Erro nas validacoes dos metodos da request...
+Thu Dec 11 18:38:03 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 200
+
+Thu Dec 11 18:38:03 2025 [INFO] 127.0.0.1: [GET] /style.css HTTP/1.0 200
+
+Thu Dec 11 18:38:06 2025 [ERROR] Location / nao aceita o metodo POST.
+Thu Dec 11 18:38:06 2025 [ERROR] Erro nas validacoes dos metodos da request...
+Thu Dec 11 18:38:32 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 200
+
+Thu Dec 11 18:38:32 2025 [INFO] 127.0.0.1: [GET] /style.css HTTP/1.0 200
+
+Thu Dec 11 18:38:33 2025 [INFO] 127.0.0.1: [POST] /teste HTTP/1.0 201
+
+Thu Dec 11 18:43:24 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 200
+
+Thu Dec 11 18:43:24 2025 [INFO] 127.0.0.1: [GET] /style.css HTTP/1.0 200
+
+Thu Dec 11 18:43:26 2025 [ERROR] Erro nas validacoes dos metodos da request...
+Thu Dec 11 18:43:49 2025 [INFO] 127.0.0.1: [POST] /teste HTTP/1.0 201
+
+Thu Dec 11 18:44:08 2025 [ERROR] Erro nas validacoes dos metodos da request...
+Thu Dec 11 18:44:08 2025 [ERROR] Erro nas validacoes dos metodos da request...
+Fri Dec 12 08:30:54 2025 [INFO] 127.0.0.1: [POST] /teste HTTP/1.0 201
+
+Fri Dec 12 08:31:33 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 200
+
+Fri Dec 12 08:31:33 2025 [INFO] 127.0.0.1: [GET] /style.css HTTP/1.0 200
+
+Fri Dec 12 08:37:04 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 200
+
+Fri Dec 12 08:37:05 2025 [INFO] 127.0.0.1: [GET] /style.css HTTP/1.0 200
+
+Sat Dec 13 10:19:30 2025 [INFO] O bestMatch e: /
+Sat Dec 13 10:19:30 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 10:19:30 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 200
+
+Sat Dec 13 10:19:30 2025 [INFO] O bestMatch e: /
+Sat Dec 13 10:19:30 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 10:19:30 2025 [INFO] 127.0.0.1: [GET] /style.css HTTP/1.0 200
+
+Sat Dec 13 10:20:11 2025 [INFO] O bestMatch e: /
+Sat Dec 13 10:20:11 2025 [DEBUG] ENTROU NO VALIDADOR DO DELETE
+Sat Dec 13 10:20:11 2025 [ERROR] Erro nas validacoes dos metodos da request...
+Sat Dec 13 10:21:35 2025 [INFO] O bestMatch e: /
+Sat Dec 13 10:21:35 2025 [DEBUG] ENTROU NO VALIDADOR DO POST
+Sat Dec 13 10:21:35 2025 [ERROR] Erro nas validacoes dos metodos da request...
+Sat Dec 13 10:33:56 2025 [INFO] O bestMatch e: /teste
+Sat Dec 13 10:33:56 2025 [DEBUG] ENTROU NO VALIDADOR DO DELETE
+Sat Dec 13 10:33:56 2025 [ERROR] Erro nas validacoes dos metodos da request...
+Sat Dec 13 10:34:47 2025 [INFO] O bestMatch e: /
+Sat Dec 13 10:34:47 2025 [DEBUG] ENTROU NO VALIDADOR DO DELETE
+Sat Dec 13 10:34:47 2025 [ERROR] Erro nas validacoes dos metodos da request...
+Sat Dec 13 10:48:21 2025 [INFO] O bestMatch e: /
+Sat Dec 13 10:48:21 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 10:48:21 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 200
+
+Sat Dec 13 10:48:21 2025 [INFO] O bestMatch e: /
+Sat Dec 13 10:48:21 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 10:48:21 2025 [INFO] 127.0.0.1: [GET] /style.css HTTP/1.0 200
+
+Sat Dec 13 10:49:27 2025 [INFO] O bestMatch e: /
+Sat Dec 13 10:49:27 2025 [DEBUG] ENTROU NO VALIDADOR DO POST
+Sat Dec 13 10:49:27 2025 [ERROR] Location /upload nao aceita o metodo POST.
+Sat Dec 13 10:49:27 2025 [ERROR] Erro nas validacoes dos metodos da request...
+Sat Dec 13 10:49:47 2025 [INFO] O bestMatch e: /
+Sat Dec 13 10:49:47 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 10:49:47 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 200
+
+Sat Dec 13 10:49:47 2025 [INFO] O bestMatch e: /
+Sat Dec 13 10:49:47 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 10:49:47 2025 [INFO] 127.0.0.1: [GET] /style.css HTTP/1.0 200
+
+Sat Dec 13 10:49:51 2025 [INFO] O bestMatch e: /
+Sat Dec 13 10:49:51 2025 [DEBUG] ENTROU NO VALIDADOR DO POST
+Sat Dec 13 10:49:51 2025 [ERROR] Erro nas validacoes dos metodos da request...
+Sat Dec 13 10:50:24 2025 [INFO] O bestMatch e: /
+Sat Dec 13 10:50:24 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 10:50:24 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 200
+
+Sat Dec 13 10:50:24 2025 [INFO] O bestMatch e: /
+Sat Dec 13 10:50:24 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 10:50:24 2025 [INFO] 127.0.0.1: [GET] /style.css HTTP/1.0 200
+
+Sat Dec 13 10:50:57 2025 [INFO] O bestMatch e: /
+Sat Dec 13 10:50:57 2025 [DEBUG] ENTROU NO VALIDADOR DO DELETE
+Sat Dec 13 10:50:57 2025 [ERROR] Location nao aceita DELETE
+Sat Dec 13 10:50:57 2025 [ERROR] Erro nas validacoes dos metodos da request...
+Sat Dec 13 10:52:02 2025 [INFO] O bestMatch e: /
+Sat Dec 13 10:52:02 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 10:52:02 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 200
+
+Sat Dec 13 10:52:02 2025 [INFO] O bestMatch e: /
+Sat Dec 13 10:52:02 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 10:52:02 2025 [INFO] 127.0.0.1: [GET] /style.css HTTP/1.0 200
+
+Sat Dec 13 10:52:06 2025 [INFO] O bestMatch e: /
+Sat Dec 13 10:52:06 2025 [DEBUG] ENTROU NO VALIDADOR DO DELETE
+Sat Dec 13 10:52:06 2025 [DEBUG] Upload Location existe!
+Sat Dec 13 10:52:06 2025 [DEBUG] FullPathToDelete: ./www/upload/README.md
+Sat Dec 13 10:52:06 2025 [DEBUG] Vai retornar TRUE pro DELETE.
+Sat Dec 13 10:57:02 2025 [INFO] O bestMatch e: /
+Sat Dec 13 10:57:02 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 10:57:02 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 200
+
+Sat Dec 13 10:57:02 2025 [INFO] O bestMatch e: /
+Sat Dec 13 10:57:02 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 10:57:02 2025 [INFO] 127.0.0.1: [GET] /style.css HTTP/1.0 200
+
+Sat Dec 13 10:57:06 2025 [INFO] O bestMatch e: /
+Sat Dec 13 10:57:06 2025 [DEBUG] ENTROU NO VALIDADOR DO DELETE
+Sat Dec 13 10:57:06 2025 [DEBUG] Upload Location existe!
+Sat Dec 13 10:57:06 2025 [DEBUG] FullPathToDelete: ./www/upload/README.md
+Sat Dec 13 10:57:06 2025 [DEBUG] Vai retornar TRUE pro DELETE.
+Sat Dec 13 10:57:06 2025 [INFO] 127.0.0.1: [DELETE] /README.md HTTP/1.0 200
+
+Sat Dec 13 10:57:18 2025 [INFO] O bestMatch e: /
+Sat Dec 13 10:57:18 2025 [DEBUG] ENTROU NO VALIDADOR DO POST
+Sat Dec 13 10:57:18 2025 [ERROR] Erro nas validacoes dos metodos da request...
+Sat Dec 13 10:57:26 2025 [INFO] O bestMatch e: /
+Sat Dec 13 10:57:26 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 10:57:26 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 200
+
+Sat Dec 13 10:57:26 2025 [INFO] O bestMatch e: /
+Sat Dec 13 10:57:26 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 10:57:26 2025 [INFO] 127.0.0.1: [GET] /style.css HTTP/1.0 200
+
+Sat Dec 13 10:57:41 2025 [INFO] O bestMatch e: /teste
+Sat Dec 13 10:57:41 2025 [DEBUG] ENTROU NO VALIDADOR DO POST
+Sat Dec 13 10:57:41 2025 [INFO] 127.0.0.1: [POST] /teste HTTP/1.0 201
+
+Sat Dec 13 10:57:52 2025 [INFO] O bestMatch e: /
+Sat Dec 13 10:57:52 2025 [DEBUG] ENTROU NO VALIDADOR DO DELETE
+Sat Dec 13 10:57:52 2025 [DEBUG] Upload Location existe!
+Sat Dec 13 10:57:52 2025 [DEBUG] FullPathToDelete: ./www/upload/test
+Sat Dec 13 10:57:52 2025 [ERROR] Error no acesso ao arquivo desejado para deletar. 403 forbidden
+Sat Dec 13 10:57:52 2025 [ERROR] Erro nas validacoes dos metodos da request...
+Sat Dec 13 10:58:00 2025 [INFO] O bestMatch e: /teste
+Sat Dec 13 10:58:00 2025 [DEBUG] ENTROU NO VALIDADOR DO DELETE
+Sat Dec 13 10:58:00 2025 [DEBUG] Upload Location existe!
+Sat Dec 13 10:58:00 2025 [DEBUG] FullPathToDelete: ./www/upload/teste.txt
+Sat Dec 13 10:58:00 2025 [DEBUG] Vai retornar TRUE pro DELETE.
+Sat Dec 13 10:58:00 2025 [INFO] 127.0.0.1: [DELETE] /teste.txt HTTP/1.0 200
+

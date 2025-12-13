@@ -102,9 +102,9 @@ void HttpRequest::parseBody(const std::string &rawRequest, std::string onlyBody)
 	this->body = onlyBody;
 
 	std::cout << "---------------PARSE BODY Raw Request-----------------" << std::endl;
-	std::cout << rawRequest << std::endl;
+	// std::cout << rawRequest << std::endl;
 	std::cout << "---------------PARSE BODY Only body-----------------" << std::endl;
-	std::cout << onlyBody << std::endl;
+	// std::cout << onlyBody << std::endl;
 
 	if (isMultipart) {
 		std::cout << "IS MULTIPART FORM-DATA !!" << std::endl;
@@ -116,7 +116,7 @@ void HttpRequest::parseBody(const std::string &rawRequest, std::string onlyBody)
 	}
 	if (this->getHeaderValue("Transfer-Encoding") == "chunked")
 		this->body = decodeChunkedBody(this->body);
-	if (this->isUploadRequest()) {
+	if (this->isUploadRequest() && this->getMethod() == "POST") {
 		// Precisamos pegar o file name
 		size_t filenameStartPos = this->body.find("filename=") + std::strlen("filename=");
 		size_t filenameEndPos = this->body.find("\r\n", filenameStartPos);

@@ -4,6 +4,7 @@
 
 # include <iostream> //| Para testes, remover depois
 # include <sys/socket.h>
+# include <sys/stat.h>
 # include <netinet/in.h>
 # include <netinet/tcp.h>
 # include <unistd.h>

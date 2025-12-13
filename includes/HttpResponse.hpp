@@ -17,8 +17,8 @@ class HttpResponse {
 		~HttpResponse();
 
 	void handleGet(const HttpRequest &req);
-	void handlePost(const HttpRequest &req);
-	void handleDelete(const HttpRequest &req);
+	void handlePost(const HttpRequest &req, const ServerBlock &serverBlock, std::string bestMatch);
+	void handleDelete(const HttpRequest &req, const ServerBlock &serverBlock, std::string bestMatch);
 	void dispatchRequest(const HttpRequest &req);
 	void dispatchRequest(const HttpRequest &req, const ServerBlock &serverBlock);
 	bool dispatchRequestAsync(const HttpRequest &req, const ServerBlock &serverBlock, int clientFd);

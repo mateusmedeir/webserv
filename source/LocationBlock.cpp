@@ -266,3 +266,13 @@ void LocationBlock::addCookiesEnabled()
     this->_config.verifyToken(DIFF_SEMICOLON, "Configuração inválida: cookies_enabled: esperava um ponto e vírgula no final de cookies_enabled");
     this->_config.removeTokens(1); //| Removendo o ponto e vírgula
 }
+
+// bool checkHttpMethodInLocation(std::string method) const;
+bool LocationBlock::checkHttpMethodInLocation(std::string method) {
+    for (std::vector<std::string>::iterator it = this->_allowMethods.begin(); it != this->_allowMethods.end(); it++) {
+        if (*it == method) {
+            return (true);
+        }
+    }
+    return (false);
+}

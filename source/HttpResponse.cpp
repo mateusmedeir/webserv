@@ -27,23 +27,11 @@ void HttpResponse::handleGet(const HttpRequest &req) {
 	this->setBody(buffer.str(), mimeType);
 };
 
-void HttpResponse::handlePost(const HttpRequest &req){
-	// Validar se a location permite POST
-	// O upload na location esta liberado?
-	// determinar o diretorio de upload
-	std::string uploadDir = "./www/upload";
-	// o diretorio e "gravavel"?
-	if (access(uploadDir.c_str(), W_OK) != 0) {
-		Logger::error("Error no acesso. 403 forbidden");
-		this->setErrorPage(403);
-		this->setStatus(403, "Forbidden");
-		return ;
-	}
-	// montar o caminho final
-	std::string fullPath = uploadDir + "/" + req.getUploadFileName();
-	// Criar o arquivo
-	// escrever o conteudo no arquivo criado
-	// montar a response
+void HttpResponse::handlePost(const HttpRequest &req, const ServerBlock &serverBlock, std::string bestMatch){
+	std::map<std::string, LocationBlock> locationsMap = serverBlock.getLocations();
+	LocationBlock location = locationsMap.at(bestMatch);
+	std::string locationUploadDir = location.getUploadPath();
+	std::string fullPath = locationUploadDir + "/" + req.getUploadFileName();
 	std::ofstream	newFile(fullPath.c_str());
 	if (!newFile.is_open()) {
 		Logger::error("Nao foi possivel criar o arquivo.");
@@ -52,100 +40,53 @@ void HttpResponse::handlePost(const HttpRequest &req){
 		return ;
 		throw std::runtime_error("Could not create posted file");
 	}
-	this->setStatus(201, "Created");
-	this->setHeader("Access-Control-Allow-Origin", "*");
-	this->setBody("<h1>File named " + req.getUploadFileName() + " was uploaded successfully!</h1>", "text/html");
 	size_t endHeader = req.getBody().find("\r\n\r\n") + 4;
 	size_t endFormData = req.getBody().find(req.getEndBoudary());
 	newFile << req.getBody().substr(endHeader, endFormData - endHeader - 2);
 	newFile.close();
-
-
-	//checar se a URI termina com '/'
-	// std::string uri = req.getUri();
-	// if (uri.empty() || uri[uri.size() - 1] != '/') {
-	// 	// Erro na URI
-	// 	Logger::debug(uri);
-	// 	Logger::error("Error na URI. 400 bad request");
-	// 	this->setErrorPage(400);
-	// 	this->setStatus(400, "Bad Request");
-	// 	return ;
-	// }
-	// checar se temos acesso na URI
-	// Aqui precisamos da questao do ROOT
-	// if (uri.empty() || access(uri.c_str(), R_OK | W_OK) != 0) {
-	// 	Logger::error("Error no acesso. 403 forbidden");
-	// 	this->setErrorPage(403);
-	// 	this->setStatus(403, "Forbidden");
-	// 	return ;
-	// }
-	// checar se a location aceita POST
-	// Isso vai precisar ser validado la no client...
-	// Se chegar ate aqui, podemos criar o arquivo e escrever o conteudo dentro dele.
-	// std::string	uploadFilePath = std::string("./uploads" + uri) + req.getUploadFileName();
-	// std::ofstream	newFile(uploadFilePath.c_str());
-	// if (!newFile.is_open()) {
-	// 	// Logger::error("Nao foi possivel criar o arquivo.");
-	// 	// this->setErrorPage(400);
-	// 	// this->setStatus(400, "Bad Request");
-	// 	// return ;
-	// 	throw std::runtime_error("Could not create posted file");
-	// }
-	// this->setStatus(201, "Created");
-	// this->setHeader("Access-Control-Allow-Origin", "*");
-	// this->setBody("<h1>File named " + req.getUploadFileName() + " was uploaded successfully!</h1>", "text/html");
-	// size_t endHeader = req.getBody().find("\r\n\r\n") + 4;
-	// size_t endFormData = req.getBody().find(req.getEndBoudary());
-	// newFile << req.getBody().substr(endHeader, endFormData - endHeader - 2);
-	// newFile.close();
-
-	// std::string path = "./uploads/upload.txt";
-
-	// std::ofstream file(path.c_str());
-	// if (!file) {
-	// 	this->setStatus(500, "Internal Server Error");
-	// 	this->setBody("<h1>500 Internal Server Error</h1>", "text/html");
-	// }
-
-	// file << req.getBody();
-	// file.close();
-
-	// this->setStatus(201, "Created");
-	// this->setBody("<h1>File uploaded successfully!</h1>", "text/html");
+	this->setStatus(201, "Created");
+	this->setHeader("Access-Control-Allow-Origin", "*");
+	this->setBody("<h1>File named " + req.getUploadFileName() + " was uploaded successfully!</h1>", "text/html");
 };
 
-void HttpResponse::handleDelete(const HttpRequest &req){
-	// Precisamos fazer algumas validacoes antes de deletar o arquivo selecionado.
-	// Checar o acesso ao recurso
-	// Checar se a location suporta DELETE
-	// Checar se nao e um diretorio
-	// Deletar o arquivo selecionado na URI
+void HttpResponse::handleDelete(const HttpRequest &req, const ServerBlock &serverBlock, std::string bestMatch){
+	std::map<std::string, LocationBlock> locationsMap = serverBlock.getLocations();
+	LocationBlock location = locationsMap.at(bestMatch);
+	std::string locationUploadDir = location.getUploadPath();
+	std::string fullPathToDelete = locationUploadDir + req.getUri();
 
-	std::string path = uriToPath(req.getUri());
-
-	if (std::remove(path.c_str()) == 0) {
+	if (std::remove(fullPathToDelete.c_str()) == 0) {
 		this->setStatus(200, "OK");
-		this->setBody("<h1>File deleted successfully</h1>", "text/html");
-	} else {
-		this->setStatus(404, "Not Found");
-		this->setBody("<h1>404 Not Found</h1>", "text/html");
+		this->setBody("<h1>File " + req.getUploadFileName() + " was deleted successfully</h1>", "text/html");
 	}
+	else
+		throw std::runtime_error("DELETE: Could not delete file");
+
+	// std::string path = uriToPath(req.getUri());
+
+	// if (std::remove(path.c_str()) == 0) {
+	// 	this->setStatus(200, "OK");
+	// 	this->setBody("<h1>File deleted successfully</h1>", "text/html");
+	// } else {
+	// 	this->setStatus(404, "Not Found");
+	// 	this->setBody("<h1>404 Not Found</h1>", "text/html");
+	// }
 };
 
-void HttpResponse::dispatchRequest(const HttpRequest &req){
-	std::cout << "Dispatching request for method: " << req.getMethod() << std::endl;
-	if (this->_status_code != 200)
-		return;
+// void HttpResponse::dispatchRequest(const HttpRequest &req){
+// 	std::cout << "Dispatching request for method: " << req.getMethod() << std::endl;
+// 	if (this->_status_code != 200)
+// 		return;
 
-	if(req.getMethod() == "GET")
-		return handleGet(req);
-	else if(req.getMethod() == "POST")
-		return handlePost(req);
-	else if(req.getMethod() == "DELETE")
-		return handleDelete(req);
-	else 
-		this->setErrorPage(405);
-}
+// 	if(req.getMethod() == "GET")
+// 		return handleGet(req);
+// 	else if(req.getMethod() == "POST")
+// 		return handlePost(req, const ServerBlock &serverBlock);
+// 	else if(req.getMethod() == "DELETE")
+// 		return handleDelete(req);
+// 	else 
+// 		this->setErrorPage(405);
+// }
 
 void		HttpResponse::setStatus(int code, const std::string &message){
 	this->_status_code = code;
@@ -325,9 +266,9 @@ void HttpResponse::dispatchRequest(const HttpRequest &req, const ServerBlock &se
 	if(req.getMethod() == "GET")
 		return handleGet(req);
 	else if(req.getMethod() == "POST")
-		return handlePost(req);
+		return handlePost(req, serverBlock, bestMatch);
 	else if(req.getMethod() == "DELETE")
-		return handleDelete(req);
+		return handleDelete(req, serverBlock, bestMatch);
 	else 
 		this->setErrorPage(405);
 }

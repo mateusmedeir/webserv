@@ -50,4 +50,6 @@ class LocationBlock {
         std::vector<std::string> getCgiExtensions() const;
         std::vector<std::string> getAllowMethods() const;
         bool getCookiesEnabled() const;
+
+        bool checkHttpMethodInLocation(std::string method);
 };
