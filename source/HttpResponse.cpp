@@ -10,7 +10,7 @@ HttpResponse::HttpResponse(){
 HttpResponse::~HttpResponse(){};
 
 void HttpResponse::handleGet(const ServerBlock &serverBlock, const LocationBlock *location){
-	if (!location->getReturn().empty()) return setResponseByStatus(302, location->getReturn(), "text/html");
+	if (!location->getReturn().empty()) return setResponseByStatus(302, "Found", location->getReturn());
 
 	std::string path = location->getPath(serverBlock.getRoot().second);
 	if (path.empty()) return setResponseByStatus(404);
@@ -21,7 +21,7 @@ void HttpResponse::handleGet(const ServerBlock &serverBlock, const LocationBlock
 	std::ostringstream buffer;
 	buffer << file.rdbuf();
 
-	setResponseByStatus(200, buffer.str(), getMimeType(path));
+	setResponseByStatus(200, "OK", buffer.str(), getMimeType(path));
 };
 
 void HttpResponse::handlePost(const HttpRequest &req){
@@ -29,26 +29,22 @@ void HttpResponse::handlePost(const HttpRequest &req){
 
 	std::ofstream file(path.c_str());
 	if (!file) {
-		this->setStatus(500, "Internal Server Error");
-		this->setBody("<h1>500 Internal Server Error</h1>", "text/html");
+		setResponseByStatus(500, "Internal Server Error", "<h1>500 Internal Server Error</h1>");
 	}
 
 	file << req.getBody();
 	file.close();
 
-	this->setStatus(201, "Created");
-	this->setBody("<h1>File uploaded successfully!</h1>", "text/html");
+	setResponseByStatus(201, "Created", "<h1>File uploaded successfully!</h1>");
 };
 
 void HttpResponse::handleDelete(const ServerBlock &serverBlock, const LocationBlock *location){
 		std::string path = location->getPath(serverBlock.getRoot().second);
 
 		if (std::remove(path.c_str()) == 0) {
-			this->setStatus(200, "OK");
-			this->setBody("<h1>File deleted successfully</h1>", "text/html");
+			setResponseByStatus(200, "OK", "<h1>File deleted successfully</h1>");
 		} else {
-			this->setStatus(404, "Not Found");
-			this->setBody("<h1>404 Not Found</h1>", "text/html");
+			setResponseByStatus(404, "Not Found", "<h1>404 Not Found</h1>");
 		}
 };
 
@@ -188,7 +184,7 @@ void		HttpResponse::setErrorPage(int code){
 	setBody(buffer.str(),"text/html");
 }
 
-void HttpResponse::setResponseByStatus(int statusCode, const std::string &bodyContent, const std::string &contentType) {
+void HttpResponse::setResponseByStatus(int statusCode, const std::string &statusMessage, const std::string &bodyContent, const std::string &contentType) {
 	if (this->_status_code >= 400) {
 		setErrorPage(this->_status_code);
 	} else if (statusCode == 302) {
@@ -196,7 +192,7 @@ void HttpResponse::setResponseByStatus(int statusCode, const std::string &bodyCo
 		setHeader("Location", bodyContent);
 		setBody("<h1>302 Found</h1>", "text/html");
 	} else {
-		setStatus(statusCode, "OK");
+		setStatus(statusCode, statusMessage);
 		setBody(bodyContent, contentType);
 	}
 }
