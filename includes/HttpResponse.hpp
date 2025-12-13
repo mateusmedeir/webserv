@@ -12,11 +12,12 @@ class HttpResponse {
 		std::string 												_status_message;
 		std::map<std::string, std::string>	_headers;
 		std::string 												_body;
+		bool														_execAutoIndex;
 	public:
 		HttpResponse();
 		~HttpResponse();
 
-	void handleGet(const HttpRequest &req);
+	void handleGet(const HttpRequest &req, const ServerBlock &serverBlock, std::string bestMatch);
 	void handlePost(const HttpRequest &req, const ServerBlock &serverBlock, std::string bestMatch);
 	void handleDelete(const HttpRequest &req, const ServerBlock &serverBlock, std::string bestMatch);
 	void dispatchRequest(const HttpRequest &req);
@@ -27,6 +28,7 @@ class HttpResponse {
 	void setHeader(const std::string &key, const std::string &value);
 	void setBody(const std::string &b, const std::string &contentType);
 	void setErrorPage(int code);
+	void setExecAutoIndex(bool exec);
 	void processCookies(const HttpRequest &req, const LocationBlock &location);
 	void processCgiResponse(const std::string &cgiOutput);
 	
@@ -37,6 +39,7 @@ class HttpResponse {
 	std::string		uriToPath(const std::string &uri) const;
 	std::string		getMimeType(const std::string &path) const;
 	std::string 	getHttpVersion() const;
+	bool 			getExecAutoIndex() const;
 	
 	int getStatusCode() const;
 	std::string getStatusMessage() const;

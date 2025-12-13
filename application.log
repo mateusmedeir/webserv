@@ -540,3 +540,181 @@ Sat Dec 13 15:54:25 2025 [DEBUG] ------ testando o max body dentro da validacao 
 Sat Dec 13 15:54:25 2025 [ERROR] Max body size exceded. Payload Too Large
 Sat Dec 13 15:54:25 2025 [INFO] 127.0.0.1: [POST] /teste HTTP/1.0 413
 
+Sat Dec 13 16:09:04 2025 [INFO] O bestMatch e: /
+Sat Dec 13 16:09:04 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 16:09:04 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 200
+
+Sat Dec 13 16:09:04 2025 [INFO] O bestMatch e: /
+Sat Dec 13 16:09:04 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 16:09:04 2025 [INFO] 127.0.0.1: [GET] /style.css HTTP/1.0 200
+
+Sat Dec 13 16:09:19 2025 [DEBUG] ----- testando o max_body_size ---------
+Sat Dec 13 16:09:19 2025 [DEBUG] ----- testando o max_body_size ---------
+Sat Dec 13 16:09:19 2025 [DEBUG] ----- testando o max_body_size ---------
+Sat Dec 13 16:09:19 2025 [DEBUG] ----- testando o max_body_size ---------
+Sat Dec 13 16:09:19 2025 [DEBUG] ----- testando o max_body_size ---------
+Sat Dec 13 16:09:19 2025 [DEBUG] ----- testando o max_body_size ---------
+Sat Dec 13 16:09:19 2025 [INFO] O bestMatch e: /teste
+Sat Dec 13 16:09:19 2025 [DEBUG] ENTROU NO VALIDADOR DO POST
+Sat Dec 13 16:09:19 2025 [DEBUG] ------ testando o max body dentro da validacao para os metodos ----------
+Sat Dec 13 16:09:19 2025 [DEBUG] ------ testando o max body dentro da validacao para os metodos ----------
+Sat Dec 13 16:09:19 2025 [INFO] 127.0.0.1: [POST] /teste HTTP/1.0 201
+
+Sat Dec 13 16:11:10 2025 [INFO] O bestMatch e: /
+Sat Dec 13 16:11:10 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 16:11:10 2025 [INFO] 127.0.0.1: [GET] /upload/images.png HTTP/1.0 200
+
+Sat Dec 13 16:11:37 2025 [INFO] O bestMatch e: /
+Sat Dec 13 16:11:37 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 16:11:37 2025 [INFO] 127.0.0.1: [GET] /upload/images.pngg HTTP/1.0 404
+
+Sat Dec 13 16:11:41 2025 [INFO] O bestMatch e: /
+Sat Dec 13 16:11:41 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 16:11:41 2025 [INFO] 127.0.0.1: [GET] /upload/images.png HTTP/1.0 200
+
+Sat Dec 13 18:31:18 2025 [INFO] O bestMatch e: /
+Sat Dec 13 18:31:18 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 18:31:18 2025 [DEBUG] String contendo alias + uri para o GET: ./www/
+Sat Dec 13 18:31:18 2025 [DEBUG] EXECUTANDO O GET METODO....
+Sat Dec 13 18:31:18 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 200
+
+Sat Dec 13 18:31:53 2025 [INFO] O bestMatch e: /
+Sat Dec 13 18:31:53 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 18:31:53 2025 [DEBUG] String contendo alias + uri para o GET: ./www/
+Sat Dec 13 18:31:53 2025 [DEBUG] EXECUTANDO O GET METODO....
+Sat Dec 13 18:31:53 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 200
+
+Sat Dec 13 18:32:09 2025 [INFO] O bestMatch e: /
+Sat Dec 13 18:32:09 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 18:32:09 2025 [DEBUG] String contendo alias + uri para o GET: ./www/
+Sat Dec 13 18:32:09 2025 [DEBUG] EXECUTANDO O GET METODO....
+Sat Dec 13 18:32:09 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 200
+
+Sat Dec 13 18:36:21 2025 [INFO] O bestMatch e: /
+Sat Dec 13 18:36:21 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 18:36:21 2025 [DEBUG] String contendo alias + uri para o GET: ./www/index.html
+Sat Dec 13 18:36:21 2025 [INFO] Location aceita o autoindex.
+Sat Dec 13 18:36:21 2025 [DEBUG] EXECUTANDO AUTOINDEX....
+Sat Dec 13 18:36:21 2025 [INFO] 127.0.0.1: [GET] /index.html HTTP/1.0 404
+
+Sat Dec 13 18:36:21 2025 [INFO] O bestMatch e: /
+Sat Dec 13 18:36:21 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 18:36:21 2025 [DEBUG] String contendo alias + uri para o GET: ./www/favicon.ico
+Sat Dec 13 18:36:21 2025 [ERROR] Acesso ao recurso ./www/favicon.ico negado.
+Sat Dec 13 18:36:21 2025 [ERROR] Erro nas validacoes dos metodos da request...
+Sat Dec 13 18:47:01 2025 [INFO] O bestMatch e: /
+Sat Dec 13 18:47:01 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 18:47:01 2025 [DEBUG] String contendo alias + uri para o GET: ./www/index.html
+Sat Dec 13 18:47:01 2025 [DEBUG] Validando se o arquivo existe. Nao tem autoindex...: ./www/index.html
+Sat Dec 13 18:47:01 2025 [DEBUG] EXECUTANDO O GET METODO....
+Sat Dec 13 18:47:01 2025 [INFO] 127.0.0.1: [GET] /index.html HTTP/1.0 200
+
+Sat Dec 13 18:47:01 2025 [INFO] O bestMatch e: /
+Sat Dec 13 18:47:01 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 18:47:01 2025 [DEBUG] String contendo alias + uri para o GET: ./www/style.css
+Sat Dec 13 18:47:01 2025 [DEBUG] Validando se o arquivo existe. Nao tem autoindex...: ./www/style.css
+Sat Dec 13 18:47:01 2025 [DEBUG] EXECUTANDO O GET METODO....
+Sat Dec 13 18:47:01 2025 [INFO] 127.0.0.1: [GET] /style.css HTTP/1.0 200
+
+Sat Dec 13 18:47:08 2025 [INFO] O bestMatch e: /
+Sat Dec 13 18:47:08 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 18:47:08 2025 [DEBUG] String contendo alias + uri para o GET: ./www/
+Sat Dec 13 18:47:08 2025 [DEBUG] EXECUTANDO O GET METODO....
+Sat Dec 13 18:47:08 2025 [INFO] 127.0.0.1: [GET] /index.html HTTP/1.0 200
+
+Sat Dec 13 18:47:08 2025 [INFO] O bestMatch e: /
+Sat Dec 13 18:47:08 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 18:47:08 2025 [DEBUG] String contendo alias + uri para o GET: ./www/style.css
+Sat Dec 13 18:47:08 2025 [DEBUG] Validando se o arquivo existe. Nao tem autoindex...: ./www/style.css
+Sat Dec 13 18:47:08 2025 [DEBUG] EXECUTANDO O GET METODO....
+Sat Dec 13 18:47:08 2025 [INFO] 127.0.0.1: [GET] /style.css HTTP/1.0 200
+
+Sat Dec 13 18:51:33 2025 [INFO] O bestMatch e: /teste
+Sat Dec 13 18:51:33 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 18:51:33 2025 [DEBUG] String contendo alias + uri para o GET: ./www/teste/
+Sat Dec 13 18:51:33 2025 [ERROR] Acesso ao recurso ./www/teste/ negado.
+Sat Dec 13 18:51:33 2025 [ERROR] Erro nas validacoes dos metodos da request...
+Sat Dec 13 18:52:25 2025 [INFO] O bestMatch e: /
+Sat Dec 13 18:52:25 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 18:52:25 2025 [DEBUG] String contendo alias + uri para o GET: ./www/api
+Sat Dec 13 18:52:25 2025 [DEBUG] Validando se o arquivo existe. Nao tem autoindex...: ./www/api
+Sat Dec 13 18:52:25 2025 [DEBUG] EXECUTANDO O GET METODO....
+Sat Dec 13 18:52:25 2025 [INFO] 127.0.0.1: [GET] /api HTTP/1.0 200
+
+Sat Dec 13 19:04:11 2025 [INFO] O bestMatch e: /
+Sat Dec 13 19:04:11 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 19:04:11 2025 [DEBUG] String contendo alias + uri para o GET: ./www/
+Sat Dec 13 19:04:11 2025 [DEBUG] Path executado no GET: ./www/index.html
+Sat Dec 13 19:04:11 2025 [DEBUG] EXECUTANDO O GET METODO....
+Sat Dec 13 19:04:11 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 200
+
+Sat Dec 13 19:04:11 2025 [INFO] O bestMatch e: /
+Sat Dec 13 19:04:11 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 19:04:11 2025 [DEBUG] String contendo alias + uri para o GET: ./www/style.css
+Sat Dec 13 19:04:11 2025 [DEBUG] Validando se o arquivo existe. Nao tem autoindex...: ./www/style.css
+Sat Dec 13 19:04:11 2025 [DEBUG] Path executado no GET: ./www/style.css
+Sat Dec 13 19:04:11 2025 [DEBUG] EXECUTANDO O GET METODO....
+Sat Dec 13 19:04:11 2025 [INFO] 127.0.0.1: [GET] /style.css HTTP/1.0 200
+
+Sat Dec 13 19:04:54 2025 [INFO] O bestMatch e: /
+Sat Dec 13 19:04:54 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 19:04:54 2025 [DEBUG] String contendo alias + uri para o GET: ./www/
+Sat Dec 13 19:04:54 2025 [DEBUG] Path executado no GET: ./www/index.html
+Sat Dec 13 19:04:54 2025 [DEBUG] EXECUTANDO O GET METODO....
+Sat Dec 13 19:04:54 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 200
+
+Sat Dec 13 19:05:14 2025 [INFO] O bestMatch e: /
+Sat Dec 13 19:05:14 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 19:05:14 2025 [DEBUG] String contendo alias + uri para o GET: ./www/api/
+Sat Dec 13 19:05:14 2025 [DEBUG] Path executado no GET: ./www/api/index.php
+Sat Dec 13 19:05:14 2025 [DEBUG] EXECUTANDO O GET METODO....
+Sat Dec 13 19:05:14 2025 [INFO] 127.0.0.1: [GET] /api/ HTTP/1.0 200
+
+Sat Dec 13 19:05:26 2025 [INFO] O bestMatch e: /
+Sat Dec 13 19:05:26 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 19:05:26 2025 [DEBUG] String contendo alias + uri para o GET: ./www/api
+Sat Dec 13 19:05:26 2025 [DEBUG] Validando se o arquivo existe. Nao tem autoindex...: ./www/api
+Sat Dec 13 19:05:26 2025 [DEBUG] Path executado no GET: ./www/api
+Sat Dec 13 19:05:26 2025 [DEBUG] EXECUTANDO O GET METODO....
+Sat Dec 13 19:05:26 2025 [INFO] 127.0.0.1: [GET] /api HTTP/1.0 200
+
+Sat Dec 13 19:10:42 2025 [INFO] O bestMatch e: /
+Sat Dec 13 19:10:42 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 19:10:42 2025 [DEBUG] String contendo alias + uri para o GET: ./www/
+Sat Dec 13 19:10:42 2025 [DEBUG] Path executado no GET: ./www/index.html
+Sat Dec 13 19:10:42 2025 [DEBUG] EXECUTANDO O GET METODO....
+Sat Dec 13 19:10:42 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 200
+
+Sat Dec 13 19:10:42 2025 [INFO] O bestMatch e: /
+Sat Dec 13 19:10:42 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 19:10:42 2025 [DEBUG] String contendo alias + uri para o GET: ./www/style.css
+Sat Dec 13 19:10:42 2025 [DEBUG] Validando se o arquivo existe. Nao tem autoindex...: ./www/style.css
+Sat Dec 13 19:10:42 2025 [DEBUG] Path executado no GET: ./www/style.css
+Sat Dec 13 19:10:42 2025 [DEBUG] EXECUTANDO O GET METODO....
+Sat Dec 13 19:10:42 2025 [INFO] 127.0.0.1: [GET] /style.css HTTP/1.0 200
+
+Sat Dec 13 19:10:44 2025 [INFO] O bestMatch e: /
+Sat Dec 13 19:10:44 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 19:10:44 2025 [DEBUG] String contendo alias + uri para o GET: ./www/api
+Sat Dec 13 19:10:44 2025 [DEBUG] Validando se o arquivo existe. Nao tem autoindex...: ./www/api
+Sat Dec 13 19:10:44 2025 [ERROR] Acesso ao recurso ./www/api negado.
+Sat Dec 13 19:10:44 2025 [ERROR] Erro nas validacoes dos metodos da request...
+Sat Dec 13 19:10:48 2025 [INFO] O bestMatch e: /
+Sat Dec 13 19:10:48 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 19:10:48 2025 [DEBUG] String contendo alias + uri para o GET: ./www/api
+Sat Dec 13 19:10:48 2025 [DEBUG] Validando se o arquivo existe. Nao tem autoindex...: ./www/api
+Sat Dec 13 19:10:48 2025 [ERROR] Acesso ao recurso ./www/api negado.
+Sat Dec 13 19:10:48 2025 [ERROR] Erro nas validacoes dos metodos da request...
+Sat Dec 13 19:10:59 2025 [INFO] O bestMatch e: /
+Sat Dec 13 19:10:59 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 19:10:59 2025 [DEBUG] String contendo alias + uri para o GET: ./www/api/
+Sat Dec 13 19:10:59 2025 [DEBUG] Path executado no GET: ./www/api/index.php
+Sat Dec 13 19:10:59 2025 [DEBUG] EXECUTANDO O GET METODO....
+Sat Dec 13 19:10:59 2025 [INFO] 127.0.0.1: [GET] /api/ HTTP/1.0 200
+
+Sat Dec 13 19:11:19 2025 [INFO] O bestMatch e: /
+Sat Dec 13 19:11:19 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 19:11:19 2025 [DEBUG] String contendo alias + uri para o GET: ./www/api
+Sat Dec 13 19:11:19 2025 [DEBUG] Validando se o arquivo existe. Nao tem autoindex...: ./www/api
+Sat Dec 13 19:11:19 2025 [ERROR] Acesso ao recurso ./www/api negado.
+Sat Dec 13 19:11:19 2025 [ERROR] Erro nas validacoes dos metodos da request...

@@ -10,16 +10,43 @@ HttpResponse::HttpResponse(){
 
 HttpResponse::~HttpResponse(){};
 
-void HttpResponse::handleGet(const HttpRequest &req) {
-	std::string path = uriToPath(req.getUri());
+void HttpResponse::handleGet(const HttpRequest &req, const ServerBlock &serverBlock, std::string bestMatch) {
+	// validar se e autoindex.
+	if (this->getExecAutoIndex()) {
+		// Execute autoindex...
+		Logger::debug("EXECUTANDO AUTOINDEX....");
+		this->setStatus(404, "Not Found");
+		this->setBody("<h1>AUTO INDEX GENERATED</h1>", "text/html");
+		return ;
+	}
+	std::map<std::string, LocationBlock> locationsMap = serverBlock.getLocations();
+	LocationBlock location = locationsMap.at(bestMatch);
+	std::string path = location.getAlias() + req.getUri();
+	std::vector<std::string> locationIndexes = location.getIndex();
+	for (std::vector<std::string>::iterator it = locationIndexes.begin(); it != locationIndexes.end(); it++) {
+		if (access((path + *it).c_str(), R_OK) == 0) {
+			// rootOrAliasPlusUri += *it;
+			// this->request.setUri(this->request.getUri() + *it);
+			path += *it;
+		}
+	}
+	Logger::debug("Path executado no GET: " + path);
+	if (access(path.c_str(), R_OK) != 0) {
+		this->setErrorPage(403);
+		this->setStatus(403, "Forbidden");
+		return ;
+	}
+
+	// std::string path = uriToPath(req.getUri());
 
 	std::ifstream file(path.c_str(), std::ios::binary);
 	if (!file) {
+		Logger::error("Get file not found");
 		this->setStatus(404, "Not Found");
 		this->setBody("<h1>404 Not Found</h1>", "text/html");
 		return;
 	}
-
+	Logger::debug("EXECUTANDO O GET METODO....");
 	std::ostringstream buffer;
 	buffer << file.rdbuf();
 	this->setStatus(200, "OK");
@@ -61,16 +88,6 @@ void HttpResponse::handleDelete(const HttpRequest &req, const ServerBlock &serve
 	}
 	else
 		throw std::runtime_error("DELETE: Could not delete file");
-
-	// std::string path = uriToPath(req.getUri());
-
-	// if (std::remove(path.c_str()) == 0) {
-	// 	this->setStatus(200, "OK");
-	// 	this->setBody("<h1>File deleted successfully</h1>", "text/html");
-	// } else {
-	// 	this->setStatus(404, "Not Found");
-	// 	this->setBody("<h1>404 Not Found</h1>", "text/html");
-	// }
 };
 
 // void HttpResponse::dispatchRequest(const HttpRequest &req){
@@ -264,7 +281,7 @@ void HttpResponse::dispatchRequest(const HttpRequest &req, const ServerBlock &se
 	
 	// Processamento normal
 	if(req.getMethod() == "GET")
-		return handleGet(req);
+		return handleGet(req, serverBlock, bestMatch);
 	else if(req.getMethod() == "POST")
 		return handlePost(req, serverBlock, bestMatch);
 	else if(req.getMethod() == "DELETE")
@@ -406,6 +423,14 @@ int HttpResponse::getStatusCode() const {
 
 std::string HttpResponse::getStatusMessage() const {
 	return _status_message;
+}
+
+void HttpResponse::setExecAutoIndex(bool exec) {
+	this->_execAutoIndex = exec;
+}
+
+bool HttpResponse::getExecAutoIndex() const {
+	return (this->_execAutoIndex);
 }
 
 std::string HttpResponse::getHeaderValue(const std::string &key) const {

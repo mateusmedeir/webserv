@@ -69,6 +69,76 @@ bool Client::validatingUriWithLocation(std::string bestMatch) {
     // Validacoes para o GET:
     if (this->request.getMethod() == "GET") {
         Logger::debug("ENTROU NO VALIDADOR DO GET");
+        // Validar se o Location aceita o GET
+        if (!location.checkHttpMethodInLocation("GET")) {
+            Logger::error("Location nao aceita o metodo GET.");
+            this->response.setErrorPage(405);
+            this->response.setStatus(405, "Method not allowed");
+            return (false);
+        }
+        // Concatenar a URI com o root/alias da location
+        std::string rootOrAliasPlusUri = location.getAlias() + this->request.getUri();
+        Logger::debug("String contendo alias + uri para o GET: " + rootOrAliasPlusUri);
+        // Validar o acesso de READ a esse recurso
+        if (access(rootOrAliasPlusUri.c_str(), R_OK) != 0) {
+            // erro de acesso ao recurso
+            Logger::error("Acesso ao recurso " + rootOrAliasPlusUri + " negado.");
+            this->response.setErrorPage(403);
+            this->response.setStatus(403, "Forbidden");
+            return (false);
+        }
+        if (!rootOrAliasPlusUri.empty() && rootOrAliasPlusUri[rootOrAliasPlusUri.size() - 1] == '/') {
+            // e dir
+            // validar se tem algum index dentro desse dir.
+            bool    aux = false;
+            std::vector<std::string> locationIndexes = location.getIndex();
+            for (std::vector<std::string>::iterator it = locationIndexes.begin(); it != locationIndexes.end(); it++) {
+                if (access((rootOrAliasPlusUri + *it).c_str(), R_OK) == 0) {
+                    // rootOrAliasPlusUri += *it;
+                    // this->request.setUri(this->request.getUri() + *it);
+                    aux = true;
+                }
+            }
+            if (aux) {
+                // achou algum index dentro do dir rootOrAliasPlusUri
+                return (true);
+            } else {
+                // nao achou index.
+                if (!location.getAutoIndex()) {
+                    // location nao tem auto index
+                    Logger::error("Location nao aceita o autoindex.");
+                    this->response.setErrorPage(403);
+                    this->response.setStatus(403, "Forbidden");
+                    return (false);
+                }
+                // vai executar o autoindex...
+                Logger::info("Location aceita o autoindex.");
+                this->response.setExecAutoIndex(true);
+                return (true);
+            }
+        } else {
+            // O cliente esta pedindo um arquivo
+            Logger::debug("Validando se o arquivo existe. Nao tem autoindex...: " + rootOrAliasPlusUri);
+            // if (access(rootOrAliasPlusUri.c_str(), R_OK) != 0) 
+            if (isDirectory(rootOrAliasPlusUri)) {
+                // erro de acesso ao recurso
+                Logger::error("Acesso ao recurso " + rootOrAliasPlusUri + " negado.");
+                this->response.setErrorPage(403);
+                this->response.setStatus(403, "Forbidden");
+                return (false);
+            }
+        }
+        // Checar se termina em "/" ou nao
+            // Se sim -> e diretorio
+            // Validar se tem um index nesse diretorio
+                // se sim -> ler e devolver esse index
+            // se nao -> validar pra ver se a location tem o autoindex
+                // se sim -> executar o autoindex
+                // se nao -> erro 403
+        // se nao terminar em "/" -> O client ta pedindo um arquivo
+            // validar o acesso de leitura ao recurso
+                // se sim -> ler o arquivo e montar o body
+                //se nao -> erro 404 not found
         return (true);
     }
     // Validacoes para o POST:
