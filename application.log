@@ -500,3 +500,43 @@ Sat Dec 13 10:58:00 2025 [DEBUG] FullPathToDelete: ./www/upload/teste.txt
 Sat Dec 13 10:58:00 2025 [DEBUG] Vai retornar TRUE pro DELETE.
 Sat Dec 13 10:58:00 2025 [INFO] 127.0.0.1: [DELETE] /teste.txt HTTP/1.0 200
 
+Sat Dec 13 15:44:51 2025 [INFO] O bestMatch e: /
+Sat Dec 13 15:44:51 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 15:44:51 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 200
+
+Sat Dec 13 15:44:52 2025 [INFO] O bestMatch e: /
+Sat Dec 13 15:44:52 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 15:44:52 2025 [INFO] 127.0.0.1: [GET] /style.css HTTP/1.0 200
+
+Sat Dec 13 15:45:33 2025 [DEBUG] ----- testando o max_body_size ---------
+Sat Dec 13 15:45:33 2025 [DEBUG] ----- testando o max_body_size ---------
+Sat Dec 13 15:45:33 2025 [INFO] O bestMatch e: /teste
+Sat Dec 13 15:45:33 2025 [DEBUG] ENTROU NO VALIDADOR DO POST
+Sat Dec 13 15:45:33 2025 [DEBUG] ------ testando o max body dentro da validacao para os metodos ----------
+Sat Dec 13 15:45:33 2025 [DEBUG] ------ testando o max body dentro da validacao para os metodos ----------
+Sat Dec 13 15:45:33 2025 [INFO] 127.0.0.1: [POST] /teste HTTP/1.0 201
+
+Sat Dec 13 15:54:02 2025 [INFO] O bestMatch e: /
+Sat Dec 13 15:54:02 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 15:54:02 2025 [INFO] 127.0.0.1: [GET] / HTTP/1.0 200
+
+Sat Dec 13 15:54:03 2025 [INFO] O bestMatch e: /
+Sat Dec 13 15:54:03 2025 [DEBUG] ENTROU NO VALIDADOR DO GET
+Sat Dec 13 15:54:03 2025 [INFO] 127.0.0.1: [GET] /style.css HTTP/1.0 200
+
+Sat Dec 13 15:54:14 2025 [INFO] O bestMatch e: /teste
+Sat Dec 13 15:54:14 2025 [DEBUG] ENTROU NO VALIDADOR DO DELETE
+Sat Dec 13 15:54:14 2025 [DEBUG] Upload Location existe!
+Sat Dec 13 15:54:14 2025 [DEBUG] FullPathToDelete: ./www/upload/teste.txt
+Sat Dec 13 15:54:14 2025 [DEBUG] Vai retornar TRUE pro DELETE.
+Sat Dec 13 15:54:14 2025 [INFO] 127.0.0.1: [DELETE] /teste.txt HTTP/1.0 200
+
+Sat Dec 13 15:54:25 2025 [DEBUG] ----- testando o max_body_size ---------
+Sat Dec 13 15:54:25 2025 [DEBUG] ----- testando o max_body_size ---------
+Sat Dec 13 15:54:25 2025 [INFO] O bestMatch e: /teste
+Sat Dec 13 15:54:25 2025 [DEBUG] ENTROU NO VALIDADOR DO POST
+Sat Dec 13 15:54:25 2025 [DEBUG] ------ testando o max body dentro da validacao para os metodos ----------
+Sat Dec 13 15:54:25 2025 [DEBUG] ------ testando o max body dentro da validacao para os metodos ----------
+Sat Dec 13 15:54:25 2025 [ERROR] Max body size exceded. Payload Too Large
+Sat Dec 13 15:54:25 2025 [INFO] 127.0.0.1: [POST] /teste HTTP/1.0 413
+

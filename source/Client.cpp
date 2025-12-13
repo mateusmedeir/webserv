@@ -79,6 +79,17 @@ bool Client::validatingUriWithLocation(std::string bestMatch) {
             this->response.setStatus(400, "Bad Request");
             return (false);
         }
+        //Validar o tamanho maximo do body da request.
+        Logger::debug("------ testando o max body dentro da validacao para os metodos ----------");
+        std::cout << "Max body size do server block: " << this->_serverListen.getServerBlock().getMaxBodySize().second << std::endl;
+        Logger::debug("------ testando o max body dentro da validacao para os metodos ----------");
+        if (this->_serverListen.getServerBlock().getMaxBodySize().second < this->request.getBody().size()) {
+            // O tamanho do arquivo e maior do que o limite suportado por max_body_size
+            Logger::error("Max body size exceded. Payload Too Large");
+            this->response.setErrorPage(413);
+            this->response.setStatus(413, "Payload Too Large");
+        }
+        if (this->_serverListen.getServerBlock().getMaxBodySize().second)
         // O upload na location esta liberado?
         if (!location.getCanUpload()) {
             //nao pode upload nessa location
@@ -403,6 +414,10 @@ void Client::concatenateRequestData(std::string data) {
                 this->request.parseBody(this->_rawRequest, onlyBody);
                 this->setState(COMPLETE);
             }
+            Logger::debug("----- testando o max_body_size ---------");
+            std::cout << "bodyLenght: " << bodyLength << std::endl;
+            std::cout << "content_lenght: " << contentLengthStr << std::endl;
+            Logger::debug("----- testando o max_body_size ---------");
         } else if (this->_rawRequest.find("0\r\n\r\n") != std::string::npos) { //caso tenha outro encoding (chunked)
             // caso entre aqui, o body da request ja ta todo pronto.
             size_t bodyStartPos = this->_rawRequest.find("\r\n\r\n") + 4;
