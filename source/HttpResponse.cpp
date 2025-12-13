@@ -9,21 +9,19 @@ HttpResponse::HttpResponse(){
 
 HttpResponse::~HttpResponse(){};
 
-void HttpResponse::handleGet(const HttpRequest &req) {
-	std::string path = uriToPath(req.getUri());
+void HttpResponse::handleGet(const ServerBlock &serverBlock, const LocationBlock *location){
+	if (!location->getReturn().empty()) return setResponseByStatus(302, location->getReturn(), "text/html");
+
+	std::string path = location->getPath(serverBlock.getRoot().second);
+	if (path.empty()) return setResponseByStatus(404);
 
 	std::ifstream file(path.c_str(), std::ios::binary);
-	if (!file) {
-		this->setStatus(404, "Not Found");
-		this->setBody("<h1>404 Not Found</h1>", "text/html");
-		return;
-	}
+	if (!file) return setResponseByStatus(404);
 
 	std::ostringstream buffer;
 	buffer << file.rdbuf();
-	this->setStatus(200, "OK");
-	std::string mimeType = getMimeType(path);
-	this->setBody(buffer.str(), mimeType);
+
+	setResponseByStatus(200, buffer.str(), getMimeType(path));
 };
 
 void HttpResponse::handlePost(const HttpRequest &req){
@@ -42,8 +40,8 @@ void HttpResponse::handlePost(const HttpRequest &req){
 	this->setBody("<h1>File uploaded successfully!</h1>", "text/html");
 };
 
-void HttpResponse::handleDelete(const HttpRequest &req){
-		std::string path = uriToPath(req.getUri());
+void HttpResponse::handleDelete(const ServerBlock &serverBlock, const LocationBlock *location){
+		std::string path = location->getPath(serverBlock.getRoot().second);
 
 		if (std::remove(path.c_str()) == 0) {
 			this->setStatus(200, "OK");
@@ -54,19 +52,27 @@ void HttpResponse::handleDelete(const HttpRequest &req){
 		}
 };
 
-void HttpResponse::dispatchRequest(const HttpRequest &req){
-	std::cout << "Dispatching request for method: " << req.getMethod() << std::endl;
+void HttpResponse::dispatchRequest(const HttpRequest &req, const ServerBlock &serverBlock) {
 	if (this->_status_code != 200)
 		return;
+	
+	const LocationBlock* locationPtr = serverBlock.getValidLocation(req.getUri(), req.getMethod());
+    if (!locationPtr) {
+        this->setErrorPage(404);
+        return;
+    }
+
 
 	if(req.getMethod() == "GET")
-		return handleGet(req);
+		return handleGet(serverBlock, locationPtr);
 	else if(req.getMethod() == "POST")
 		return handlePost(req);
 	else if(req.getMethod() == "DELETE")
-		return handleDelete(req);
+		return handleDelete(serverBlock, locationPtr);
 	else 
 		this->setErrorPage(405);
+
+	processCookies(req, *locationPtr);
 }
 
 void		HttpResponse::setStatus(int code, const std::string &message){
@@ -111,20 +117,6 @@ std::string	HttpResponse::intToString(int n) const{
 	std::ostringstream oss;
 	oss << n;
 	return oss.str();
-}
-
-std::string HttpResponse::uriToPath(const std::string &uri) const {
-    std::string path = uri;
-
-    if (path[path.size() - 1] == '/') {
-        path += "index.html";
-    }
-    if (path[0] != '/') {
-        path = "/" + path;
-    }
-
-    std::cout << "Converted URI to path: " << "./www" + path << std::endl;
-    return "./www" + path;
 }
 
 std::string HttpResponse::getMimeType(const std::string &path) const {
@@ -196,8 +188,52 @@ void		HttpResponse::setErrorPage(int code){
 	setBody(buffer.str(),"text/html");
 }
 
+void HttpResponse::setResponseByStatus(int statusCode, const std::string &bodyContent, const std::string &contentType) {
+	if (this->_status_code >= 400) {
+		setErrorPage(this->_status_code);
+	} else if (statusCode == 302) {
+		setStatus(302, "Found");
+		setHeader("Location", bodyContent);
+		setBody("<h1>302 Found</h1>", "text/html");
+	} else {
+		setStatus(statusCode, "OK");
+		setBody(bodyContent, contentType);
+	}
+}
+
 void HttpResponse::processCookies(const HttpRequest &req, const LocationBlock &location) {
 	if (location.getCookiesEnabled()) {
 		CookieHandler::handleCookie(*this, req);
 	}
+}
+
+std::string HttpResponse::getHttpVersion() const {
+	return _http_version;
+}
+
+int HttpResponse::getStatusCode() const {
+	return _status_code;
+}
+
+std::string HttpResponse::getStatusMessage() const {
+	return _status_message;
+}
+
+std::string HttpResponse::getHeaderValue(const std::string &key) const {
+	std::string lowerKey = key;
+	for (size_t i = 0; i < lowerKey.size(); ++i) {
+		lowerKey[i] = std::tolower(lowerKey[i]);
+	}
+	
+	for (std::map<std::string, std::string>::const_iterator it = _headers.begin();
+		 it != _headers.end(); ++it) {
+		std::string lowerHeader = it->first;
+		for (size_t i = 0; i < lowerHeader.size(); ++i) {
+			lowerHeader[i] = std::tolower(lowerHeader[i]);
+		}
+		if (lowerHeader == lowerKey) {
+			return it->second;
+		}
+	}
+	return "";
 }

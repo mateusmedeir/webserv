@@ -19,12 +19,24 @@
 # include <cstddef>
 # include <cstdlib>
 # include <ctime>
+# include <cstring>
 # include <fstream>
 # include <sstream>
 # include <cctype>
-#include <set>
-#include <csignal>
+# include <set>
+# include <csignal>
 
+enum    LogLevel {
+    DEBUG,
+    INFO,
+    WARNING,
+    ERROR
+};
+
+typedef struct s_logEvent {
+    enum LogLevel   level;
+    std::string     message;
+}t_logEvent;
 
 # include "HttpRequest.hpp"
 # include "HttpResponse.hpp"
@@ -33,10 +45,13 @@
 # include "EpollHandler.hpp"
 # include "EpollInstance.hpp"
 # include "LocationBlock.hpp"
-# include "ServerInstance.hpp"
 # include "ServerListen.hpp"
 # include "Client.hpp"
 # include "CookieHandler.hpp"
+# include "LogHandler.hpp"
+# include "StdLogHandler.hpp"
+# include "FileLogHandler.hpp"
+# include "CompositeLogHandler.hpp"
 
 enum clientBufferState {
     READING_HEADER = 9, //Lendo o header da request ainda

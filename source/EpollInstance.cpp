@@ -62,8 +62,6 @@ void EpollInstance::manipInterestList(int operation, EpollHandler *handler) {
     struct epoll_event data;
     data.events = handler->getInterestedEvents();
 
-    std::cout << "Dentro do manipInterest. FD: " << handler->getSocketFd() << std::endl;
-
     data.data.ptr = handler;
     if (operation == EPOLL_CTL_ADD) {
         _instance->_handlers[handler->getSocketFd()] = handler;
@@ -73,7 +71,6 @@ void EpollInstance::manipInterestList(int operation, EpollHandler *handler) {
               << " errno=" << errno << " (" << strerror(errno) << ")\n";
         throw(EpollInstance::CannotManipulateEpollInstance());
     }
-    std::cout << "Manipulacao feita com sucesso!" << std::endl;
 }
 
 int EpollInstance::manipEpollWait(void) {

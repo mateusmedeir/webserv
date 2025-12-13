@@ -23,7 +23,6 @@ bool ServerListen::operator==(const ServerListen &other) const {
 ServerListen::~ServerListen(void) {}
 
 void ServerListen::handleEpollIn(void) {
-    std::cout << "New connection incoming on server socket FD: " << this->getSocketFd() << std::endl;
     while (true) {
         struct sockaddr_in clientSocketAddr;
         socklen_t clientSocketLength = sizeof(clientSocketAddr);
@@ -50,7 +49,6 @@ void ServerListen::handleEpollIn(void) {
                 RunTime::getClients().insert(
                     std::make_pair(clientFd, Client(clientFd, RunTime::getElementInServerList(this->getSocketFd())))
                 );
-                std::cout << "inseriu novo client no map." << std::endl;
                 EpollInstance::manipInterestList(EPOLL_CTL_ADD, &RunTime::getClient(clientFd));
             }
             catch (const std::exception &e) {

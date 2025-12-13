@@ -1,3 +1,5 @@
 *.o
 .vscode
 webserv
+*.log
+*.txt

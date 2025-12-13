@@ -31,7 +31,7 @@ class ServerBlock
         
         void printServerBlock();
         bool isUriValid(const std::string uri);
-        bool isLocationValid(const std::string uri, const std::string method);
+        const LocationBlock *getValidLocation(const std::string uri, const std::string method) const;
 
         void addListens();
         void addServerNames();

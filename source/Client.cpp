@@ -1,8 +1,7 @@
 #include "../includes/WebservHeader.hpp"
 #include "../includes/RunTime.hpp"
 
-Client::Client(int clientFd, ServerListen &serverListen) : EpollHandler(EPOLLIN, clientFd, 30), _serverListen(serverListen) {
-    std::cout << "Client got created..." << std::endl;
+Client::Client(int clientFd, ServerListen &serverListen) : EpollHandler(EPOLLIN | EPOLLOUT, clientFd, 30), _serverListen(serverListen) {
     this->_state = READING_HEADER;
     this->_rawRequest = "";
     this->request = HttpRequest();
@@ -35,51 +34,15 @@ void Client::handleEpollIn(void) {
     if ((count = read(this->getSocketFd(), buffer, sizeof(buffer))) > 0) {
         this->concatenateRequestData(std::string(buffer, count));
         if (this->isRequestComplete()) {
-            std::cout << "================== REQUEST COMPLETE =================" << std::endl;
-            std::cout << this->request.getMethod() << std::endl;
-            std::cout << this->request.getUri() << std::endl;
-            std::map<std::string, std::string> headers = this->request.getHeaders();
-            for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); it++) {
-                std::cout << it->first << ": " << it->second << std::endl;
-            }
-            std::cout << "Body: " << this->request.getBody() << std::endl;
-            std::cout << "=====================================================" << std::endl;
-            this->response.dispatchRequest(this->request);
-            
-            // Process cookies if enabled for this location
-            std::string uri = this->request.getUri();
-            ServerBlock serverBlock = this->_serverListen.getServerBlock();
-            std::map<std::string, LocationBlock> locations = serverBlock.getLocations();
-            
-            // Find best matching location (prefix match, longest wins)
-            std::string bestMatch = "";
-            for (std::map<std::string, LocationBlock>::const_iterator it = locations.begin();
-                 it != locations.end(); ++it) {
-                const std::string &path = it->first;
-                if (uri.compare(0, path.size(), path) == 0) {
-                    if (path.size() > bestMatch.size()) {
-                        bestMatch = path;
-                    }
-                }
-            }
-            
-            if (!bestMatch.empty()) {
-                LocationBlock location = locations.find(bestMatch)->second;
-                this->response.processCookies(this->request, location);
-            }
+            this->response.dispatchRequest(this->request, this->_serverListen.getServerBlock());
             
             std::string responseStr = this->response.toString();
-            std::cout << "=================== RESPONSE SEND ===================" << std::endl;
-            std::cout << responseStr << std::endl;
-            std::cout << "=====================================================" << std::endl;
-            
-            // Enviar resposta com tratamento correto de erros (conforme régua de avaliação)
+            Logger::info(toString());
             if (!sendResponse(responseStr)) {
                 // Erro ao enviar - cliente já foi removido em sendResponse()
                 return;
             }
             
-            // Se toda a resposta foi enviada, deletar cliente
             if (this->_responseOffset >= responseStr.size()) {
                 RunTime::deleteClient(this->getSocketFd());
             }
@@ -87,7 +50,6 @@ void Client::handleEpollIn(void) {
     } else if (count == 0) {
         // EOF - cliente fechou conexão
         std::cout << "Client closed the connection." << std::endl;
-        std::cout << this->getRawRequest() << std::endl;
         RunTime::deleteClient(this->getSocketFd());
     }
     // count < 0: erro no read() ou EAGAIN
@@ -188,7 +150,6 @@ void Client::concatenateRequestData(std::string data) {
     if (this->_state == COMPLETE) {
         return;
     }
-
     this->_rawRequest.append(data);
 
     if (this->_state == READING_HEADER && this->_rawRequest.find("\r\n\r\n") != std::string::npos) {
@@ -201,11 +162,7 @@ void Client::concatenateRequestData(std::string data) {
             return;
         }
         if (
-            !this->_serverListen.getServerBlock()
-            .isLocationValid(
-                this->request.getUri(),
-                this->request.getMethod()
-            )
+            !this->_serverListen.getServerBlock().getValidLocation(this->request.getUri(), this->request.getMethod())
         ) {
             this->response.setErrorPage(405);
             this->setState(COMPLETE);
@@ -220,9 +177,10 @@ void Client::concatenateRequestData(std::string data) {
             int contentLength = std::atoi(contentLengthStr.c_str());
             size_t bodyStartPos = this->_rawRequest.find("\r\n\r\n") + 4;
             size_t bodyLength = this->_rawRequest.size() - bodyStartPos;
+            std::string requestBody = this->_rawRequest.substr(bodyStartPos, bodyLength);
             
             if (bodyLength >= static_cast<size_t>(contentLength)) {
-                this->request.parseBody(this->_rawRequest);
+                this->request.parseBody(this->_rawRequest, requestBody);
                 this->setState(COMPLETE);
             }
         } else {
@@ -253,4 +211,43 @@ HttpResponse &Client::getResponse(void) {
 
 void Client::setState(int state) {
     this->_state = state;
+}
+
+static std::string ipv4ToStr(unsigned int ip)
+{
+    std::ostringstream ss;
+
+    ss << ((ip >> 24) & 0xFF) << "."
+       << ((ip >> 16) & 0xFF) << "."
+       << ((ip >> 8)  & 0xFF) << "."
+       << (ip & 0xFF);
+
+    return ss.str();
+}
+
+std::string Client::toString(void) const {
+    std::ostringstream result;
+
+    // Data/hora/dia/mes/ano "Isso ja tem no logger"
+    // +
+    // [tipo] "Isso ja tem no logger"
+    // +
+    // Mensagem passada para o Logger::metodo(mensagem);
+
+    // IP do socket onde foi feito a request
+    // +
+    // Metodo http
+    // +
+    // URI desejada
+    // +
+    // Protocolo usado
+    // +
+    // Status da response
+    result << ipv4ToStr(this->_serverListen.getHost()) << ": [" //Precisamos converter esse int para o IP que o socket ouve
+            << this->request.getMethod() << "] "
+            << this->request.getUri() << " "
+            << this->response.getHttpVersion() << " "
+            << this->response.getStatusCode();
+    
+            return(result.str());
 }
