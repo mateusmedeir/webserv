@@ -78,14 +78,12 @@ void ServerListen::setServerAddr(int socketDomain) {
 void ServerListen::createServerSocket(int socketDomain, int socketType) {
     this->setSocketFd(socket(socketDomain, socketType, 0));
 
-    std::cout << "socket()" << this->getSocketFd() << std::endl;
     if (this->getSocketFd() == -1) {
         throw(ServerListen::CannotInitServerSocket());
     }
 }
 
 void ServerListen::bindServerSocket(void) {
-    std::cout << "bind()" << this->getSocketFd() << std::endl;
     if (bind(this->getSocketFd(), (struct sockaddr *)&this->_serverAddr, sizeof(this->_serverAddr)) == -1) {
         throw(ServerListen::CannotBindServerSocket());
     }
@@ -94,7 +92,6 @@ void ServerListen::bindServerSocket(void) {
 void ServerListen::updateToNonBlocking(void) {
     try
     {
-        std::cout << "nonblocking()" << this->getSocketFd() << std::endl;
         set_nonblocking(this->getSocketFd());
     }
     catch(const std::exception& e)
@@ -104,7 +101,6 @@ void ServerListen::updateToNonBlocking(void) {
 }
 
 void ServerListen::listenServerSocket(void) {
-    std::cout << "listen()" << this->getSocketFd() << std::endl;
     if (listen(this->getSocketFd(), MAX_EVENTS) == -1) {
         throw(ServerListen::CannotSetServerToListen());
     }

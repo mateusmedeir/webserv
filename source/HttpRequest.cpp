@@ -132,8 +132,8 @@ void HttpRequest::parseBody(const std::string &rawRequest, std::string onlyBody)
 		trimChars(aux, "\"");
 		this->uploadFileName = aux;
 	}
-	std::cout << "---------------BODY UNCHUNKED-----------------" << std::endl;
-	std::cout << this->getBody() << std::endl;
+	// std::cout << "---------------BODY UNCHUNKED-----------------" << std::endl;
+	// std::cout << this->getBody() << std::endl;
 }
 
 std::string HttpRequest::getMethod() const {

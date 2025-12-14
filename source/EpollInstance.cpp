@@ -94,6 +94,7 @@ void EpollInstance::deletePendingRemovals() {
         throw std::runtime_error("EpollInstance is not initialized.");
     }
     for (size_t i = 0; i < _instance->_pendingRemovals.size(); i++) {
+        std::cerr << "Deleting handler for fd: " << _instance->_pendingRemovals[i] << std::endl;
         int fd = _instance->_pendingRemovals[i];
 
         std::map<int, EpollHandler*>::iterator it =
@@ -104,6 +105,7 @@ void EpollInstance::deletePendingRemovals() {
             _instance->_handlers.erase(it);
         }
     }
+    std::cerr << "Cleared pending removals." << std::endl;
     _instance->_pendingRemovals.clear();
 }
 

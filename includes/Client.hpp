@@ -2,18 +2,20 @@
 
 # include "WebservHeader.hpp"
 
+class CgiHandler; // Forward declaration
 class ServerListen;
 
 class Client : public EpollHandler {
     private:
         int             _state;
         std::string     _rawRequest;
-        ServerListen    &_serverListen;
-        std::string     _pendingResponse;  // Resposta pendente de envio (caso send() parcial)
         size_t          _responseOffset;   // Offset atual da resposta sendo enviada
-    public:
+        std::string     _pendingResponse;  // Resposta pendente de envio (caso send() parcial)
+        ServerListen    &_serverListen;
+        public:
         HttpRequest     request;
         HttpResponse    response;
+        CgiHandler    *cgiHandler;
 
         Client(int clientFd, ServerListen &serverListen);
         Client(const Client &src);
@@ -36,5 +38,9 @@ class Client : public EpollHandler {
 
         std::string toString(void) const;
         // Metodo para validar antes de executar o POST, DELETE e GET
-        bool validatingUriWithLocation(std::string bestMatch);
+        bool validateMethodAllowed(LocationBlock &location);
+        bool validatingUriWithLocation(LocationBlock &location);
+        bool validateGet(LocationBlock &location);
+        bool validatePost(LocationBlock &location);
+        bool validateDelete(LocationBlock &location);
 };

@@ -53,11 +53,13 @@ typedef struct s_logEvent {
 # include "StdLogHandler.hpp"
 # include "FileLogHandler.hpp"
 # include "CompositeLogHandler.hpp"
+# include "CgiHandler.hpp"
 
 enum clientBufferState {
     READING_HEADER = 9, //Lendo o header da request ainda
     READING_BODY = 10, //Lendo o conteudo da request ainda
-    COMPLETE = 11, //Ja lemos todo o conteudo da request
+    WAITING_CGI = 11, //Aguardando resposta do CGI
+    COMPLETE = 12, //Ja lemos todo o conteudo da request
 };
 
 // void initAllLogHandlers(void);

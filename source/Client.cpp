@@ -8,6 +8,7 @@ Client::Client(int clientFd, ServerListen &serverListen) : EpollHandler(EPOLLIN 
     this->response = HttpResponse();
     this->_pendingResponse = "";
     this->_responseOffset = 0;
+    this->cgiHandler = NULL; // Initialize cgiHandler to NULL
 }
 
 Client::Client(const Client &src) : EpollHandler(src.getInterestedEvents(), src.getSocketFd(), src.getMaxTimeoutSecs()), _serverListen(src._serverListen) {
@@ -21,6 +22,8 @@ Client &Client::operator=(const Client &src) {
         this->_state = src._state;
         this->_pendingResponse = src._pendingResponse;
         this->_responseOffset = src._responseOffset;
+        // cgiHandler should not be copied, it's specific to an active CGI process
+        this->cgiHandler = NULL; 
     }
     return (*this);
 }
@@ -29,279 +32,98 @@ Client::~Client(void) {
     if (this->getSocketFd() != -1) {
         close(this->getSocketFd());
     }
-}
-
-bool	isDirectory(const std::string& path) {
-	struct stat path_stat;
-	if (stat(path.c_str(), &path_stat) != 0) {
-		// Erro ao acessar as informacoes do arquivo.
-		return false;
-	}
-	return S_ISDIR(path_stat.st_mode);
-}
-
-// Preciso por a funcao de achar o best match no topo da validatingWithLocation()
-	// std::map<std::string, LocationBlock> locations = serverBlock.getLocations();
-	// std::string bestMatch = "";
-	// const LocationBlock* locationPtr = NULL;
-	
-	// for (std::map<std::string, LocationBlock>::const_iterator it = locations.begin();
-	// 	 it != locations.end(); ++it) {
-	// 	const std::string &path = it->first;
-	// 	if (req.getUri().compare(0, path.size(), path) == 0) {
-	// 		if (path.size() > bestMatch.size()) {
-	// 			bestMatch = path;
-	// 			locationPtr = &(it->second);
-	// 		}
-	// 	}
-	// }
-// Essa parte vai pegar sempre o melhor match para a location baseado no URI
-// Posso fazer essa validacao antes de entrar nos ifs para validar os metodos
-// Dessa forma, sempre teremos o location certo ja validado para usarmos na validacao dentro dos ifs
-bool Client::validatingUriWithLocation(std::string bestMatch) {
-    if (bestMatch.empty()) {
-        // A funcao de bestMatch nao achou o match da location
-        this->response.setResponseByStatus(400, "Bad Request", "<h1>Bad Request</h1>");
-        return (false);
+    if (this->cgiHandler) { // Ensure cgiHandler is deleted on client destruction
+        delete this->cgiHandler;
+        this->cgiHandler = NULL;
     }
-    Logger::info("O bestMatch e: " + bestMatch);
-    std::map<std::string, LocationBlock> locationsMap = this->_serverListen.getServerBlock().getLocations();
-    LocationBlock location = locationsMap.find(bestMatch)->second;
-    // Aqui, vamos validar a URI levando em consideracao cada metodo.
-    // Validacoes para o GET:
-    if (this->request.getMethod() == "GET") {
-        Logger::debug("ENTROU NO VALIDADOR DO GET");
-        // Validar se o Location aceita o GET
-        if (!location.checkHttpMethodInLocation("GET")) {
-            Logger::error("Location nao aceita o metodo GET.");
-            this->response.setResponseByStatus(405, "Method Not Allowed", "<h1>Method Not Allowed</h1>");
-            return (false);
-        }
-        // Concatenar a URI com o root/alias da location
-        std::string rootOrAliasPlusUri = location.getAlias() + this->request.getUri();
-        Logger::debug("String contendo alias + uri para o GET: " + rootOrAliasPlusUri);
-        // Validar o acesso de READ a esse recurso
-        if (access(rootOrAliasPlusUri.c_str(), R_OK) != 0) {
-            // erro de acesso ao recurso
-            Logger::error("Acesso ao recurso " + rootOrAliasPlusUri + " negado.");
-            this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbiddent</h1>");
-            return (false);
-        }
-        if (!rootOrAliasPlusUri.empty() && rootOrAliasPlusUri[rootOrAliasPlusUri.size() - 1] == '/') {
-            // e dir
-            // validar se tem algum index dentro desse dir.
-            bool    aux = false;
-            std::vector<std::string> locationIndexes = location.getIndex();
-            for (std::vector<std::string>::iterator it = locationIndexes.begin(); it != locationIndexes.end(); it++) {
-                if (access((rootOrAliasPlusUri + *it).c_str(), R_OK) == 0) {
-                    // rootOrAliasPlusUri += *it;
-                    // this->request.setUri(this->request.getUri() + *it);
-                    aux = true;
-                }
-            }
-            if (aux) {
-                // achou algum index dentro do dir rootOrAliasPlusUri
-                return (true);
-            } else {
-                // nao achou index.
-                if (!location.getAutoIndex()) {
-                    // location nao tem auto index
-                    Logger::error("Location nao aceita o autoindex.");
-                    this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbiddent</h1>");
-                    return (false);
-                }
-                // vai executar o autoindex...
-                Logger::info("Location aceita o autoindex.");
-                this->response.setExecAutoIndex(true);
-                return (true);
-            }
-        } else {
-            // O cliente esta pedindo um arquivo
-            Logger::debug("Validando se o arquivo existe. Nao tem autoindex...: " + rootOrAliasPlusUri);
-            // if (access(rootOrAliasPlusUri.c_str(), R_OK) != 0) 
-            if (isDirectory(rootOrAliasPlusUri)) {
-                // erro de acesso ao recurso
-                Logger::error("Acesso ao recurso " + rootOrAliasPlusUri + " negado.");
-                this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbiddent</h1>");
-                return (false);
-            }
-        }
-        // Checar se termina em "/" ou nao
-            // Se sim -> e diretorio
-            // Validar se tem um index nesse diretorio
-                // se sim -> ler e devolver esse index
-            // se nao -> validar pra ver se a location tem o autoindex
-                // se sim -> executar o autoindex
-                // se nao -> erro 403
-        // se nao terminar em "/" -> O client ta pedindo um arquivo
-            // validar o acesso de leitura ao recurso
-                // se sim -> ler o arquivo e montar o body
-                //se nao -> erro 404 not found
-        return (true);
-    }
-    // Validacoes para o POST:
-    if (this->request.getMethod() == "POST") {
-        Logger::debug("ENTROU NO VALIDADOR DO POST");
-        if (this->request.getUri().empty() || this->request.getUri()[this->request.getUri().length() - 1] == '/') {
-            this->response.setResponseByStatus(400, "Bad Request", "<h1>Bad Request</h1>");
-            return (false);
-        }
-        //Validar o tamanho maximo do body da request.
-        Logger::debug("------ testando o max body dentro da validacao para os metodos ----------");
-        std::cout << "Max body size do server block: " << this->_serverListen.getServerBlock().getMaxBodySize().second << std::endl;
-        Logger::debug("------ testando o max body dentro da validacao para os metodos ----------");
-        if (this->_serverListen.getServerBlock().getMaxBodySize().second < this->request.getBody().size()) {
-            // O tamanho do arquivo e maior do que o limite suportado por max_body_size
-            Logger::error("Max body size exceded. Payload Too Large");
-            this->response.setResponseByStatus(413, "Payload Too Large", "<h1>Payload Too Large</h1>");
-            return (false);
-        }
-        // O upload na location esta liberado?
-        if (!location.getCanUpload()) {
-            //nao pode upload nessa location
-            Logger::error("Location nao aceita upload. 403 forbidden");
-            this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbidden</h1>");
-            return (false);
-        }
-        // Validar se a location permite POST
-        if (!location.checkHttpMethodInLocation("POST")) {
-            // a location nao aceita POST
-            Logger::error("Location " + this->request.getUri() + " nao aceita o metodo POST.");
-            this->response.setResponseByStatus(405, "Method Not Allowed", "<h1>Method Not Allowed</h1>");
-            return (false);
-        }
-        // determinar o diretorio de upload
-        std::string locationUploadDir = location.getUploadPath();
-    	// o diretorio e "gravavel"?
-        if (access(locationUploadDir.c_str(),R_OK | W_OK) != 0) {
-		    Logger::error("Error no acesso. 403 forbidden");
-            this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbidden</h1>");
-	    	return (false);
-	    }
-        // Retorna TRUE
-        return (true);
-    }
-    // Validacoes para o DELETE:
-    if (this->request.getMethod() == "DELETE") {
-        Logger::debug("ENTROU NO VALIDADOR DO DELETE");
-        // checar se termina ou nao em "/"
-            // Caso termine em "/", e um diretorio. Nao podemos deletar!
-        if (this->request.getUri().empty() || this->request.getUri()[this->request.getUri().length() - 1] == '/') {
-            Logger::error("Diretory nao pode ser deletado. 403 forbidden.");
-            this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbidden</h1>");
-            return (false);
-        }
-        // checar se a location suporta DELETE
-        if (!location.checkHttpMethodInLocation("DELETE")) {
-            Logger::error("Location nao aceita DELETE");
-            // a location nao aceita DELETE
-            this->response.setResponseByStatus(405, "Method Not Allowed", "<h1>Method Not Allowed</h1>");
-            return (false);
-        }
-        // A URI vai vir com o a location + "/nome_do_arquivo"
-        // Precisamos pegar apenas o URI sem o arquivo.
-        std::string locationUploadDir = location.getUploadPath();
-        if (!locationUploadDir.empty()) {
-            Logger::debug("Upload Location existe!");
-            // significa que temos um diretorio para upload e delete.
-            std::string fullPathToDelete = locationUploadDir + this->request.getUri();
-            // full path vai ter o local de upload + URI da request.
-            // Validar se o arquivo existe nesse fullPath
-            //checar os direitos de acesso ao recurso
-            Logger::debug("FullPathToDelete: " + fullPathToDelete);
-            if (access(fullPathToDelete.c_str(), R_OK | W_OK) != 0) {
-                Logger::error("Error no acesso ao arquivo desejado para deletar. 403 forbidden");
-                this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbidden</h1>");
-                return (false);
-            }
-            Logger::debug("Vai retornar TRUE pro DELETE.");
-            return (true);
-        }
-        return (false);
-        // // Caso nao temine em "/", e um arquivo.
-        // if (isDirectory(locationUploadDir)) {
-        //     //checar os direitos de acesso ao arquivo
-        //     this->response.setErrorPage(403);
-		//     this->response.setStatus(403, "Forbidden");
-	    // 	return (false);
-        // }
-        // // Checando os acessos ao caminho completo que sera deletado
-	    // std::string fullPathToDelete = locationUploadDir + this->request.getUri();
-        // if (access(locationUploadDir.c_str(), W_OK) != 0) {
-        //     this->response.setErrorPage(403);
-		//     this->response.setStatus(403, "Forbidden");
-	    // 	return (false);
-        // }
-        // return (true);
-    }
-    return (false);
 }
 
 void Client::handleEpollIn(void) {
+    // If we are waiting for CGI, we should not read new request data
+    if (this->_state == WAITING_CGI) {
+        return;
+    }
+
     char buffer[4096] = {0};
     int count = 0;
     if ((count = read(this->getSocketFd(), buffer, sizeof(buffer))) > 0) {
         this->concatenateRequestData(std::string(buffer, count));
         if (this->isRequestComplete()) {
             ServerBlock serverBlock = this->_serverListen.getServerBlock();
-            // Process cookies if enabled for this location
-            std::string uri = this->request.getUri();
-            std::map<std::string, LocationBlock> locations = serverBlock.getLocations();
-            
-            // Find best matching location (prefix match, longest wins)
-            std::string bestMatch = "";
-            for (std::map<std::string, LocationBlock>::const_iterator it = locations.begin();
-            it != locations.end(); ++it) {
-                const std::string &path = it->first;
-                if (uri.compare(0, path.size(), path) == 0) {
-                    if (path.size() > bestMatch.size()) {
-                        bestMatch = path;
-                    }
+            const LocationBlock* locationPtr = serverBlock.getValidLocation(this->request.getUri(), this->request.getMethod());
+            if (!locationPtr) {
+                this->response.setErrorPage(404);
+            } else {
+                if (!validatingUriWithLocation(const_cast<LocationBlock&>(*locationPtr))) {
+                    Logger::error("Erro nas validacoes dos metodos da request...");
+                    return ;
                 }
+                this->response.dispatchRequest(this, this->_serverListen.getServerBlock(), *locationPtr);
             }
             
-            // VALIDAR ERROS NOS METODOS HTTP GET, POST e DELETE
-            if (!validatingUriWithLocation(bestMatch)) {
-                // Deu erro para execucao do metodo da request.
-                Logger::error("Erro nas validacoes dos metodos da request...");
-                return ;
-            }
-            this->response.dispatchRequest(this->request, this->_serverListen.getServerBlock());
-            
-            std::string responseStr = this->response.toString();
-            Logger::info(toString());
-            if (!sendResponse(responseStr)) {
-                // Erro ao enviar - cliente já foi removido em sendResponse()
-                return;
+            // Only send response if not waiting for CGI
+            if (this->_state != WAITING_CGI) { 
+                std::string responseStr = this->response.toString();
+                Logger::info(toString());
+                if (!sendResponse(responseStr)) {
+                    return;
+                }
             }
         }
     } else if (count == 0) {
-        // EOF - cliente fechou conexão
         EpollInstance::manipInterestList(EPOLL_CTL_DEL, this);
     }
-    // count < 0: erro no read() ou EAGAIN
-    // Em non-blocking, -1 pode ser EAGAIN/EWOULDBLOCK (normal) ou erro real
-    // NÃO verificamos errno diretamente (conforme régua)
-    // Se epoll acionou EPOLLIN, deveria haver dados - se read() retorna -1, pode ser erro
-    // Porém, em alguns casos raros, pode ser EAGAIN mesmo com EPOLLIN (race condition)
-    // Por segurança, apenas não processamos - o próximo epoll_wait() tentará novamente
-    // Se for erro real persistente, o timeout de 30s removerá o cliente
 }
 
 void Client::handleEpollOut(void) {
-    // Socket está pronto para escrita - continuar enviando resposta pendente
-    if (!this->isRequestComplete()) {
-        // Ainda não temos uma resposta completa para enviar
-        return;
+    if (this->_state == WAITING_CGI) {
+        if (this->cgiHandler && this->cgiHandler->isFinished()) {
+            Logger::debug("Client: CGI handler finished, processing output.");
+            std::string cgiOutput = this->cgiHandler->getCgiOutput();
+            this->response.parseCgiOutput(cgiOutput);
+            this->_state = COMPLETE;
+
+            std::cerr << "CGI FD: " << this->cgiHandler->getSocketFd() << std::endl;
+            std::cerr << "Client FD: " << this->getSocketFd() << std::endl;
+            EpollInstance::manipInterestList(EPOLL_CTL_DEL, this->cgiHandler);
+            this->cgiHandler = NULL;
+
+            // Now that CGI is done, the response is ready to be sent.
+            // We can fall through to the response sending logic below.
+        } else if (this->cgiHandler) {
+            // CGI still running, do nothing and wait.
+            return;
+        } else {
+            Logger::error("Client: In WAITING_CGI state but cgiHandler is NULL. Sending 500.");
+            this->response.setErrorPage(500);
+            this->_state = COMPLETE;
+            // Fall through to send the error response.
+        }
     }
-    
-    // Continuar enviando resposta pendente
-    if (!sendResponse(this->_pendingResponse)) {
-        // Erro ao enviar - cliente já foi removido
-        return;
+
+    if (!this->_pendingResponse.empty()) {
+        if (!sendResponse(this->_pendingResponse)) {
+            // sendResponse returning false means the client was closed/deleted.
+            return;
+        }
+        if (!this->_pendingResponse.empty()) {
+            // Partial send, wait for next EPOLLOUT.
+            return;
+        }
     }
-    
-    EpollInstance::manipInterestList(EPOLL_CTL_DEL, this);
+
+    if (this->isRequestComplete() && this->_pendingResponse.empty()) {
+        std::string responseStr = this->response.toString();
+        Logger::info(toString());
+        if (!sendResponse(responseStr)) {
+            // Client was closed/deleted.
+            return;
+        }
+        if (this->_pendingResponse.empty()) {
+            // Response sent completely, we can close the client.
+            EpollInstance::manipInterestList(EPOLL_CTL_DEL, this);
+        }
+    }
 }
 
 bool Client::sendResponse(const std::string &responseStr) {
@@ -353,7 +175,7 @@ bool Client::sendResponse(const std::string &responseStr) {
 }
 
 void Client::concatenateRequestData(std::string data) {
-    if (this->_state == COMPLETE) {
+    if (this->_state == COMPLETE || this->_state == WAITING_CGI) { // Don't process if waiting for CGI
         return;
     }
     std::cout << "------------concatenate request-----------------" << std::endl;
@@ -412,6 +234,132 @@ void Client::concatenateRequestData(std::string data) {
             this->setState(COMPLETE);
         }
     }
+}
+
+bool	isDirectory(const std::string& path) {
+	struct stat path_stat;
+	if (stat(path.c_str(), &path_stat) != 0) {
+		// Erro ao acessar as informacoes do arquivo.
+		return false;
+	}
+	return S_ISDIR(path_stat.st_mode);
+}
+
+bool Client::validateMethodAllowed(LocationBlock &location) {
+    if (!location.checkHttpMethodInLocation(this->request.getMethod())) {
+        Logger::debug("Metodo nao permitido na location...");
+        this->response.setResponseByStatus(
+            405, "Method Not Allowed", "<h1>Method Not Allowed</h1>"
+        );
+        return false;
+    }
+    return true;
+}
+
+bool Client::validatingUriWithLocation(LocationBlock &location) {
+
+    if (!validateMethodAllowed(location))
+        return false;
+
+    const std::string &method = this->request.getMethod();
+
+    if (method == "GET")
+        return validateGet(location);
+    else if (method == "POST")
+        return validatePost(location);
+    else if (method == "DELETE")
+        return validateDelete(location);
+    else {
+        Logger::debug("Metodo HTTP nao suportado...");
+        this->response.setResponseByStatus(405, "Method Not Allowed", "<h1>Method Not Allowed</h1>");
+        return false;
+    }
+}
+
+bool Client::validateGet(LocationBlock &location) {
+    std::string path = "./www" + this->request.getUri();
+    Logger::debug("String contendo alias + uri para o GET: " + path);
+
+    if (access(path.c_str(), R_OK) != 0) {
+        Logger::debug("Acesso ao recurso " + path + " negado.");
+        this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbidden</h1>");
+        return false;
+    }
+
+    if (!path.empty() && path[path.size() - 1] == '/') {
+        std::vector<std::string> indexes = location.getIndex();
+        for (size_t i = 0; i < indexes.size(); i++) {
+            if (access((path + indexes[i]).c_str(), R_OK) == 0)
+                return true;
+        }
+
+        if (!location.getAutoIndex()) {
+            Logger::debug("Autoindex desabilitado e nenhum index encontrado.");
+            this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbidden</h1>");
+            return false;
+        }
+
+        Logger::debug("Autoindex habilitado.");
+        this->response.setExecAutoIndex(true);
+        return true;
+    }
+
+    if (isDirectory(path)) {
+        Logger::debug("Acesso ao diretorio " + path + " negado.");
+        this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbidden</h1>");
+        return false;
+    }
+
+    return true;
+}
+
+bool Client::validatePost(LocationBlock &location) {
+
+    if (this->request.getUri().empty() ||
+        this->request.getUri()[this->request.getUri().size() - 1] == '/') {
+        this->response.setResponseByStatus(400, "Bad Request", "<h1>Bad Request</h1>");
+        return false;
+    }
+
+    if (this->_serverListen.getServerBlock().getMaxBodySize().second <
+        this->request.getBody().size()) {
+        this->response.setResponseByStatus(413, "Payload Too Large", "<h1>Payload Too Large</h1>");
+        return false;
+    }
+
+    if (!location.getCanUpload()) {
+        this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbidden</h1>");
+        return false;
+    }
+
+    std::string uploadDir = location.getUploadPath();
+    if (access(uploadDir.c_str(), R_OK | W_OK) != 0) {
+        this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbidden</h1>");
+        return false;
+    }
+
+    return true;
+}
+
+bool Client::validateDelete(LocationBlock &location) {
+
+    if (this->request.getUri().empty() ||
+        this->request.getUri()[this->request.getUri().size() - 1] == '/') {
+        this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbidden</h1>");
+        return false;
+    }
+
+    std::string base = location.getUploadPath();
+    if (base.empty())
+        return false;
+
+    std::string fullPath = base + this->request.getUri();
+    if (access(fullPath.c_str(), R_OK | W_OK) != 0) {
+        this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbidden</h1>");
+        return false;
+    }
+
+    return true;
 }
 
 bool Client::isRequestComplete(void) {

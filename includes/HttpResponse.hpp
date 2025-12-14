@@ -2,6 +2,7 @@
 
 # include "WebservHeader.hpp"
 
+class Client;
 class LocationBlock;
 class ServerBlock;
 
@@ -17,10 +18,10 @@ class HttpResponse {
 		HttpResponse();
 		~HttpResponse();
 
-	void handleGet(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock *location);
-	void handlePost(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock *location);
-	void handleDelete(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock *location);
-	void dispatchRequest(const HttpRequest &req, const ServerBlock &serverBlock);
+	void handleGet(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock &location);
+	void handlePost(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock &location);
+	void handleDelete(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock &location);
+	void dispatchRequest(Client *client, const ServerBlock &serverBlock, const LocationBlock &location);
 
 	void setStatus(int code, const std::string &message);
 	void setHeader(const std::string &key, const std::string &value);
@@ -28,6 +29,7 @@ class HttpResponse {
 	void setErrorPage(int code);
 	void setResponseByStatus(int statusCode, const std::string &statusMessage="OK", const std::string &bodyContent="", const std::string &contentType="text/html");
 	void processCookies(const HttpRequest &req, const LocationBlock &location);
+	void parseCgiOutput(const std::string& cgiRawOutput); // Adicionado
 
 	std::string		toString() const;
 	std::string		intToString(int n) const;
