@@ -25,12 +25,15 @@ Client &Client::operator=(const Client &src) {
     return (*this);
 }
 
-Client::~Client(void) {}
+Client::~Client(void) {
+    if (this->getSocketFd() != -1) {
+        close(this->getSocketFd());
+    }
+}
 
 void Client::handleEpollIn(void) {
     char buffer[4096] = {0};
     int count = 0;
-
     if ((count = read(this->getSocketFd(), buffer, sizeof(buffer))) > 0) {
         this->concatenateRequestData(std::string(buffer, count));
         if (this->isRequestComplete()) {
@@ -42,15 +45,10 @@ void Client::handleEpollIn(void) {
                 // Erro ao enviar - cliente já foi removido em sendResponse()
                 return;
             }
-            
-            if (this->_responseOffset >= responseStr.size()) {
-                RunTime::deleteClient(this->getSocketFd());
-            }
         }
     } else if (count == 0) {
         // EOF - cliente fechou conexão
-        std::cout << "Client closed the connection." << std::endl;
-        RunTime::deleteClient(this->getSocketFd());
+        EpollInstance::manipInterestList(EPOLL_CTL_DEL, this);
     }
     // count < 0: erro no read() ou EAGAIN
     // Em non-blocking, -1 pode ser EAGAIN/EWOULDBLOCK (normal) ou erro real
@@ -84,15 +82,8 @@ void Client::handleEpollOut(void) {
         uint32_t events = this->getInterestedEvents();
         events &= ~EPOLLOUT;
         this->setInterestedEvents(events);
-        EpollInstance::manipInterestList(EPOLL_CTL_MOD, this);
-        
-        RunTime::deleteClient(this->getSocketFd());
+        EpollInstance::manipInterestList(EPOLL_CTL_DEL, this);
     }
-}
-
-void Client::deleteHandler(void) {
-    std::cout << "Deleting client handler for FD: " << this->getSocketFd() << std::endl;
-    close(this->getSocketFd());
 }
 
 bool Client::sendResponse(const std::string &responseStr) {
@@ -119,16 +110,13 @@ bool Client::sendResponse(const std::string &responseStr) {
         // Outros erros devem resultar em remoção do cliente
         // Por segurança, assumimos que é EAGAIN e adicionamos EPOLLOUT
         // Se for erro real, o próximo send() falhará novamente e então removemos
-        uint32_t events = this->getInterestedEvents();
-        events |= EPOLLOUT;
-        this->setInterestedEvents(events);
-        EpollInstance::manipInterestList(EPOLL_CTL_MOD, this);
+        EpollInstance::manipInterestList(EPOLL_CTL_DEL, this);
         return true;
     } else if (sent == 0) {
         // send() retornou 0 - conexão fechada pelo peer
         // Remover cliente conforme régua: "if an error is returned, the client is removed"
         std::cout << "Connection closed by peer during send, closing client." << std::endl;
-        RunTime::deleteClient(this->getSocketFd());
+        EpollInstance::manipInterestList(EPOLL_CTL_DEL, this);
         return false;
     } else {
         // send() enviou alguns bytes (pode ser parcial)

@@ -22,7 +22,6 @@ class Client : public EpollHandler {
 
         virtual void handleEpollIn(void);
         virtual void handleEpollOut(void);  // Para envio assíncrono quando socket está pronto
-        virtual void deleteHandler(void);
 
         void concatenateRequestData(std::string data);
         bool isRequestComplete(void);

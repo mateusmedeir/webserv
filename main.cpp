@@ -4,6 +4,7 @@ void signalHandler(int signum) {
     if (signum == SIGINT) {
         std::cout << "\n[Signal] SIGINT received, shutting down gracefully..." << std::endl;
         RunTime::deleteInstance();
+        Logger::deleteInstance();
     }
     else if (signum == SIGPIPE) {
         std::cerr << "[Signal] SIGPIPE received and ignored (client disconnected during write)" << std::endl;
@@ -20,7 +21,7 @@ int	verifyArgs(int ac, char **av)
 	return (1);
 }
 
-void	printBlock(std::vector<ServerBlock> serverBlocks, std::vector<ServerListen> serverListens)
+/* void	printBlock(std::vector<ServerBlock> serverBlocks, std::vector<ServerListen> serverListens)
 {
     for (size_t i = 0; i < serverBlocks.size(); i++)
     {
@@ -43,7 +44,7 @@ void	printBlock(std::vector<ServerBlock> serverBlocks, std::vector<ServerListen>
         }
         std::cout << "========================================================" << std::endl;
     }
-}
+} */
 
 void epollReadyListLoop(int numberOfReadySockets) {
     if (numberOfReadySockets) {
@@ -61,7 +62,7 @@ void epollReadyListLoop(int numberOfReadySockets) {
 void epollValidationLoop() {
     std::map<int, EpollHandler*> &handlers = EpollInstance::getHandlers();
     for (std::map<int, EpollHandler*>::iterator it = handlers.begin(); it != handlers.end(); ++it) {
-        it->second->handleTimeout();
+        it->second->checkTimeout();
     }
 }
 
@@ -74,6 +75,7 @@ void serverMainLoop() {
         }
         else {
             epollReadyListLoop(numberOfReadySockets);
+            EpollInstance::deletePendingRemovals();
             epollValidationLoop();
         }
     }
@@ -93,7 +95,7 @@ int main(int ac, char **av) {
 
     try {
         RunTime::initializeRuntime(ac, av);
-        printBlock(RunTime::getConfig().getServerBlocks(), RunTime::getServerListeners());
+        //printBlock(RunTime::getConfig().getServerBlocks(), RunTime::getServerListeners());
         serverMainLoop();
     } catch (const std::exception &e) {
         std::cerr << e.what() << std::endl;

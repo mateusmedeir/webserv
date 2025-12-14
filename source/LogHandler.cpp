@@ -26,6 +26,13 @@ int Logger::initLogger(enum LogLevel level, LogHandler *handler) {
     return (-1);
 }
 
+void Logger::deleteInstance(void) {
+    if (Logger::_instance != NULL) {
+        delete Logger::_instance;
+        Logger::_instance = NULL;
+    }
+}
+
 void Logger::debug(std::string message){
     if (Logger::_instance == NULL || Logger::_instance->_handler == NULL || Logger::_instance->_level > DEBUG) {
         return ;

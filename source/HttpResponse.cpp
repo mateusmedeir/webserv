@@ -9,10 +9,10 @@ HttpResponse::HttpResponse(){
 
 HttpResponse::~HttpResponse(){};
 
-void HttpResponse::handleGet(const ServerBlock &serverBlock, const LocationBlock *location){
+void HttpResponse::handleGet(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock *location){
 	if (!location->getReturn().empty()) return setResponseByStatus(302, "Found", location->getReturn());
 
-	std::string path = location->getPath(serverBlock.getRoot().second);
+	std::string path = location->getPath(serverBlock.getRoot().second, req.getUri());
 	if (path.empty()) return setResponseByStatus(404);
 
 	std::ifstream file(path.c_str(), std::ios::binary);
@@ -38,8 +38,8 @@ void HttpResponse::handlePost(const HttpRequest &req){
 	setResponseByStatus(201, "Created", "<h1>File uploaded successfully!</h1>");
 };
 
-void HttpResponse::handleDelete(const ServerBlock &serverBlock, const LocationBlock *location){
-		std::string path = location->getPath(serverBlock.getRoot().second);
+void HttpResponse::handleDelete(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock *location){
+		std::string path = location->getPath(serverBlock.getRoot().second, req.getUri());
 
 		if (std::remove(path.c_str()) == 0) {
 			setResponseByStatus(200, "OK", "<h1>File deleted successfully</h1>");
@@ -60,11 +60,11 @@ void HttpResponse::dispatchRequest(const HttpRequest &req, const ServerBlock &se
 
 
 	if(req.getMethod() == "GET")
-		return handleGet(serverBlock, locationPtr);
+		return handleGet(req, serverBlock, locationPtr);
 	else if(req.getMethod() == "POST")
 		return handlePost(req);
 	else if(req.getMethod() == "DELETE")
-		return handleDelete(serverBlock, locationPtr);
+		return handleDelete(req, serverBlock, locationPtr);
 	else 
 		this->setErrorPage(405);
 
@@ -185,8 +185,8 @@ void		HttpResponse::setErrorPage(int code){
 }
 
 void HttpResponse::setResponseByStatus(int statusCode, const std::string &statusMessage, const std::string &bodyContent, const std::string &contentType) {
-	if (this->_status_code >= 400) {
-		setErrorPage(this->_status_code);
+	if (statusCode >= 400) {
+		setErrorPage(statusCode);
 	} else if (statusCode == 302) {
 		setStatus(302, "Found");
 		setHeader("Location", bodyContent);

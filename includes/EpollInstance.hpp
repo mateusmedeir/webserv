@@ -8,6 +8,7 @@ class EpollInstance {
         int                             _epollFd;
         struct epoll_event              _configEpollEvents;
         std::map<int, EpollHandler*>    _handlers;
+        std::vector<int>                _pendingRemovals;
         struct epoll_event              _readyList[MAX_EVENTS];
 
         EpollInstance(void);
@@ -21,7 +22,7 @@ class EpollInstance {
 
         static void manipInterestList(int operation, EpollHandler *handler);
         static int manipEpollWait(void);
-        static void deleteElementFromHandlers(int socketFd);
+        static void deletePendingRemovals(void);
 
         static int getEpollFd(void);
         static struct epoll_event getConfigEpollEvents(void);

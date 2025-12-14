@@ -2,7 +2,9 @@
 #include "../includes/RunTime.hpp"
 
 ServerListen::ServerListen(unsigned int host, int port, const ServerBlock &serverBlock)
-    : EpollHandler(EPOLLIN | EPOLLRDHUP), _host(host), _port(port), _serverBlock(serverBlock) {}
+    : EpollHandler(EPOLLIN | EPOLLRDHUP), _host(host), _port(port), _serverBlock(serverBlock) {
+        initServerSocket(AF_INET, SOCK_STREAM);
+    }
 
 ServerListen::ServerListen(const ServerListen &src)
     : EpollHandler(src.getInterestedEvents(), src.getSocketFd()), _host(src._host), _port(src._port), _serverBlock(src._serverBlock) {}
@@ -45,11 +47,7 @@ void ServerListen::handleEpollIn(void) {
                 if (setsockopt(clientFd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int)) < 0) {
                     std::cerr << "[Warning] Failed to set TCP_NODELAY on client socket" << std::endl;
                 }
-                
-                RunTime::getClients().insert(
-                    std::make_pair(clientFd, Client(clientFd, RunTime::getElementInServerList(this->getSocketFd())))
-                );
-                EpollInstance::manipInterestList(EPOLL_CTL_ADD, &RunTime::getClient(clientFd));
+                EpollInstance::manipInterestList(EPOLL_CTL_ADD, new Client(clientFd, *this));
             }
             catch (const std::exception &e) {
                 std::cerr << e.what() << std::endl;

@@ -141,7 +141,6 @@ const LocationBlock *ServerBlock::getValidLocation(const std::string uri, const 
         if (uri.compare(0, locationPath.size(), locationPath) == 0) {
             if (locationPath.size() > bestMatch.size()) {
                 bool methodAllowed = false;
-                std::cout << "Found a better prefix match: " << locationPath << std::endl;
                 bestMatch = locationPath;
                 location = &(it->second);
 
@@ -151,7 +150,6 @@ const LocationBlock *ServerBlock::getValidLocation(const std::string uri, const 
                 } else {
                     for (size_t i = 0; i < allowedMethods.size(); i++)
                     {
-                        std::cout << "Checking allowed method: " << allowedMethods[i] << std::endl;
                         if (allowedMethods[i] == method) {
                             methodAllowed = true;
                             break;
@@ -159,7 +157,6 @@ const LocationBlock *ServerBlock::getValidLocation(const std::string uri, const 
                     }
                 }
                 if (!methodAllowed) {
-                    std::cout << "Method " << method << " not allowed for location " << locationPath << std::endl;
                     bestMatch = "";
                     location = NULL;
                 }

@@ -51,5 +51,5 @@ class LocationBlock {
         std::vector<std::string> getCgiExtensions() const;
         std::vector<std::string> getAllowMethods() const;
         bool getCookiesEnabled() const;
-        std::string getPath(std::string root) const;
+        std::string getPath(const std::string &root, const std::string &requestUri) const;
 };

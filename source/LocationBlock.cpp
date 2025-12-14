@@ -276,34 +276,38 @@ bool LocationBlock::validatePath(const std::string &path) const {
     return isValid;
 }
 
-std::string LocationBlock::getPath(std::string root) const
+std::string LocationBlock::getPath(const std::string &root, const std::string &requestUri) const
 {
-    std::string uri = this->getUri();
-    std::vector<std::string> indexes = this->getIndex();
+    std::string locationUri = this->getUri(); // "/"
+    std::string relativeUri = requestUri;
+
+    // remove o prefixo da location
+    if (relativeUri.find(locationUri) == 0)
+        relativeUri = relativeUri.substr(locationUri.size());
+
     std::string fullPath = root;
-    std::string validPath = "";
-
-    if (indexes.empty())
-        indexes.push_back("index.html");
-    
-    if (uri[0] != '/' && (root.empty() || root[root.size() - 1] != '/')) {
+    if (!fullPath.empty() && fullPath[fullPath.size() - 1] != '/')
         fullPath += "/";
-    } else if (uri[0] == '/' && !root.empty() && root[root.size() - 1] == '/') {
-        fullPath = fullPath.substr(0, fullPath.size() - 1);
-    }
-    fullPath += uri;
 
-    for (size_t i = 0; i < indexes.size(); i++) {
-        std::string testPath = fullPath;
-        if (testPath[testPath.size() - 1] != '/')
-            testPath += "/";
+    fullPath += relativeUri;
 
-        testPath += indexes[i];
-        if (validatePath(testPath)) {
-            validPath = testPath;
-            break;
+    // se terminar com / → tenta index
+    if (fullPath[fullPath.size() - 1] == '/') {
+        std::vector<std::string> indexes = getIndex();
+        if (indexes.empty())
+            indexes.push_back("index.html");
+
+        for (size_t i = 0; i < indexes.size(); i++) {
+            std::string test = fullPath + indexes[i];
+            if (validatePath(test))
+                return test;
         }
+        return "";
     }
 
-    return validPath;
+    // arquivo direto
+    if (validatePath(fullPath))
+        return fullPath;
+
+    return "";
 }

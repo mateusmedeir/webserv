@@ -14,11 +14,10 @@ class EpollHandler {
         virtual ~EpollHandler();
 
         int handleEvent(struct epoll_event &event);
-        void handleTimeout(void);
+        void checkTimeout(void);
 
         virtual void handleEpollIn(void) {};
         virtual void handleEpollOut(void) {};
-        virtual void deleteHandler(void) {};
 
         virtual void setSocketFd(int socketFd);
         virtual int getSocketFd() const;
@@ -26,4 +25,6 @@ class EpollHandler {
         virtual void setInterestedEvents(uint32_t events);
         virtual int getMaxTimeoutSecs() const;
         virtual void setMaxTimeoutSecs(int maxTimeoutSecs);
+        virtual time_t getLastActiveTime() const;
+        virtual void setLastActiveTime(time_t lastActiveTime);
 };

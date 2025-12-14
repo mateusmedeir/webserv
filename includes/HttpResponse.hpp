@@ -16,9 +16,9 @@ class HttpResponse {
 		HttpResponse();
 		~HttpResponse();
 
-	void handleGet(const ServerBlock &serverBlock, const LocationBlock *location);
+	void handleGet(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock *location);
 	void handlePost(const HttpRequest &req);
-	void handleDelete(const ServerBlock &serverBlock, const LocationBlock *location);
+	void handleDelete(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock *location);
 	void dispatchRequest(const HttpRequest &req, const ServerBlock &serverBlock);
 
 	void setStatus(int code, const std::string &message);

@@ -17,14 +17,14 @@ int EpollHandler::handleEvent(struct epoll_event &event) {
     return (0);
 }
 
-void EpollHandler::handleTimeout(void) {
+void EpollHandler::checkTimeout(void) {
     if (this->_maxTimeoutSecs < 0) {
         return;
     }
 
     time_t currentTime = time(NULL);
     if (currentTime - this->_lastActiveTime > this->_maxTimeoutSecs) {
-        EpollInstance::deleteElementFromHandlers(this->_socketFd);
+        EpollInstance::manipInterestList(EPOLL_CTL_DEL, this);
     }
 }
 
@@ -50,4 +50,12 @@ void EpollHandler::setInterestedEvents(uint32_t events) {
 
 void EpollHandler::setMaxTimeoutSecs(int maxTimeoutSecs) {
     this->_maxTimeoutSecs = maxTimeoutSecs;
+}
+
+time_t EpollHandler::getLastActiveTime() const {
+    return (this->_lastActiveTime);
+}
+
+void EpollHandler::setLastActiveTime(time_t lastActiveTime) {
+    this->_lastActiveTime = lastActiveTime;
 }

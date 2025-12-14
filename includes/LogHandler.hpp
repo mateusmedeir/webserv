@@ -30,6 +30,7 @@ class Logger {
     public:
         ~Logger(void);
         static int      initLogger(enum LogLevel level, LogHandler *handler);
+        static void     deleteInstance(void);
         static void     debug(std::string message);
         static void     error(std::string message);
         static void     info(std::string message);
