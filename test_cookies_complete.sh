@@ -117,7 +117,7 @@ compile_project() {
     make clean > /dev/null 2>&1 || true
     
     print_info "Compilando webserv..."
-    if ! make > "$TEMP_DIR/compile.log" 2>&1; then
+    if ! make workflow > "$TEMP_DIR/compile.log" 2>&1; then
         print_fail "Erro na compilação!"
         echo -e "${RED}Log de compilação:${NC}"
         cat "$TEMP_DIR/compile.log"

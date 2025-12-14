@@ -4,6 +4,7 @@
 
 # include <iostream> //| Para testes, remover depois
 # include <sys/socket.h>
+# include <sys/stat.h>
 # include <netinet/in.h>
 # include <netinet/tcp.h>
 # include <unistd.h>
@@ -59,4 +60,5 @@ enum clientBufferState {
     COMPLETE = 11, //Ja lemos todo o conteudo da request
 };
 
+// void initAllLogHandlers(void);
 void set_nonblocking(int sockfd);

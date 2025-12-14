@@ -1,4 +1,4 @@
-# pragma once
+#pragma once
 
 # include "WebservHeader.hpp"
 
@@ -12,12 +12,13 @@ class HttpResponse {
 		std::string 												_status_message;
 		std::map<std::string, std::string>	_headers;
 		std::string 												_body;
+		bool														_execAutoIndex;
 	public:
 		HttpResponse();
 		~HttpResponse();
 
 	void handleGet(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock *location);
-	void handlePost(const HttpRequest &req);
+	void handlePost(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock *location);
 	void handleDelete(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock *location);
 	void dispatchRequest(const HttpRequest &req, const ServerBlock &serverBlock);
 
@@ -33,6 +34,12 @@ class HttpResponse {
 
 	std::string		getMimeType(const std::string &path) const;
 	std::string 	getHttpVersion() const;
+	void setExecAutoIndex(bool exec);
+	
+	std::string findBestLocationMatch(const std::string &uri, const ServerBlock &serverBlock, LocationBlock &location) const;
+
+	bool 			getExecAutoIndex() const;
+	
 	int getStatusCode() const;
 	std::string getStatusMessage() const;
 	std::string getHeaderValue(const std::string &key) const;

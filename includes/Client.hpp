@@ -35,4 +35,6 @@ class Client : public EpollHandler {
         void setState(int state);
 
         std::string toString(void) const;
+        // Metodo para validar antes de executar o POST, DELETE e GET
+        bool validatingUriWithLocation(std::string bestMatch);
 };
