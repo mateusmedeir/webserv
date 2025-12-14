@@ -101,6 +101,9 @@ void HttpRequest::parseBody(const std::string &rawRequest, std::string onlyBody)
 	std::istringstream stream(rawRequest);
 	std::string line;
 	this->body = onlyBody;
+	if (this->body.empty()) {
+		return;
+	}
 
 	std::cout << "---------------PARSE BODY Raw Request-----------------" << std::endl;
 	// std::cout << rawRequest << std::endl;
@@ -110,6 +113,10 @@ void HttpRequest::parseBody(const std::string &rawRequest, std::string onlyBody)
 	if (isMultipart) {
 		std::cout << "IS MULTIPART FORM-DATA !!" << std::endl;
 		this->isUpload = true;
+		size_t boundaryPos = rawRequest.find("boundary=");
+		if (boundaryPos == std::string::npos) {
+			return;
+		}
 		size_t boundaryStartPos = rawRequest.find("boundary=") + std::strlen("boundary=");
 		size_t boundaryEndPos = rawRequest.find("\r\n", boundaryStartPos);
 		this->startBoundary = rawRequest.substr(boundaryStartPos, (boundaryEndPos - boundaryStartPos));

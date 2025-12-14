@@ -156,7 +156,6 @@ bool Client::validatingUriWithLocation(std::string bestMatch) {
             this->response.setResponseByStatus(413, "Payload Too Large", "<h1>Payload Too Large</h1>");
             return (false);
         }
-        if (this->_serverListen.getServerBlock().getMaxBodySize().second)
         // O upload na location esta liberado?
         if (!location.getCanUpload()) {
             //nao pode upload nessa location
@@ -291,12 +290,8 @@ void Client::handleEpollIn(void) {
 
 void Client::handleEpollOut(void) {
     // Socket está pronto para escrita - continuar enviando resposta pendente
-    if (this->_pendingResponse.empty() || this->_responseOffset >= this->_pendingResponse.size()) {
-        // Não há nada para enviar - remover interesse em EPOLLOUT
-        uint32_t events = this->getInterestedEvents();
-        events &= ~EPOLLOUT;
-        this->setInterestedEvents(events);
-        EpollInstance::manipInterestList(EPOLL_CTL_MOD, this);
+    if (!this->isRequestComplete()) {
+        // Ainda não temos uma resposta completa para enviar
         return;
     }
     
@@ -306,14 +301,7 @@ void Client::handleEpollOut(void) {
         return;
     }
     
-    // Se toda a resposta foi enviada, remover cliente
-    if (this->_responseOffset >= this->_pendingResponse.size()) {
-        // Remover interesse em EPOLLOUT
-        uint32_t events = this->getInterestedEvents();
-        events &= ~EPOLLOUT;
-        this->setInterestedEvents(events);
-        EpollInstance::manipInterestList(EPOLL_CTL_DEL, this);
-    }
+    EpollInstance::manipInterestList(EPOLL_CTL_DEL, this);
 }
 
 bool Client::sendResponse(const std::string &responseStr) {
