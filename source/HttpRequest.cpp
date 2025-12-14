@@ -17,13 +17,13 @@ void HttpRequest::parseRequestLine(const std::string &rawRequest) {
 	if (std::getline(stream, line)) {
 		if (!line.empty() && line[line.size() - 1] == '\r')
 			line.erase(line.size() - 1);
-		std::istringstream first_line(line);
-		first_line >> this->method >> this->uri >> this->version;
-
-		if (this->method.empty() || this->uri.empty() || this->version.empty())
+			std::istringstream first_line(line);
+			first_line >> this->method >> this->uri >> this->version;
+			
+			if (this->method.empty() || this->uri.empty() || this->version.empty())
 			throw std::runtime_error("Request line malformada: campos ausentes");
+		}
 	}
-}
 
 void HttpRequest::parseHeaders(const std::string &rawRequest) {
 	std::istringstream stream(rawRequest);
@@ -35,11 +35,11 @@ void HttpRequest::parseHeaders(const std::string &rawRequest) {
 			pastFirstLine = true;
 			continue;
 		}
-
+		
 		if (line == "\r" || line == "") break;
 
 		if (!line.empty() && line[line.size() - 1] == '\r')
-			line.erase(line.size() - 1);
+		line.erase(line.size() - 1);
 
 		size_t sep = line.find(":");
 		if (sep != std::string::npos) {
@@ -57,10 +57,19 @@ void HttpRequest::parseHeaders(const std::string &rawRequest) {
 	}
 }
 
+void	trimChars(std::string& input, const std::string& charsToTrim) {
+	size_t start = input.find_first_not_of(charsToTrim);
+	size_t end = input.find_last_not_of(charsToTrim);
+
+	if (start == std::string::npos || end == std::string::npos)
+		return ;
+	input = input.substr(start, end - start + 1);
+}
+
 std::string decodeChunkedBody(std::string& chunkedBody) {
 	std::stringstream result;
 	std::istringstream stream(chunkedBody);
-
+	
 	std::string line;
 	while (std::getline(stream, line)) {
 		//Converter o chunk para inteiro.
@@ -92,6 +101,11 @@ void HttpRequest::parseBody(const std::string &rawRequest, std::string onlyBody)
 	std::string line;
 	this->body = onlyBody;
 
+	std::cout << "---------------PARSE BODY Raw Request-----------------" << std::endl;
+	// std::cout << rawRequest << std::endl;
+	std::cout << "---------------PARSE BODY Only body-----------------" << std::endl;
+	// std::cout << onlyBody << std::endl;
+
 	if (isMultipart) {
 		std::cout << "IS MULTIPART FORM-DATA !!" << std::endl;
 		this->isUpload = true;
@@ -102,12 +116,16 @@ void HttpRequest::parseBody(const std::string &rawRequest, std::string onlyBody)
 	}
 	if (this->getHeaderValue("Transfer-Encoding") == "chunked")
 		this->body = decodeChunkedBody(this->body);
-	if (this->isUploadRequest()) {
+	if (this->isUploadRequest() && this->getMethod() == "POST") {
 		// Precisamos pegar o file name
 		size_t filenameStartPos = this->body.find("filename=") + std::strlen("filename=");
 		size_t filenameEndPos = this->body.find("\r\n", filenameStartPos);
-		this->uploadFileName = this->body.substr(filenameStartPos, filenameEndPos - filenameStartPos);
+		std::string aux = this->body.substr(filenameStartPos, filenameEndPos - filenameStartPos);
+		trimChars(aux, "\"");
+		this->uploadFileName = aux;
 	}
+	std::cout << "---------------BODY UNCHUNKED-----------------" << std::endl;
+	std::cout << this->getBody() << std::endl;
 }
 
 std::string HttpRequest::getMethod() const {
@@ -159,6 +177,7 @@ bool HttpRequest::hasHeader(const std::string &key) const {
 	}
 	return false;
 }
+
 
 std::string HttpRequest::getBody() const {
 		return body;

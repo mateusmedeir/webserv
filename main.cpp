@@ -1,4 +1,5 @@
 #include "includes/RunTime.hpp"
+#include "includes/CgiHandler.hpp"
 
 void signalHandler(int signum) {
     if (signum == SIGINT) {

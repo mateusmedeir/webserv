@@ -1,5 +1,6 @@
 #include "../includes/WebservHeader.hpp"
 #include "../includes/CookieHandler.hpp"
+#include "../includes/CgiHandler.hpp"
 
 HttpResponse::HttpResponse(){
 	this->_http_version = "HTTP/1.0";
@@ -9,33 +10,39 @@ HttpResponse::HttpResponse(){
 
 HttpResponse::~HttpResponse(){};
 
-void HttpResponse::handleGet(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock *location){
+void HttpResponse::handleGet(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock *location) {
 	if (!location->getReturn().empty()) return setResponseByStatus(302, "Found", location->getReturn());
 
 	std::string path = location->getPath(serverBlock.getRoot().second, req.getUri());
 	if (path.empty()) return setResponseByStatus(404);
 
+	// validar se e autoindex.
+	if (this->getExecAutoIndex()) {
+		// Execute autoindex...
+		Logger::debug("EXECUTANDO AUTOINDEX....");
+		return setResponseByStatus(404);
+	}
+	std::vector<std::string> locationIndexes = location->getIndex();
+	for (std::vector<std::string>::iterator it = locationIndexes.begin(); it != locationIndexes.end(); it++) {
+		if (access((path + *it).c_str(), R_OK) == 0) {
+			// rootOrAliasPlusUri += *it;
+			// this->request.setUri(this->request.getUri() + *it);
+			path += *it;
+		}
+	}
+	Logger::debug("Path executado no GET: " + path);
+	if (access(path.c_str(), R_OK) != 0) {
+		return setResponseByStatus(403);
+	}
+	
 	std::ifstream file(path.c_str(), std::ios::binary);
 	if (!file) return setResponseByStatus(404);
-
+	
+	Logger::debug("EXECUTANDO O GET METODO....");
 	std::ostringstream buffer;
 	buffer << file.rdbuf();
 
 	setResponseByStatus(200, "OK", buffer.str(), getMimeType(path));
-};
-
-void HttpResponse::handlePost(const HttpRequest &req){
-	std::string path = "./uploads/upload.txt";
-
-	std::ofstream file(path.c_str());
-	if (!file) {
-		setResponseByStatus(500, "Internal Server Error", "<h1>500 Internal Server Error</h1>");
-	}
-
-	file << req.getBody();
-	file.close();
-
-	setResponseByStatus(201, "Created", "<h1>File uploaded successfully!</h1>");
 };
 
 void HttpResponse::handleDelete(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock *location){
@@ -62,7 +69,7 @@ void HttpResponse::dispatchRequest(const HttpRequest &req, const ServerBlock &se
 	if(req.getMethod() == "GET")
 		return handleGet(req, serverBlock, locationPtr);
 	else if(req.getMethod() == "POST")
-		return handlePost(req);
+		return handlePost(req, serverBlock, locationPtr);
 	else if(req.getMethod() == "DELETE")
 		return handleDelete(req, serverBlock, locationPtr);
 	else 
@@ -70,6 +77,24 @@ void HttpResponse::dispatchRequest(const HttpRequest &req, const ServerBlock &se
 
 	processCookies(req, *locationPtr);
 }
+
+void HttpResponse::handlePost(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock *location){
+	std::string locationUploadDir = location->getUploadPath();
+	std::string fullPath = locationUploadDir + "/" + req.getUploadFileName();
+	// Trocar por fullPath = location->getPath(); ??
+	std::ofstream	newFile(fullPath.c_str());
+	if (!newFile.is_open()) {
+		Logger::error("Nao foi possivel criar o arquivo.");
+		return this->setResponseByStatus(400);
+	}
+	size_t endHeader = req.getBody().find("\r\n\r\n") + 4;
+	size_t endFormData = req.getBody().find(req.getEndBoudary());
+	newFile << req.getBody().substr(endHeader, endFormData - endHeader - 2);
+	newFile.close();
+	setResponseByStatus(201);
+	this->setHeader("Access-Control-Allow-Origin", "*");
+	this->setBody("<h1>File named " + req.getUploadFileName() + " was uploaded successfully!</h1>", "text/html");
+};
 
 void		HttpResponse::setStatus(int code, const std::string &message){
 	this->_status_code = code;
@@ -203,6 +228,27 @@ void HttpResponse::processCookies(const HttpRequest &req, const LocationBlock &l
 	}
 }
 
+std::string HttpResponse::findBestLocationMatch(const std::string& uri,
+                                                   const ServerBlock& serverBlock,
+                                                   LocationBlock& location) const {
+	std::map<std::string, LocationBlock> locations = serverBlock.getLocations();
+	std::string bestMatch = "";
+	
+	for (std::map<std::string, LocationBlock>::const_iterator it = locations.begin();
+		 it != locations.end(); ++it) {
+		const std::string &path = it->first;
+		if (uri.compare(0, path.size(), path) == 0) {
+			if (path.size() > bestMatch.size()) {
+				bestMatch = path;
+				location = it->second;
+			}
+		}
+	}
+	
+	return bestMatch;
+}
+
+// std::string 	getHttpVersion() const;
 std::string HttpResponse::getHttpVersion() const {
 	return _http_version;
 }
@@ -213,6 +259,14 @@ int HttpResponse::getStatusCode() const {
 
 std::string HttpResponse::getStatusMessage() const {
 	return _status_message;
+}
+
+void HttpResponse::setExecAutoIndex(bool exec) {
+	this->_execAutoIndex = exec;
+}
+
+bool HttpResponse::getExecAutoIndex() const {
+	return (this->_execAutoIndex);
 }
 
 std::string HttpResponse::getHeaderValue(const std::string &key) const {

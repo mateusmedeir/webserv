@@ -1,0 +1,6 @@
+A minha ideia para criar os novos arquivos de configuracao e:
+- Criar uma estrutura de diretorios com nomenclaturas diferentes
+- Dentro de cada diretorio, ter os arquivos necessarios para os testes que queremos
+- Esses arquivos serao diferentes. A partir deles que vamos ver se o nosso servidor esta com a configuracao correta
+- ...
+

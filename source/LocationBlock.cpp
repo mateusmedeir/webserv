@@ -311,3 +311,12 @@ std::string LocationBlock::getPath(const std::string &root, const std::string &r
 
     return "";
 }
+
+bool LocationBlock::checkHttpMethodInLocation(std::string method) {
+    for (std::vector<std::string>::iterator it = this->_allowMethods.begin(); it != this->_allowMethods.end(); it++) {
+        if (*it == method) {
+            return (true);
+        }
+    }
+    return (false);
+}
