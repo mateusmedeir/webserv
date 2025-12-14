@@ -32,8 +32,6 @@ class Client : public EpollHandler {
         HttpRequest &getRequest(void);
         HttpResponse &getResponse(void);
 
-        std::string toString(void) const;
-
         void setState(int state);
 
         std::string toString(void) const;

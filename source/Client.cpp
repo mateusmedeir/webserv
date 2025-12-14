@@ -61,8 +61,7 @@ bool	isDirectory(const std::string& path) {
 bool Client::validatingUriWithLocation(std::string bestMatch) {
     if (bestMatch.empty()) {
         // A funcao de bestMatch nao achou o match da location
-        this->response.setErrorPage(400);
-        this->response.setStatus(400, "Bad Request");
+        this->response.setResponseByStatus(400, "Bad Request", "<h1>Bad Request</h1>");
         return (false);
     }
     Logger::info("O bestMatch e: " + bestMatch);
@@ -75,8 +74,7 @@ bool Client::validatingUriWithLocation(std::string bestMatch) {
         // Validar se o Location aceita o GET
         if (!location.checkHttpMethodInLocation("GET")) {
             Logger::error("Location nao aceita o metodo GET.");
-            this->response.setErrorPage(405);
-            this->response.setStatus(405, "Method not allowed");
+            this->response.setResponseByStatus(405, "Method Not Allowed", "<h1>Method Not Allowed</h1>");
             return (false);
         }
         // Concatenar a URI com o root/alias da location
@@ -86,8 +84,7 @@ bool Client::validatingUriWithLocation(std::string bestMatch) {
         if (access(rootOrAliasPlusUri.c_str(), R_OK) != 0) {
             // erro de acesso ao recurso
             Logger::error("Acesso ao recurso " + rootOrAliasPlusUri + " negado.");
-            this->response.setErrorPage(403);
-            this->response.setStatus(403, "Forbidden");
+            this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbiddent</h1>");
             return (false);
         }
         if (!rootOrAliasPlusUri.empty() && rootOrAliasPlusUri[rootOrAliasPlusUri.size() - 1] == '/') {
@@ -110,8 +107,7 @@ bool Client::validatingUriWithLocation(std::string bestMatch) {
                 if (!location.getAutoIndex()) {
                     // location nao tem auto index
                     Logger::error("Location nao aceita o autoindex.");
-                    this->response.setErrorPage(403);
-                    this->response.setStatus(403, "Forbidden");
+                    this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbiddent</h1>");
                     return (false);
                 }
                 // vai executar o autoindex...
@@ -126,8 +122,7 @@ bool Client::validatingUriWithLocation(std::string bestMatch) {
             if (isDirectory(rootOrAliasPlusUri)) {
                 // erro de acesso ao recurso
                 Logger::error("Acesso ao recurso " + rootOrAliasPlusUri + " negado.");
-                this->response.setErrorPage(403);
-                this->response.setStatus(403, "Forbidden");
+                this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbiddent</h1>");
                 return (false);
             }
         }
@@ -148,8 +143,7 @@ bool Client::validatingUriWithLocation(std::string bestMatch) {
     if (this->request.getMethod() == "POST") {
         Logger::debug("ENTROU NO VALIDADOR DO POST");
         if (this->request.getUri().empty() || this->request.getUri()[this->request.getUri().length() - 1] == '/') {
-            this->response.setErrorPage(400);
-            this->response.setStatus(400, "Bad Request");
+            this->response.setResponseByStatus(400, "Bad Request", "<h1>Bad Request</h1>");
             return (false);
         }
         //Validar o tamanho maximo do body da request.
@@ -159,24 +153,22 @@ bool Client::validatingUriWithLocation(std::string bestMatch) {
         if (this->_serverListen.getServerBlock().getMaxBodySize().second < this->request.getBody().size()) {
             // O tamanho do arquivo e maior do que o limite suportado por max_body_size
             Logger::error("Max body size exceded. Payload Too Large");
-            this->response.setErrorPage(413);
-            this->response.setStatus(413, "Payload Too Large");
+            this->response.setResponseByStatus(413, "Payload Too Large", "<h1>Payload Too Large</h1>");
+            return (false);
         }
         if (this->_serverListen.getServerBlock().getMaxBodySize().second)
         // O upload na location esta liberado?
         if (!location.getCanUpload()) {
             //nao pode upload nessa location
             Logger::error("Location nao aceita upload. 403 forbidden");
-            this->response.setErrorPage(403);
-            this->response.setStatus(403, "Forbidden");
+            this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbidden</h1>");
             return (false);
         }
         // Validar se a location permite POST
         if (!location.checkHttpMethodInLocation("POST")) {
             // a location nao aceita POST
             Logger::error("Location " + this->request.getUri() + " nao aceita o metodo POST.");
-            this->response.setErrorPage(405);
-            this->response.setStatus(405, "Method not allowed");
+            this->response.setResponseByStatus(405, "Method Not Allowed", "<h1>Method Not Allowed</h1>");
             return (false);
         }
         // determinar o diretorio de upload
@@ -184,8 +176,7 @@ bool Client::validatingUriWithLocation(std::string bestMatch) {
     	// o diretorio e "gravavel"?
         if (access(locationUploadDir.c_str(),R_OK | W_OK) != 0) {
 		    Logger::error("Error no acesso. 403 forbidden");
-		    this->response.setErrorPage(403);
-		    this->response.setStatus(403, "Forbidden");
+            this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbidden</h1>");
 	    	return (false);
 	    }
         // Retorna TRUE
@@ -198,16 +189,14 @@ bool Client::validatingUriWithLocation(std::string bestMatch) {
             // Caso termine em "/", e um diretorio. Nao podemos deletar!
         if (this->request.getUri().empty() || this->request.getUri()[this->request.getUri().length() - 1] == '/') {
             Logger::error("Diretory nao pode ser deletado. 403 forbidden.");
-            this->response.setErrorPage(403);
-            this->response.setStatus(403, "Forbidden");
+            this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbidden</h1>");
             return (false);
         }
         // checar se a location suporta DELETE
         if (!location.checkHttpMethodInLocation("DELETE")) {
             Logger::error("Location nao aceita DELETE");
             // a location nao aceita DELETE
-            this->response.setErrorPage(405);
-            this->response.setStatus(405, "Method not allowed");
+            this->response.setResponseByStatus(405, "Method Not Allowed", "<h1>Method Not Allowed</h1>");
             return (false);
         }
         // A URI vai vir com o a location + "/nome_do_arquivo"
@@ -223,8 +212,7 @@ bool Client::validatingUriWithLocation(std::string bestMatch) {
             Logger::debug("FullPathToDelete: " + fullPathToDelete);
             if (access(fullPathToDelete.c_str(), R_OK | W_OK) != 0) {
                 Logger::error("Error no acesso ao arquivo desejado para deletar. 403 forbidden");
-                this->response.setErrorPage(403);
-                this->response.setStatus(403, "Forbidden");
+                this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbidden</h1>");
                 return (false);
             }
             Logger::debug("Vai retornar TRUE pro DELETE.");
@@ -283,6 +271,10 @@ void Client::handleEpollIn(void) {
             
             std::string responseStr = this->response.toString();
             Logger::info(toString());
+            if (!sendResponse(responseStr)) {
+                // Erro ao enviar - cliente já foi removido em sendResponse()
+                return;
+            }
         }
     } else if (count == 0) {
         // EOF - cliente fechou conexão

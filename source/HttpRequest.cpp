@@ -15,15 +15,16 @@ void HttpRequest::parseRequestLine(const std::string &rawRequest) {
 	std::string line;
 
 	if (std::getline(stream, line)) {
-		if (!line.empty() && line[line.size() - 1] == '\r')
+		if (!line.empty() && line[line.size() - 1] == '\r') {
 			line.erase(line.size() - 1);
 			std::istringstream first_line(line);
 			first_line >> this->method >> this->uri >> this->version;
 			
 			if (this->method.empty() || this->uri.empty() || this->version.empty())
-			throw std::runtime_error("Request line malformada: campos ausentes");
+				throw std::runtime_error("Request line malformada: campos ausentes");
 		}
 	}
+}
 
 void HttpRequest::parseHeaders(const std::string &rawRequest) {
 	std::istringstream stream(rawRequest);

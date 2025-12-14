@@ -1,6 +1,5 @@
 #include "../includes/WebservHeader.hpp"
 #include "../includes/CookieHandler.hpp"
-#include "../includes/CgiHandler.hpp"
 
 HttpResponse::HttpResponse(){
 	this->_http_version = "HTTP/1.0";
@@ -14,6 +13,7 @@ void HttpResponse::handleGet(const HttpRequest &req, const ServerBlock &serverBl
 	if (!location->getReturn().empty()) return setResponseByStatus(302, "Found", location->getReturn());
 
 	std::string path = location->getPath(serverBlock.getRoot().second, req.getUri());
+	Logger::debug("Path dentro do delete: " + path);
 	if (path.empty()) return setResponseByStatus(404);
 
 	// validar se e autoindex.
@@ -46,13 +46,15 @@ void HttpResponse::handleGet(const HttpRequest &req, const ServerBlock &serverBl
 };
 
 void HttpResponse::handleDelete(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock *location){
-		std::string path = location->getPath(serverBlock.getRoot().second, req.getUri());
-
-		if (std::remove(path.c_str()) == 0) {
-			setResponseByStatus(200, "OK", "<h1>File deleted successfully</h1>");
-		} else {
-			setResponseByStatus(404, "Not Found", "<h1>404 Not Found</h1>");
-		}
+	std::cout << serverBlock.getRoot().second << std::endl;
+	std::cout << req.getUri() << std::endl;
+	std::string path = location->getPath(location->getUploadPath(), req.getUri());
+	Logger::debug("Path dentro do delete: " + path);
+	if (std::remove(path.c_str()) == 0) {
+		setResponseByStatus(200, "OK", "<h1>File deleted successfully</h1>");
+	} else {
+		setResponseByStatus(404, "Not Found", "<h1>404 Not Found</h1>");
+	}
 };
 
 void HttpResponse::dispatchRequest(const HttpRequest &req, const ServerBlock &serverBlock) {
@@ -79,6 +81,7 @@ void HttpResponse::dispatchRequest(const HttpRequest &req, const ServerBlock &se
 }
 
 void HttpResponse::handlePost(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock *location){
+	(void)serverBlock;
 	std::string locationUploadDir = location->getUploadPath();
 	std::string fullPath = locationUploadDir + "/" + req.getUploadFileName();
 	// Trocar por fullPath = location->getPath(); ??
