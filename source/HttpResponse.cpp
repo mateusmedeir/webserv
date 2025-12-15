@@ -64,12 +64,14 @@ void HttpResponse::dispatchRequest(Client *client, const ServerBlock &serverBloc
 	
 	processCookies(req, location);
 
-	if (CgiHandler::isCgiScript(req.getUri(), location)) {
+	if (req.getIsCgi()) {
+		Logger::debug("Dispatching to CGI handler for URI: " + req.getUri());
+
 		client->cgiHandler = new CgiHandler(req, serverBlock, location);
 		if (!client->cgiHandler->start()) {
 				Logger::error("Failed to start CGI handler.");
 				setErrorPage(500);
-				// Clean up cgiHandler on failure
+
 				delete client->cgiHandler;
 				client->cgiHandler = NULL;
 				return;

@@ -105,13 +105,13 @@ void HttpRequest::parseBody(const std::string &rawRequest, std::string onlyBody)
 		return;
 	}
 
-	std::cout << "---------------PARSE BODY Raw Request-----------------" << std::endl;
-	// std::cout << rawRequest << std::endl;
-	std::cout << "---------------PARSE BODY Only body-----------------" << std::endl;
-	// std::cout << onlyBody << std::endl;
+	Logger::debug("---------------PARSE BODY Raw Request-----------------");
+	Logger::debug(rawRequest);
+	Logger::debug("---------------PARSE BODY Only body-----------------");
+	Logger::debug(onlyBody);
 
 	if (isMultipart) {
-		std::cout << "IS MULTIPART FORM-DATA !!" << std::endl;
+		Logger::debug("IS MULTIPART FORM-DATA !!");
 		this->isUpload = true;
 		size_t boundaryPos = rawRequest.find("boundary=");
 		if (boundaryPos == std::string::npos) {
@@ -201,6 +201,14 @@ std::string HttpRequest::getEndBoudary() const {
 
 std::string HttpRequest::getUploadFileName() const {
 	return (this->uploadFileName);
+}
+
+void HttpRequest::setIsCgi(bool val) {
+	this->isCgi = val;
+}
+
+bool HttpRequest::getIsCgi() const {
+	return (this->isCgi);
 }
 
 bool HttpRequest::isUploadRequest() {

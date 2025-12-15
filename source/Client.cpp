@@ -8,7 +8,7 @@ Client::Client(int clientFd, ServerListen &serverListen) : EpollHandler(EPOLLIN 
     this->response = HttpResponse();
     this->_pendingResponse = "";
     this->_responseOffset = 0;
-    this->cgiHandler = NULL; // Initialize cgiHandler to NULL
+    this->cgiHandler = NULL;
 }
 
 Client::Client(const Client &src) : EpollHandler(src.getInterestedEvents(), src.getSocketFd(), src.getMaxTimeoutSecs()), _serverListen(src._serverListen) {
@@ -22,7 +22,6 @@ Client &Client::operator=(const Client &src) {
         this->_state = src._state;
         this->_pendingResponse = src._pendingResponse;
         this->_responseOffset = src._responseOffset;
-        // cgiHandler should not be copied, it's specific to an active CGI process
         this->cgiHandler = NULL; 
     }
     return (*this);
@@ -32,14 +31,13 @@ Client::~Client(void) {
     if (this->getSocketFd() != -1) {
         close(this->getSocketFd());
     }
-    if (this->cgiHandler) { // Ensure cgiHandler is deleted on client destruction
+    if (this->cgiHandler) {
         delete this->cgiHandler;
         this->cgiHandler = NULL;
     }
 }
 
 void Client::handleEpollIn(void) {
-    // If we are waiting for CGI, we should not read new request data
     if (this->_state == WAITING_CGI) {
         return;
     }
@@ -54,14 +52,14 @@ void Client::handleEpollIn(void) {
             if (!locationPtr) {
                 this->response.setErrorPage(404);
             } else {
-                if (!validatingUriWithLocation(const_cast<LocationBlock&>(*locationPtr))) {
+                this->request.setIsCgi(CgiHandler::isCgiScript(this->request.getUri(), *locationPtr));
+                if (!validatingUriWithLocation(serverBlock, const_cast<LocationBlock&>(*locationPtr))) {
                     Logger::error("Erro nas validacoes dos metodos da request...");
                     return ;
                 }
                 this->response.dispatchRequest(this, this->_serverListen.getServerBlock(), *locationPtr);
             }
             
-            // Only send response if not waiting for CGI
             if (this->_state != WAITING_CGI) { 
                 std::string responseStr = this->response.toString();
                 Logger::info(toString());
@@ -83,13 +81,9 @@ void Client::handleEpollOut(void) {
             this->response.parseCgiOutput(cgiOutput);
             this->_state = COMPLETE;
 
-            std::cerr << "CGI FD: " << this->cgiHandler->getSocketFd() << std::endl;
-            std::cerr << "Client FD: " << this->getSocketFd() << std::endl;
             EpollInstance::manipInterestList(EPOLL_CTL_DEL, this->cgiHandler);
             this->cgiHandler = NULL;
 
-            // Now that CGI is done, the response is ready to be sent.
-            // We can fall through to the response sending logic below.
         } else if (this->cgiHandler) {
             // CGI still running, do nothing and wait.
             return;
@@ -97,7 +91,6 @@ void Client::handleEpollOut(void) {
             Logger::error("Client: In WAITING_CGI state but cgiHandler is NULL. Sending 500.");
             this->response.setErrorPage(500);
             this->_state = COMPLETE;
-            // Fall through to send the error response.
         }
     }
 
@@ -120,50 +113,35 @@ void Client::handleEpollOut(void) {
             return;
         }
         if (this->_pendingResponse.empty()) {
-            // Response sent completely, we can close the client.
             EpollInstance::manipInterestList(EPOLL_CTL_DEL, this);
         }
     }
 }
 
 bool Client::sendResponse(const std::string &responseStr) {
-    // Armazenar resposta pendente se necessário
     if (this->_pendingResponse.empty()) {
         this->_pendingResponse = responseStr;
         this->_responseOffset = 0;
     }
     
-    // Enviar dados a partir do offset atual
     const char *data = this->_pendingResponse.c_str() + this->_responseOffset;
     size_t remaining = this->_pendingResponse.size() - this->_responseOffset;
     
     // send() com flags MSG_NOSIGNAL para evitar SIGPIPE
     ssize_t sent = send(this->getSocketFd(), data, remaining, MSG_NOSIGNAL);
     
-    // Verificar valor de retorno conforme régua de avaliação
-    // Conforme régua: "checking only -1 or 0 values is not enough, both should be checked"
     if (sent < 0) {
-        // Erro no send()
-        // Em socket non-blocking, -1 pode ser EAGAIN/EWOULDBLOCK (normal) ou erro real
-        // NÃO verificamos errno diretamente (conforme régua), mas tratamos o erro
-        // Em non-blocking, EAGAIN significa que o buffer está cheio - precisamos esperar EPOLLOUT
-        // Outros erros devem resultar em remoção do cliente
-        // Por segurança, assumimos que é EAGAIN e adicionamos EPOLLOUT
-        // Se for erro real, o próximo send() falhará novamente e então removemos
         EpollInstance::manipInterestList(EPOLL_CTL_DEL, this);
         return true;
     } else if (sent == 0) {
-        // send() retornou 0 - conexão fechada pelo peer
-        // Remover cliente conforme régua: "if an error is returned, the client is removed"
-        std::cout << "Connection closed by peer during send, closing client." << std::endl;
+        Logger::debug("Client: Connection closed by peer during send, closing client.");
         EpollInstance::manipInterestList(EPOLL_CTL_DEL, this);
         return false;
     } else {
         // send() enviou alguns bytes (pode ser parcial)
         this->_responseOffset += sent;
-        
+
         if (this->_responseOffset < this->_pendingResponse.size()) {
-            // Ainda há dados para enviar - adicionar EPOLLOUT
             uint32_t events = this->getInterestedEvents();
             events |= EPOLLOUT;
             this->setInterestedEvents(events);
@@ -175,12 +153,9 @@ bool Client::sendResponse(const std::string &responseStr) {
 }
 
 void Client::concatenateRequestData(std::string data) {
-    if (this->_state == COMPLETE || this->_state == WAITING_CGI) { // Don't process if waiting for CGI
+    if (this->_state == COMPLETE || this->_state == WAITING_CGI) {
         return;
     }
-    std::cout << "------------concatenate request-----------------" << std::endl;
-    std::cout << data << std::endl;
-
     this->_rawRequest.append(data);
 
     if (this->_state == READING_HEADER && this->_rawRequest.find("\r\n\r\n") != std::string::npos) {
@@ -203,13 +178,9 @@ void Client::concatenateRequestData(std::string data) {
     }
 
     if (this->_state == READING_BODY) {
-        // Quando estivermos lendo o body, nao podemos nos basear apenas no content length.
-        // Pois esse header nao e obrigatorio. Entao, dessa forma, nao e garantia de nada.
-        // E, quando o contne type for multipart, o client pode mandar o encoding como chunked.
-        // E, caso ele mande esse encoding diferente, o content length nao vem tambem.
-        // e o body vem com um formato diferente, onde a string "0\r\n\r\n" indica o final do body.
         std::string contentLengthStr = this->request.getHeaderValue("Content-Length");
-        if (!contentLengthStr.empty()) { // caso tenha content length. Que e 99% dos casos
+
+        if (!contentLengthStr.empty()) { 
             int contentLength = std::atoi(contentLengthStr.c_str());
             size_t bodyStartPos = this->_rawRequest.find("\r\n\r\n") + 4;
             size_t bodyLength = this->_rawRequest.size() - bodyStartPos;
@@ -219,11 +190,8 @@ void Client::concatenateRequestData(std::string data) {
                 this->request.parseBody(this->_rawRequest, onlyBody);
                 this->setState(COMPLETE);
             }
-            Logger::debug("----- testando o max_body_size ---------");
-            std::cout << "bodyLenght: " << bodyLength << std::endl;
-            std::cout << "content_lenght: " << contentLengthStr << std::endl;
-            Logger::debug("----- testando o max_body_size ---------");
-        } else if (this->_rawRequest.find("0\r\n\r\n") != std::string::npos) { //caso tenha outro encoding (chunked)
+        } else if (this->_rawRequest.find("0\r\n\r\n") != std::string::npos) {
+            //caso tenha outro encoding (chunked)
             // caso entre aqui, o body da request ja ta todo pronto.
             size_t bodyStartPos = this->_rawRequest.find("\r\n\r\n") + 4;
             size_t bodyEndPos = this->_rawRequest.find("0\r\n\r\n") + 4;
@@ -256,19 +224,18 @@ bool Client::validateMethodAllowed(LocationBlock &location) {
     return true;
 }
 
-bool Client::validatingUriWithLocation(LocationBlock &location) {
-
+bool Client::validatingUriWithLocation(ServerBlock &serverBlock, LocationBlock &location) {
     if (!validateMethodAllowed(location))
         return false;
 
     const std::string &method = this->request.getMethod();
 
     if (method == "GET")
-        return validateGet(location);
+        return validateGet(serverBlock, location);
     else if (method == "POST")
-        return validatePost(location);
+        return validatePost(serverBlock, location);
     else if (method == "DELETE")
-        return validateDelete(location);
+        return validateDelete(serverBlock, location);
     else {
         Logger::debug("Metodo HTTP nao suportado...");
         this->response.setResponseByStatus(405, "Method Not Allowed", "<h1>Method Not Allowed</h1>");
@@ -276,8 +243,9 @@ bool Client::validatingUriWithLocation(LocationBlock &location) {
     }
 }
 
-bool Client::validateGet(LocationBlock &location) {
-    std::string path = "./www" + this->request.getUri();
+bool Client::validateGet(ServerBlock &serverBlock, LocationBlock &location) {
+    std::string path = serverBlock.getRoot().second + this->request.getUri();
+    path = extractUriWithoutQuery(path);
     Logger::debug("String contendo alias + uri para o GET: " + path);
 
     if (access(path.c_str(), R_OK) != 0) {
@@ -313,10 +281,14 @@ bool Client::validateGet(LocationBlock &location) {
     return true;
 }
 
-bool Client::validatePost(LocationBlock &location) {
+bool Client::validatePost(ServerBlock &serverBlock, LocationBlock &location) {
+    std::string uri = this->request.getUri();
+    uri = extractUriWithoutQuery(uri);
 
-    if (this->request.getUri().empty() ||
-        this->request.getUri()[this->request.getUri().size() - 1] == '/') {
+    (void)serverBlock; // Unused parameter
+
+    if (uri.empty() ||
+        uri[uri.size() - 1] == '/') {
         this->response.setResponseByStatus(400, "Bad Request", "<h1>Bad Request</h1>");
         return false;
     }
@@ -341,19 +313,31 @@ bool Client::validatePost(LocationBlock &location) {
     return true;
 }
 
-bool Client::validateDelete(LocationBlock &location) {
+bool Client::validateDelete(ServerBlock &serverBlock, LocationBlock &location) {
+    std::string uri = this->request.getUri();
+    uri = extractUriWithoutQuery(uri);
 
-    if (this->request.getUri().empty() ||
-        this->request.getUri()[this->request.getUri().size() - 1] == '/') {
+    (void)serverBlock; // Unused parameter
+
+    if (uri.empty() ||
+        uri[uri.size() - 1] == '/') {
         this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbidden</h1>");
         return false;
     }
 
-    std::string base = location.getUploadPath();
+    std::string base;
+    if (this->request.getIsCgi()) {
+        base = serverBlock.getRoot().second;
+    } else {
+        base = location.getUploadPath();
+    }
+
+    Logger::debug("Base path for DELETE: " + base);
     if (base.empty())
         return false;
 
     std::string fullPath = base + this->request.getUri();
+    Logger::debug("Full path for DELETE: " + fullPath);
     if (access(fullPath.c_str(), R_OK | W_OK) != 0) {
         this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbidden</h1>");
         return false;

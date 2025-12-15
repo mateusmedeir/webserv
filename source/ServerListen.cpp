@@ -40,7 +40,7 @@ void ServerListen::handleEpollIn(void) {
             }
         } else {
             try {
-                set_nonblocking(clientFd);
+                setNonBlocking(clientFd);
                 
                 // TCP_NODELAY: Reduz latência para requisições pequenas
                 int flag = 1;
@@ -92,7 +92,7 @@ void ServerListen::bindServerSocket(void) {
 void ServerListen::updateToNonBlocking(void) {
     try
     {
-        set_nonblocking(this->getSocketFd());
+        setNonBlocking(this->getSocketFd());
     }
     catch(const std::exception& e)
     {

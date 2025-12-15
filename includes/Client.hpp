@@ -39,8 +39,8 @@ class Client : public EpollHandler {
         std::string toString(void) const;
         // Metodo para validar antes de executar o POST, DELETE e GET
         bool validateMethodAllowed(LocationBlock &location);
-        bool validatingUriWithLocation(LocationBlock &location);
-        bool validateGet(LocationBlock &location);
-        bool validatePost(LocationBlock &location);
-        bool validateDelete(LocationBlock &location);
+        bool validatingUriWithLocation(ServerBlock &serverBlock, LocationBlock &location);
+        bool validateGet(ServerBlock &serverBlock, LocationBlock &location);
+        bool validatePost(ServerBlock &serverBlock, LocationBlock &location);
+        bool validateDelete(ServerBlock &serverBlock, LocationBlock &location);
 };

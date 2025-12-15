@@ -26,6 +26,8 @@
 # include <cctype>
 # include <set>
 # include <csignal>
+#include <sys/wait.h>
+
 
 enum    LogLevel {
     DEBUG,
@@ -63,4 +65,7 @@ enum clientBufferState {
 };
 
 // void initAllLogHandlers(void);
-void set_nonblocking(int sockfd);
+void setNonBlocking(int sockfd);
+std::string intToString(int n);
+std::string extractUriWithoutQuery(const std::string &uri);
+std::string extractQueryFromUri(const std::string &uri);

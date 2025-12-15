@@ -11,11 +11,14 @@ class CgiHandler: public EpollHandler {
 				std::vector<std::string> _env;
 				std::string _cgiOutput;
 				bool _isFinished;
-				pid_t _childPid; // Adicionado para armazenar o PID do processo filho
+				pid_t _childPid;
 
 				const HttpRequest &_request;
 				const ServerBlock	&_serverBlock;
 				const LocationBlock	&_location;
+
+				std::string _requestBody;
+				size_t _bytesWritten;
 
     public:
         CgiHandler(
@@ -33,15 +36,12 @@ class CgiHandler: public EpollHandler {
 
 				const std::string& getCgiOutput() const;
 				bool isFinished() const;
-				pid_t getChildPid() const; // Getter para o PID do processo filho
+				pid_t getChildPid() const;
 
 				static bool isCgiScript(const std::string& uri, const LocationBlock& location);
-				static std::string extractCgiScriptName(const std::string& uri);
-				static std::string extractQueryString(const std::string& uri);
 				std::string extractCgiScriptPath(const std::string& uri);
 
 				std::string normalizeHeaderName(const std::string& header);
-				std::string intToString(int n);
 
 				std::string getInterpretterPath(const std::string& scriptPath);
 };

@@ -22,6 +22,7 @@ class EpollInstance {
 
         static void manipInterestList(int operation, EpollHandler *handler);
         static int manipEpollWait(void);
+        static void replaceHandlerFd(EpollHandler *handler, int newFd, uint32_t newEvents);
         static void deletePendingRemovals(void);
 
         static int getEpollFd(void);
