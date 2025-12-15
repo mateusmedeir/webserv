@@ -9,10 +9,10 @@ HttpResponse::HttpResponse(){
 
 HttpResponse::~HttpResponse(){};
 
-void HttpResponse::handleGet(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock *location) {
-	if (!location->getReturn().empty()) return setResponseByStatus(302, "Found", location->getReturn());
+void HttpResponse::handleGet(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock &location){
+	if (!location.getReturn().empty()) return setResponseByStatus(302, "Found", location.getReturn());
 
-	std::string path = location->getPath(serverBlock.getRoot().second, req.getUri());
+	std::string path = location.getPath(serverBlock.getRoot().second, req.getUri());
 	Logger::debug("Path dentro do delete: " + path);
 	if (path.empty()) return setResponseByStatus(404);
 
@@ -22,7 +22,7 @@ void HttpResponse::handleGet(const HttpRequest &req, const ServerBlock &serverBl
 		Logger::debug("EXECUTANDO AUTOINDEX....");
 		return setResponseByStatus(404);
 	}
-	std::vector<std::string> locationIndexes = location->getIndex();
+	std::vector<std::string> locationIndexes = location.getIndex();
 	for (std::vector<std::string>::iterator it = locationIndexes.begin(); it != locationIndexes.end(); it++) {
 		if (access((path + *it).c_str(), R_OK) == 0) {
 			// rootOrAliasPlusUri += *it;
@@ -45,10 +45,10 @@ void HttpResponse::handleGet(const HttpRequest &req, const ServerBlock &serverBl
 	setResponseByStatus(200, "OK", buffer.str(), getMimeType(path));
 };
 
-void HttpResponse::handleDelete(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock *location){
+void HttpResponse::handleDelete(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock &location){
 	std::cout << serverBlock.getRoot().second << std::endl;
 	std::cout << req.getUri() << std::endl;
-	std::string path = location->getPath(location->getUploadPath(), req.getUri());
+	std::string path = location.getPath(location.getUploadPath(), req.getUri());
 	Logger::debug("Path dentro do delete: " + path);
 	if (std::remove(path.c_str()) == 0) {
 		setResponseByStatus(200, "OK", "<h1>File deleted successfully</h1>");
@@ -57,32 +57,42 @@ void HttpResponse::handleDelete(const HttpRequest &req, const ServerBlock &serve
 	}
 };
 
-void HttpResponse::dispatchRequest(const HttpRequest &req, const ServerBlock &serverBlock) {
+void HttpResponse::dispatchRequest(Client *client, const ServerBlock &serverBlock, const LocationBlock &location) {
+	HttpRequest req = client->request;
 	if (this->_status_code != 200)
-		return;
+	return;
 	
-	const LocationBlock* locationPtr = serverBlock.getValidLocation(req.getUri(), req.getMethod());
-    if (!locationPtr) {
-        this->setErrorPage(404);
-        return;
-    }
+	processCookies(req, location);
 
+	if (req.getIsCgi()) {
+		Logger::debug("Dispatching to CGI handler for URI: " + req.getUri());
+
+		client->cgiHandler = new CgiHandler(req, serverBlock, location);
+		if (!client->cgiHandler->start()) {
+				Logger::error("Failed to start CGI handler.");
+				setErrorPage(500);
+
+				delete client->cgiHandler;
+				client->cgiHandler = NULL;
+				return;
+		}
+		client->setState(WAITING_CGI);
+		return;
+	}
 
 	if(req.getMethod() == "GET")
-		return handleGet(req, serverBlock, locationPtr);
+		return handleGet(req, serverBlock, location);
 	else if(req.getMethod() == "POST")
-		return handlePost(req, serverBlock, locationPtr);
+		return handlePost(req, serverBlock, location);
 	else if(req.getMethod() == "DELETE")
-		return handleDelete(req, serverBlock, locationPtr);
+		return handleDelete(req, serverBlock, location);
 	else 
-		this->setErrorPage(405);
-
-	processCookies(req, *locationPtr);
+		return setResponseByStatus(405, "Method Not Allowed", "<h1>Method Not Allowed</h1>");
 }
 
-void HttpResponse::handlePost(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock *location){
+void HttpResponse::handlePost(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock &location){
 	(void)serverBlock;
-	std::string locationUploadDir = location->getUploadPath();
+	std::string locationUploadDir = location.getUploadPath();
 	std::string fullPath = locationUploadDir + "/" + req.getUploadFileName();
 	// Trocar por fullPath = location->getPath(); ??
 	std::ofstream	newFile(fullPath.c_str());
@@ -289,4 +299,64 @@ std::string HttpResponse::getHeaderValue(const std::string &key) const {
 		}
 	}
 	return "";
+}
+
+void HttpResponse::parseCgiOutput(const std::string& cgiRawOutput) {
+    // Clear existing response data
+    this->_headers.clear();
+    this->_body.clear();
+    this->_status_code = 200; // Default status
+    this->_status_message = "OK"; // Default message
+
+    size_t headerEndPos = cgiRawOutput.find("\r\n\r\n");
+    std::string headersPart;
+    std::string bodyPart;
+
+    if (headerEndPos != std::string::npos) {
+        headersPart = cgiRawOutput.substr(0, headerEndPos);
+        bodyPart = cgiRawOutput.substr(headerEndPos + 4);
+    } else {
+        // No header-body separator found, treat entire output as body
+        bodyPart = cgiRawOutput;
+    }
+
+    std::istringstream issHeaders(headersPart);
+    std::string line;
+    while (std::getline(issHeaders, line) && !line.empty()) {
+        if (!line.empty() && line[line.length() - 1] == '\r') {
+            line.resize(line.length() - 1); // Remove trailing \r (C++98 compatible)
+        }
+        if (line.empty()) continue; // Skip empty lines
+
+        size_t colonPos = line.find(':');
+        if (colonPos != std::string::npos) {
+            std::string key = line.substr(0, colonPos);
+            std::string value = line.substr(colonPos + 1);
+            
+            // Trim leading whitespace from value
+            size_t firstChar = value.find_first_not_of(" \t");
+            if (firstChar != std::string::npos) {
+                value = value.substr(firstChar);
+            }
+
+            if (key == "Status") {
+                // Parse status code and message
+                size_t spacePos = value.find(' ');
+                if (spacePos != std::string::npos) {
+                    this->_status_code = std::atoi(value.substr(0, spacePos).c_str());
+                    this->_status_message = value.substr(spacePos + 1);
+                } else {
+                    this->_status_code = std::atoi(value.c_str());
+                    this->_status_message = "Unknown"; // Default if no message provided
+                }
+            } else {
+                // Other headers
+                setHeader(key, value);
+            }
+        }
+    }
+
+    setBody(bodyPart, getHeaderValue("Content-Type").empty() ? "text/plain" : getHeaderValue("Content-Type"));
+    // Update Content-Length based on the actual body size
+    setHeader("Content-Length", intToString(this->_body.size()));
 }

@@ -79,6 +79,71 @@ void EpollInstance::manipInterestList(int operation, EpollHandler *handler) {
     }
 }
 
+void EpollInstance::replaceHandlerFd(EpollHandler *handler, int newFd, uint32_t newEvents) {
+    if (_instance == NULL) {
+        throw std::runtime_error("EpollInstance is not initialized.");
+    }
+    if (!handler) {
+        throw std::invalid_argument("replaceHandlerFd: handler is null");
+    }
+
+    int oldFd = handler->getSocketFd();
+    int epfd = _instance->_epollFd;
+    if (epfd == -1) {
+        throw std::runtime_error("replaceHandlerFd: invalid epoll fd");
+    }
+
+    if (newEvents == 0) {
+        newEvents = handler->getInterestedEvents();
+    }
+
+    if (oldFd == newFd && oldFd != -1) {
+        struct epoll_event ev;
+        ev.events = newEvents;
+        ev.data.ptr = handler;
+        if (epoll_ctl(epfd, EPOLL_CTL_MOD, oldFd, &ev) == -1) {
+            std::cerr << "replaceHandlerFd: EPOLL_CTL_MOD failed: fd=" << oldFd
+                      << " errno=" << errno << " (" << strerror(errno) << ")\n";
+            throw(EpollInstance::CannotManipulateEpollInstance());
+        }
+        handler->setInterestedEvents(newEvents);
+        _instance->_handlers[oldFd] = handler;
+        return;
+    }
+
+    if (oldFd != -1) {
+        if (epoll_ctl(epfd, EPOLL_CTL_DEL, oldFd, NULL) == -1) {
+            if (errno != ENOENT && errno != EBADF) {
+                std::cerr << "replaceHandlerFd: EPOLL_CTL_DEL failed for oldFd=" << oldFd
+                          << " errno=" << errno << " (" << strerror(errno) << ")\n";
+                throw(EpollInstance::CannotManipulateEpollInstance());
+            } else {
+                Logger::debug("replaceHandlerFd: EPOLL_CTL_DEL returned ENOENT/EBADF for oldFd=" + intToString(oldFd) + " (continuing)");
+            }
+        }
+
+        std::map<int, EpollHandler*>::iterator it = _instance->_handlers.find(oldFd);
+        if (it != _instance->_handlers.end())
+            _instance->_handlers.erase(it);
+    }
+
+    struct epoll_event ev;
+    ev.events = newEvents;
+    ev.data.ptr = handler;
+
+    if (epoll_ctl(epfd, EPOLL_CTL_ADD, newFd, &ev) == -1) {
+        std::cerr << "replaceHandlerFd: EPOLL_CTL_ADD failed for newFd=" << newFd
+                  << " errno=" << errno << " (" << strerror(errno) << ")\n";
+        handler->setSocketFd(-1);
+        throw(EpollInstance::CannotManipulateEpollInstance());
+    }
+
+    handler->setSocketFd(newFd);
+    handler->setInterestedEvents(newEvents);
+    _instance->_handlers[newFd] = handler;
+}
+
+
 int EpollInstance::manipEpollWait(void) {
     if (_instance == NULL) {
         throw std::runtime_error("EpollInstance is not initialized.");

@@ -14,6 +14,7 @@ class HttpRequest {
     std::string                         uploadFileName;
     bool                                isMultipart;
     bool                                isUpload;
+    bool                                isCgi;
 
     
     public:
@@ -30,9 +31,11 @@ class HttpRequest {
     std::map<std::string, std::string> getHeaders() const;
     std::string getHeaderValue(const std::string &key) const;
     bool hasHeader(const std::string &key) const;
+    void setIsCgi(bool val);
     std::string getBody() const;
     std::string getStartBoudary() const;
     std::string getEndBoudary() const;
     std::string getUploadFileName() const;
+    bool getIsCgi() const;
     bool isUploadRequest();
 };

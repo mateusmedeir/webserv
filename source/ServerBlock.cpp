@@ -28,14 +28,6 @@ ServerBlock::ServerBlock(ConfigFile &config) : _config(config), _maxBodySize(fal
 			throw std::runtime_error("Configuração inválida: server: token inválido");
         }
 	}
-    for (std::map<std::string, LocationBlock>::iterator it = this->_locations.begin(); it != this->_locations.end(); ++it)
-    {
-        std::cout << "Location: " << it->first << " with methods: ";
-        std::vector<std::string> methods = it->second.getAllowMethods();
-        for (size_t i = 0; i < methods.size(); i++)
-            std::cout << methods[i] << " ";
-        std::cout << std::endl; 
-    }
 
     //| Fazer verificação para ver se os atributos estão corretos.
     if (this->_maxBodySize.second == 0)
@@ -363,8 +355,6 @@ void ServerBlock::addLocation()
     if (uri[0] != '/')
         throw std::runtime_error("Configuração inválida: location: URI inválida, deve começar com '/'");
 
-    for (std::map<std::string, LocationBlock>::iterator it = this->_locations.begin(); it != this->_locations.end(); ++it)
-        std::cout << "Location existente: " << it->first << std::endl;
     if (this->_locations.count(uri) > 0)
         throw std::runtime_error("Configuração inválida: location: location duplicado");
     this->_locations.insert(std::make_pair(uri, LocationBlock(this->_config)));

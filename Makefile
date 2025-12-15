@@ -20,7 +20,8 @@ SRC =	main.cpp \
 		source/LogHandler.cpp \
 		source/CompositeLogHandler.cpp \
 		source/StdLogHandler.cpp \
-		source/FileLogHandler.cpp
+		source/FileLogHandler.cpp \
+		source/CgiHandler.cpp
 
 OBJ = $(SRC:.cpp=.o)
 
