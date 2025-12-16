@@ -26,7 +26,8 @@
 # include <cctype>
 # include <set>
 # include <csignal>
-#include <sys/wait.h>
+# include <sys/wait.h>
+# include <dirent.h>
 
 
 enum    LogLevel {

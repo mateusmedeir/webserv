@@ -276,38 +276,69 @@ bool LocationBlock::validatePath(const std::string &path) const {
     return isValid;
 }
 
-std::string LocationBlock::getPath(const std::string &root, const std::string &requestUri) const
-{
-    std::string locationUri = this->getUri(); // "/"
-    std::string relativeUri = requestUri;
+std::string LocationBlock::getPath(const std::string &root, const std::string &requestUri) const {
+    std::string serverRoot = root;
+    std::string locationAlias = this->getAlias();
+    std::string locationUri = this->getUri();
+    std::string request = requestUri;
+    std::string finalPath;
+     
+    if (locationAlias.empty()) {
+        finalPath = serverRoot + request;
+        Logger::debug("Nao temos alias. FinalPath = " + finalPath);
+    }
+    else {
+        // Tem alias
+        // O alias tem preferencia em cima do root
+        // remove o prefixo da location
+        if (request.find(locationUri) == 0)
+            request = request.substr(locationUri.size());
+        finalPath = locationAlias + '/' + request;
+        Logger::debug("Temos alias. FinalPath = " + finalPath);
+    }
 
-    // remove o prefixo da location
-    if (relativeUri.find(locationUri) == 0)
-        relativeUri = relativeUri.substr(locationUri.size());
 
-    std::string fullPath = root;
-    if (!fullPath.empty() && fullPath[fullPath.size() - 1] != '/')
-        fullPath += "/";
 
-    fullPath += relativeUri;
+    // std::string locationUri = this->getUri(); // "/"
+    // std::string relativeUri = requestUri;
 
-    // se terminar com / → tenta index
-    if (fullPath[fullPath.size() - 1] == '/') {
+
+    // std::string fullPath = root;
+    // if (!fullPath.empty() && fullPath[fullPath.size() - 1] != '/')
+    //     fullPath += "/";
+
+    // fullPath += relativeUri;
+
+    if (!finalPath.empty() && finalPath[finalPath.size() - 1] == '/') {
         std::vector<std::string> indexes = getIndex();
         if (indexes.empty())
             indexes.push_back("index.html");
 
         for (size_t i = 0; i < indexes.size(); i++) {
-            std::string test = fullPath + indexes[i];
+            std::string test = finalPath + indexes[i];
             if (validatePath(test))
                 return test;
         }
-        return "";
     }
 
+    // se terminar com / → tenta index
+    // if (fullPath[fullPath.size() - 1] == '/') {
+    //     std::vector<std::string> indexes = getIndex();
+    //     if (indexes.empty())
+    //         indexes.push_back("index.html");
+
+    //     for (size_t i = 0; i < indexes.size(); i++) {
+    //         std::string test = fullPath + indexes[i];
+    //         if (validatePath(test))
+    //             return test;
+    //     }
+    //     return "";
+    // }
+
+    Logger::debug("Final Path dentro do getPath: " + finalPath);
     // arquivo direto
-    if (validatePath(fullPath))
-        return fullPath;
+    if (validatePath(finalPath))
+        return finalPath;
 
     return "";
 }

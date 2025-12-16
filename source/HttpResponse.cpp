@@ -9,18 +9,53 @@ HttpResponse::HttpResponse(){
 
 HttpResponse::~HttpResponse(){};
 
+void	HttpResponse::generateAutoIndexHTML(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock &location) {
+	std::stringstream output;
+	std::string path = location.getPath(serverBlock.getRoot().second, req.getUri());
+	Logger::debug("PAth dentro do generateAutoIndex: " + path);
+	if (path.empty()) return setResponseByStatus(404);
+	DIR* dir = opendir(path.c_str());
+	if (dir == NULL) {
+		return;
+	}
+	output << "<html><head><title>Autoindex</title></head><body><h1>Autoindex</h1><ul>";
+	dirent* entry;
+	while ((entry = readdir(dir)) != NULL) {
+		std::string name = entry->d_name;
+		if (name != "." && name != "..") {
+			output << "<li>";
+			//Checando se e um diretorio
+			if (entry->d_type == DT_DIR) {
+				//se for diretorio, criar um link direto para ele
+				output << "<a href=\"" << name << "/\">" << name << " (directory)</a>";
+			} else {
+				// Para arquivos, gera um link para download
+				output << "<a href=\"" << name << "\">" << name << "</a>";
+			}
+			output << "</li>";
+		}
+	}
+	output << "</ul></body></html>";
+	closedir(dir);
+	setResponseByStatus(200, "OK", output.str(), "text/html");
+	// Tentei usar a getMimeType(), mas ele esta retornando o tipo de arquivo binario como default
+	// Dessa forma, o get do client acaba baixando o arquivo gerado pelo autoindex.
+	// Precisamos dar uma olhada melhor no getMimeType() 
+}
+
 void HttpResponse::handleGet(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock &location){
 	if (!location.getReturn().empty()) return setResponseByStatus(302, "Found", location.getReturn());
 
 	std::string path = location.getPath(serverBlock.getRoot().second, req.getUri());
-	Logger::debug("Path dentro do delete: " + path);
+	Logger::debug("Path dentro do get: " + path);
 	if (path.empty()) return setResponseByStatus(404);
 
 	// validar se e autoindex.
 	if (this->getExecAutoIndex()) {
 		// Execute autoindex...
 		Logger::debug("EXECUTANDO AUTOINDEX....");
-		return setResponseByStatus(404);
+		this->generateAutoIndexHTML(req, serverBlock, location);
+		return ;
 	}
 	std::vector<std::string> locationIndexes = location.getIndex();
 	for (std::vector<std::string>::iterator it = locationIndexes.begin(); it != locationIndexes.end(); it++) {
