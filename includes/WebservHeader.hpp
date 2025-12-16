@@ -1,6 +1,7 @@
 #pragma once
 
 # define MAX_EVENTS 10
+# define MAX_BUFFER_SIZE 4096
 
 # include <iostream> //| Para testes, remover depois
 # include <sys/socket.h>

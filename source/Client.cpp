@@ -42,11 +42,12 @@ void Client::handleEpollIn(void) {
         return;
     }
 
-    char buffer[4096] = {0};
+    char buffer[MAX_BUFFER_SIZE] = {0};
     int count = 0;
     if ((count = read(this->getSocketFd(), buffer, sizeof(buffer))) > 0) {
         this->concatenateRequestData(std::string(buffer, count));
         if (this->isRequestComplete()) {
+            Logger::debug("Client: Request Header:\n" + this->getRawRequest());
             ServerBlock serverBlock = this->_serverListen.getServerBlock();
             const LocationBlock* locationPtr = serverBlock.getValidLocation(this->request.getUri(), this->request.getMethod());
             if (!locationPtr) {

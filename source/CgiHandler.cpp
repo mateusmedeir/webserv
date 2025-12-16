@@ -4,7 +4,7 @@ CgiHandler::CgiHandler(
   const HttpRequest &request,
   const ServerBlock &serverBlock,
   const LocationBlock &location
-) : EpollHandler(0), _scriptPath(""), _cgiOutput(""), _isFinished(false), _childPid(-1), _request(request), _serverBlock(serverBlock), _location(location) {
+) : EpollHandler(0, -1, 10), _scriptPath(""), _cgiOutput(""), _isFinished(false), _childPid(-1), _request(request), _serverBlock(serverBlock), _location(location) {
     this->_scriptPath = extractCgiScriptPath(request.getUri());
     this->_env = buildEnvironment();
     this->_requestBody = request.getBody();
@@ -28,7 +28,7 @@ CgiHandler::~CgiHandler() {
 }
 
 void CgiHandler::handleEpollIn() {
-    char buffer[4096];
+    char buffer[MAX_BUFFER_SIZE];
 
     while (true) {
         ssize_t bytesRead = read(getSocketFd(), buffer, sizeof(buffer));
