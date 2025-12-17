@@ -37,10 +37,7 @@ void	HttpResponse::generateAutoIndexHTML(const HttpRequest &req, const ServerBlo
 	}
 	output << "</ul></body></html>";
 	closedir(dir);
-	setResponseByStatus(200, "OK", output.str(), "text/html");
-	// Tentei usar a getMimeType(), mas ele esta retornando o tipo de arquivo binario como default
-	// Dessa forma, o get do client acaba baixando o arquivo gerado pelo autoindex.
-	// Precisamos dar uma olhada melhor no getMimeType() 
+	setResponseByStatus(200, "OK", output.str());
 }
 
 void HttpResponse::handleGet(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock &location){
@@ -203,7 +200,7 @@ std::string HttpResponse::getMimeType(const std::string &path) const {
     std::string ext = path.substr(dotPos);
     
     // HTML e XML
-    if (ext == ".html" || ext == ".htm") return "text/html";
+    if (ext == ".html" || ext == ".htm" || ext == ".php") return "text/html";
     if (ext == ".xml") return "application/xml";
     
     // Texto
