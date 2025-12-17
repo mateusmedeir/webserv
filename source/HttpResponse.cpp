@@ -81,9 +81,13 @@ void HttpResponse::handleGet(const HttpRequest &req, const ServerBlock &serverBl
 };
 
 void HttpResponse::handleDelete(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock &location){
-	std::cout << serverBlock.getRoot().second << std::endl;
-	std::cout << req.getUri() << std::endl;
-	std::string path = location.getPath(location.getUploadPath(), req.getUri());
+	(void)serverBlock;
+	size_t	filePos = req.getUri().rfind('/');
+	std::string fileName = req.getUri().substr(filePos);
+	std::string path = location.getUploadPath() + fileName;
+	// std::cout << serverBlock.getRoot().second << std::endl;
+	// std::cout << req.getUri() << std::endl;
+	// std::string path = location.getPath(location.getUploadPath(), req.getUri());
 	Logger::debug("Path dentro do delete: " + path);
 	if (std::remove(path.c_str()) == 0) {
 		setResponseByStatus(200, "OK", "<h1>File deleted successfully</h1>");
@@ -130,6 +134,7 @@ void HttpResponse::handlePost(const HttpRequest &req, const ServerBlock &serverB
 	std::string locationUploadDir = location.getUploadPath();
 	std::string fullPath = locationUploadDir + "/" + req.getUploadFileName();
 	// Trocar por fullPath = location->getPath(); ??
+	Logger::debug("Path dentro do delete: " + fullPath);
 	std::ofstream	newFile(fullPath.c_str());
 	if (!newFile.is_open()) {
 		Logger::error("Nao foi possivel criar o arquivo.");

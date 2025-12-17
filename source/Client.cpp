@@ -336,7 +336,9 @@ bool Client::validateDelete(ServerBlock &serverBlock, LocationBlock &location) {
     if (base.empty())
         return false;
 
-    std::string fullPath = base + this->request.getUri();
+    size_t	filePos = uri.rfind('/');
+	std::string fileName = uri.substr(filePos);
+    std::string fullPath = base + fileName;
     Logger::debug("Full path for DELETE: " + fullPath);
     if (access(fullPath.c_str(), R_OK | W_OK) != 0) {
         this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbidden</h1>");
