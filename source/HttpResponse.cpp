@@ -10,17 +10,17 @@ HttpResponse::HttpResponse(){
 HttpResponse::~HttpResponse(){};
 
 void HttpResponse::handleGet(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock &location){
-	if (!location.getReturn().empty()) return setResponseByStatus(302, "Found", location.getReturn());
+	if (!location.getReturn().empty()) return setResponseByStatus(302, &serverBlock, "Found", location.getReturn());
 
 	std::string path = location.getPath(serverBlock.getRoot().second, req.getUri());
 	Logger::debug("Path dentro do delete: " + path);
-	if (path.empty()) return setResponseByStatus(404);
+	if (path.empty()) return setResponseByStatus(404, &serverBlock);
 
 	// validar se e autoindex.
 	if (this->getExecAutoIndex()) {
 		// Execute autoindex...
 		Logger::debug("EXECUTANDO AUTOINDEX....");
-		return setResponseByStatus(404);
+		return setResponseByStatus(404, &serverBlock);
 	}
 	std::vector<std::string> locationIndexes = location.getIndex();
 	for (std::vector<std::string>::iterator it = locationIndexes.begin(); it != locationIndexes.end(); it++) {
@@ -32,17 +32,17 @@ void HttpResponse::handleGet(const HttpRequest &req, const ServerBlock &serverBl
 	}
 	Logger::debug("Path executado no GET: " + path);
 	if (access(path.c_str(), R_OK) != 0) {
-		return setResponseByStatus(403);
+		return setResponseByStatus(403, &serverBlock);
 	}
 	
 	std::ifstream file(path.c_str(), std::ios::binary);
-	if (!file) return setResponseByStatus(404);
+	if (!file) return setResponseByStatus(404, &serverBlock);
 	
 	Logger::debug("EXECUTANDO O GET METODO....");
 	std::ostringstream buffer;
 	buffer << file.rdbuf();
 
-	setResponseByStatus(200, "OK", buffer.str(), getMimeType(path));
+	setResponseByStatus(200, &serverBlock, "OK", buffer.str(), getMimeType(path));
 };
 
 void HttpResponse::handleDelete(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock &location){
@@ -51,9 +51,9 @@ void HttpResponse::handleDelete(const HttpRequest &req, const ServerBlock &serve
 	std::string path = location.getPath(location.getUploadPath(), req.getUri());
 	Logger::debug("Path dentro do delete: " + path);
 	if (std::remove(path.c_str()) == 0) {
-		setResponseByStatus(200, "OK", "<h1>File deleted successfully</h1>");
+		setResponseByStatus(200, &serverBlock, "OK", "<h1>File deleted successfully</h1>");
 	} else {
-		setResponseByStatus(404, "Not Found", "<h1>404 Not Found</h1>");
+		setResponseByStatus(404, &serverBlock, "Not Found", "<h1>404 Not Found</h1>");
 	}
 };
 
@@ -70,7 +70,7 @@ void HttpResponse::dispatchRequest(Client *client, const ServerBlock &serverBloc
 		client->cgiHandler = new CgiHandler(req, serverBlock, location);
 		if (!client->cgiHandler->start()) {
 				Logger::error("Failed to start CGI handler.");
-				setErrorPage(500);
+				setErrorPage(500, &serverBlock);
 
 				delete client->cgiHandler;
 				client->cgiHandler = NULL;
@@ -87,24 +87,23 @@ void HttpResponse::dispatchRequest(Client *client, const ServerBlock &serverBloc
 	else if(req.getMethod() == "DELETE")
 		return handleDelete(req, serverBlock, location);
 	else 
-		return setResponseByStatus(405, "Method Not Allowed", "<h1>Method Not Allowed</h1>");
+		return setResponseByStatus(405, &serverBlock, "Method Not Allowed", "<h1>Method Not Allowed</h1>");
 }
 
 void HttpResponse::handlePost(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock &location){
-	(void)serverBlock;
 	std::string locationUploadDir = location.getUploadPath();
 	std::string fullPath = locationUploadDir + "/" + req.getUploadFileName();
 	// Trocar por fullPath = location->getPath(); ??
 	std::ofstream	newFile(fullPath.c_str());
 	if (!newFile.is_open()) {
 		Logger::error("Nao foi possivel criar o arquivo.");
-		return this->setResponseByStatus(400);
+		return this->setResponseByStatus(400, &serverBlock);
 	}
 	size_t endHeader = req.getBody().find("\r\n\r\n") + 4;
 	size_t endFormData = req.getBody().find(req.getEndBoudary());
 	newFile << req.getBody().substr(endHeader, endFormData - endHeader - 2);
 	newFile.close();
-	setResponseByStatus(201);
+	setResponseByStatus(201, &serverBlock);
 	this->setHeader("Access-Control-Allow-Origin", "*");
 	this->setBody("<h1>File named " + req.getUploadFileName() + " was uploaded successfully!</h1>", "text/html");
 };
@@ -208,23 +207,99 @@ std::string HttpResponse::getMimeType(const std::string &path) const {
     return "application/octet-stream";
 }
 
-void		HttpResponse::setErrorPage(int code){
-	std::string path = "./error_pages/" + intToString(code) + ".html";
+std::string HttpResponse::getStatusMessageForCode(int code) const {
+	switch (code) {
+		//| 2xx Success
+		case 200: return "OK";
+		case 201: return "Created";
+		case 204: return "No Content";
+		
+		//| 3xx Redirection
+		case 301: return "Moved Permanently";
+		case 302: return "Found";
+		case 303: return "See Other";
+		case 304: return "Not Modified";
+		case 307: return "Temporary Redirect";
+		case 308: return "Permanent Redirect";
+		
+		//| 4xx Client Errors
+		case 400: return "Bad Request";
+		case 401: return "Unauthorized";
+		case 403: return "Forbidden";
+		case 404: return "Not Found";
+		case 405: return "Method Not Allowed";
+		case 406: return "Not Acceptable";
+		case 408: return "Request Timeout";
+		case 409: return "Conflict";
+		case 410: return "Gone";
+		case 411: return "Length Required";
+		case 413: return "Payload Too Large";
+		case 414: return "URI Too Long";
+		case 415: return "Unsupported Media Type";
+		case 418: return "I'm a teapot";
+		case 422: return "Unprocessable Entity";
+		case 429: return "Too Many Requests";
+		
+		//| 5xx Server Errors
+		case 500: return "Internal Server Error";
+		case 501: return "Not Implemented";
+		case 502: return "Bad Gateway";
+		case 503: return "Service Unavailable";
+		case 504: return "Gateway Timeout";
+		case 505: return "HTTP Version Not Supported";
+		
+		default: return "Error";
+	}
+}
+
+void		HttpResponse::setErrorPage(int code, const ServerBlock *serverBlock){
+	std::string path;
+	
+	//| Verificar se existe página personalizada no ServerBlock
+	if (serverBlock) {
+		std::map<int, std::string> errorPages = serverBlock->getErrorPages();
+		std::map<int, std::string>::const_iterator it = errorPages.find(code);
+		if (it != errorPages.end()) {
+			//| Combinar root com o URI da página de erro configurada
+			std::string root = serverBlock->getRoot().second;
+			if (root.empty())
+				root = ".";
+			path = root + it->second;
+		}
+	}
+	
+	//| Se não encontrou página personalizada, usar o fallback padrão
+	if (path.empty()) {
+		path = "./error_pages/" + intToString(code) + ".html";
+	}
+	
+	//| Definir a mensagem de status apropriada
+	std::string statusMessage = getStatusMessageForCode(code);
+	
 	std::ifstream file(path.c_str());
-	if(!file){
-		setStatus(code, "Error");
-		setBody("<h1>"+ intToString(code) + "Error</h1>","text/html");
-		return;
+	if (!file) {
+		//| Se não conseguiu abrir o arquivo, tentar fallback padrão
+		if (path.find("./error_pages/") == std::string::npos) {
+			path = "./error_pages/" + intToString(code) + ".html";
+			file.open(path.c_str());
+		}
+		if (!file) {
+			//| Se ainda não conseguiu, gerar página de erro genérica
+			setStatus(code, statusMessage);
+			setBody("<html><head><title>" + intToString(code) + " " + statusMessage + "</title></head>"
+					"<body><h1>" + intToString(code) + " " + statusMessage + "</h1></body></html>", "text/html");
+			return;
+		}
 	}
 	std::ostringstream buffer;
 	buffer << file.rdbuf();
-	setStatus(code, "Error");
-	setBody(buffer.str(),"text/html");
+	setStatus(code, statusMessage);
+	setBody(buffer.str(), "text/html");
 }
 
-void HttpResponse::setResponseByStatus(int statusCode, const std::string &statusMessage, const std::string &bodyContent, const std::string &contentType) {
+void HttpResponse::setResponseByStatus(int statusCode, const ServerBlock *serverBlock, const std::string &statusMessage, const std::string &bodyContent, const std::string &contentType) {
 	if (statusCode >= 400) {
-		setErrorPage(statusCode);
+		setErrorPage(statusCode, serverBlock);
 	} else if (statusCode == 302) {
 		setStatus(302, "Found");
 		setHeader("Location", bodyContent);
