@@ -129,6 +129,7 @@ void HttpResponse::dispatchRequest(Client *client, const ServerBlock &serverBloc
 void HttpResponse::handlePost(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock &location){
 	(void)serverBlock;
 	std::string locationUploadDir = location.getUploadPath();
+	if (locationUploadDir.empty()) return (setResponseByStatus(403, "Forbidden"));
 	std::string fullPath = locationUploadDir + "/" + req.getUploadFileName();
 	// Trocar por fullPath = location->getPath(); ??
 	Logger::debug("Path dentro do delete: " + fullPath);

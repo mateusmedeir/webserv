@@ -299,7 +299,7 @@ bool Client::validatePost(ServerBlock &serverBlock, LocationBlock &location) {
         return false;
     }
 
-    if (!location.getCanUpload()) {
+    if (!this->request.getIsCgi() && (!location.getCanUpload() || location.getUploadPath().empty())) {
         this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbidden</h1>");
         return false;
     }
