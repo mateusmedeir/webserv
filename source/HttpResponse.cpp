@@ -79,9 +79,21 @@ void HttpResponse::handleGet(const HttpRequest &req, const ServerBlock &serverBl
 
 void HttpResponse::handleDelete(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock &location){
 	(void)serverBlock;
+	std::string locationUploadDir = location.getUploadPath();
+	if (locationUploadDir.empty()) return (setResponseByStatus(404, "Forbidden"));
+
+	std::string uri = req.getUri();
+	if (uri[uri.size() - 1] == '/') return (setResponseByStatus(404, "Not Found"));
+
 	size_t	filePos = req.getUri().rfind('/');
 	std::string fileName = req.getUri().substr(filePos);
-	std::string path = location.getUploadPath() + fileName;
+	std::string path = "";
+
+	if (locationUploadDir[locationUploadDir.size() - 1] == '/')
+		path = locationUploadDir + fileName;
+	else
+		path = locationUploadDir + "/" + fileName;
+
 	// std::cout << serverBlock.getRoot().second << std::endl;
 	// std::cout << req.getUri() << std::endl;
 	// std::string path = location.getPath(location.getUploadPath(), req.getUri());
@@ -129,10 +141,13 @@ void HttpResponse::dispatchRequest(Client *client, const ServerBlock &serverBloc
 void HttpResponse::handlePost(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock &location){
 	(void)serverBlock;
 	std::string locationUploadDir = location.getUploadPath();
+	std::string fullPath = "";
 	if (locationUploadDir.empty()) return (setResponseByStatus(403, "Forbidden"));
-	std::string fullPath = locationUploadDir + "/" + req.getUploadFileName();
-	// Trocar por fullPath = location->getPath(); ??
-	Logger::debug("Path dentro do delete: " + fullPath);
+	if (locationUploadDir[locationUploadDir.size() - 1] == '/')
+		fullPath = locationUploadDir + req.getUploadFileName();
+	else
+		fullPath = locationUploadDir + "/" + req.getUploadFileName();
+	Logger::debug("Path dentro do post: " + fullPath);
 	std::ofstream	newFile(fullPath.c_str());
 	if (!newFile.is_open()) {
 		Logger::error("Nao foi possivel criar o arquivo.");
