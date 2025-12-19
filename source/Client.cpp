@@ -283,16 +283,27 @@ bool Client::validateGet(ServerBlock &serverBlock, LocationBlock &location) {
 }
 
 bool Client::validatePost(ServerBlock &serverBlock, LocationBlock &location) {
+    // std::string uri = this->request.getUri();
+    // uri = extractUriWithoutQuery(uri);
     std::string uri = this->request.getUri();
-    uri = extractUriWithoutQuery(uri);
+
+    Logger::debug("client uri: " + uri);
+    Logger::debug("location uri: " + location.getUri());
+
+    if (uri.empty() || uri != location.getUri()) {
+        this->response.setResponseByStatus(404, "Not Found", "<h1>Not Found</h1>");
+        return (false);
+    }
 
     (void)serverBlock; // Unused parameter
 
-    if (uri.empty() ||
-        uri[uri.size() - 1] == '/') {
-        this->response.setResponseByStatus(400, "Bad Request", "<h1>Bad Request</h1>");
-        return false;
-    }
+
+
+    // if (uri.empty() ||
+    //     uri[uri.size() - 1] == '/') {
+    //     this->response.setResponseByStatus(400, "Bad Request", "<h1>Bad Request</h1>");
+    //     return false;
+    // }
 
     if (this->_serverListen.getServerBlock().getMaxBodySize().second <
         this->request.getBody().size()) {
@@ -300,7 +311,7 @@ bool Client::validatePost(ServerBlock &serverBlock, LocationBlock &location) {
         return false;
     }
 
-    if (!location.getCanUpload()) {
+    if (!this->request.getIsCgi() && (!location.getCanUpload() || location.getUploadPath().empty())) {
         this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbidden</h1>");
         return false;
     }
@@ -315,16 +326,34 @@ bool Client::validatePost(ServerBlock &serverBlock, LocationBlock &location) {
 }
 
 bool Client::validateDelete(ServerBlock &serverBlock, LocationBlock &location) {
-    std::string uri = this->request.getUri();
-    uri = extractUriWithoutQuery(uri);
+	std::string locationUploadDir = location.getUploadPath();
+	if (locationUploadDir.empty()) return (this->response.setResponseByStatus(404, "Not Found"), false);
+
+	std::string uri = this->request.getUri();
+	if (uri[uri.size() - 1] == '/') return (this->response.setResponseByStatus(404, "Not Found"), false);
+
+	size_t	filePos = uri.rfind('/');
+	std::string fileName = uri.substr(filePos);
+    std::string newUri = uri.substr(0, filePos);
+
+    // std::string uri = this->request.getUri();
+    // uri = extractUriWithoutQuery(uri);
+
+    Logger::debug("client uri: " + newUri);
+    Logger::debug("location uri: " + location.getUri());
+
+    if (newUri.empty() || newUri != location.getUri()) {
+        this->response.setResponseByStatus(404, "Not Found", "<h1>Not Found</h1>");
+        return (false);
+    }
 
     (void)serverBlock; // Unused parameter
 
-    if (uri.empty() ||
-        uri[uri.size() - 1] == '/') {
-        this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbidden</h1>");
-        return false;
-    }
+    // if (uri.empty() ||
+    //     uri[uri.size() - 1] == '/') {
+    //     this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbidden</h1>");
+    //     return false;
+    // }
 
     std::string base;
     if (this->request.getIsCgi()) {
@@ -332,12 +361,22 @@ bool Client::validateDelete(ServerBlock &serverBlock, LocationBlock &location) {
     } else {
         base = location.getUploadPath();
     }
+    std::string fullPath = "";
 
     Logger::debug("Base path for DELETE: " + base);
     if (base.empty())
         return false;
 
-    std::string fullPath = base + this->request.getUri();
+    // size_t	filePos = uri.rfind('/');
+	// std::string fileName = uri.substr(filePos);
+
+    if (base[base.size() - 1] == '/')
+		fullPath = base + fileName;
+	else
+		fullPath = base + "/" + fileName;
+
+    Logger::debug("Filename: " + fileName);
+
     Logger::debug("Full path for DELETE: " + fullPath);
     if (access(fullPath.c_str(), R_OK | W_OK) != 0) {
         this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbidden</h1>");

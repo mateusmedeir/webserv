@@ -9,18 +9,50 @@ HttpResponse::HttpResponse(){
 
 HttpResponse::~HttpResponse(){};
 
+void	HttpResponse::generateAutoIndexHTML(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock &location) {
+	std::stringstream output;
+	std::string path = location.getPath(serverBlock.getRoot().second, req.getUri());
+	Logger::debug("PAth dentro do generateAutoIndex: " + path);
+	if (path.empty()) return setResponseByStatus(404);
+	DIR* dir = opendir(path.c_str());
+	if (dir == NULL) {
+		return;
+	}
+	output << "<html><head><title>Autoindex</title></head><body><h1>Autoindex</h1><ul>";
+	dirent* entry;
+	while ((entry = readdir(dir)) != NULL) {
+		std::string name = entry->d_name;
+		if (name != "." && name != "..") {
+			output << "<li>";
+			//Checando se e um diretorio
+			if (entry->d_type == DT_DIR) {
+				//se for diretorio, criar um link direto para ele
+				output << "<a href=\"" << name << "/\">" << name << " (directory)</a>";
+			} else {
+				// Para arquivos, gera um link para download
+				output << "<a href=\"" << name << "\">" << name << "</a>";
+			}
+			output << "</li>";
+		}
+	}
+	output << "</ul></body></html>";
+	closedir(dir);
+	setResponseByStatus(200, "OK", output.str());
+}
+
 void HttpResponse::handleGet(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock &location){
 	if (!location.getReturn().empty()) return setResponseByStatus(302, "Found", location.getReturn());
 
 	std::string path = location.getPath(serverBlock.getRoot().second, req.getUri());
-	Logger::debug("Path dentro do delete: " + path);
+	Logger::debug("Path dentro do get: " + path);
 	if (path.empty()) return setResponseByStatus(404);
 
 	// validar se e autoindex.
 	if (this->getExecAutoIndex()) {
 		// Execute autoindex...
 		Logger::debug("EXECUTANDO AUTOINDEX....");
-		return setResponseByStatus(404);
+		this->generateAutoIndexHTML(req, serverBlock, location);
+		return ;
 	}
 	std::vector<std::string> locationIndexes = location.getIndex();
 	for (std::vector<std::string>::iterator it = locationIndexes.begin(); it != locationIndexes.end(); it++) {
@@ -46,9 +78,25 @@ void HttpResponse::handleGet(const HttpRequest &req, const ServerBlock &serverBl
 };
 
 void HttpResponse::handleDelete(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock &location){
-	std::cout << serverBlock.getRoot().second << std::endl;
-	std::cout << req.getUri() << std::endl;
-	std::string path = location.getPath(location.getUploadPath(), req.getUri());
+	(void)serverBlock;
+	std::string locationUploadDir = location.getUploadPath();
+	if (locationUploadDir.empty()) return (setResponseByStatus(404, "Forbidden"));
+
+	std::string uri = req.getUri();
+	if (uri[uri.size() - 1] == '/') return (setResponseByStatus(404, "Not Found"));
+
+	size_t	filePos = req.getUri().rfind('/');
+	std::string fileName = req.getUri().substr(filePos);
+	std::string path = "";
+
+	if (locationUploadDir[locationUploadDir.size() - 1] == '/')
+		path = locationUploadDir + fileName;
+	else
+		path = locationUploadDir + "/" + fileName;
+
+	// std::cout << serverBlock.getRoot().second << std::endl;
+	// std::cout << req.getUri() << std::endl;
+	// std::string path = location.getPath(location.getUploadPath(), req.getUri());
 	Logger::debug("Path dentro do delete: " + path);
 	if (std::remove(path.c_str()) == 0) {
 		setResponseByStatus(200, "OK", "<h1>File deleted successfully</h1>");
@@ -93,8 +141,13 @@ void HttpResponse::dispatchRequest(Client *client, const ServerBlock &serverBloc
 void HttpResponse::handlePost(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock &location){
 	(void)serverBlock;
 	std::string locationUploadDir = location.getUploadPath();
-	std::string fullPath = locationUploadDir + "/" + req.getUploadFileName();
-	// Trocar por fullPath = location->getPath(); ??
+	std::string fullPath = "";
+	if (locationUploadDir.empty()) return (setResponseByStatus(403, "Forbidden"));
+	if (locationUploadDir[locationUploadDir.size() - 1] == '/')
+		fullPath = locationUploadDir + req.getUploadFileName();
+	else
+		fullPath = locationUploadDir + "/" + req.getUploadFileName();
+	Logger::debug("Path dentro do post: " + fullPath);
 	std::ofstream	newFile(fullPath.c_str());
 	if (!newFile.is_open()) {
 		Logger::error("Nao foi possivel criar o arquivo.");
@@ -163,7 +216,7 @@ std::string HttpResponse::getMimeType(const std::string &path) const {
     std::string ext = path.substr(dotPos);
     
     // HTML e XML
-    if (ext == ".html" || ext == ".htm") return "text/html";
+    if (ext == ".html" || ext == ".htm" || ext == ".php") return "text/html";
     if (ext == ".xml") return "application/xml";
     
     // Texto
