@@ -25,7 +25,7 @@ CgiHandler::~CgiHandler() {
     kill(_childPid, SIGKILL);
 
     int status;
-    waitpid(_childPid, &status, WNOHANG);
+    waitpid(_childPid, &status, 0);
   }
 }
 
@@ -80,8 +80,7 @@ void CgiHandler::handleEpollOut() {
             EPOLLIN | EPOLLET | EPOLLRDHUP
         );
     } catch (const std::exception &e) {
-        std::cerr << "CgiHandler::handleEpollOut - replaceHandlerFd failed: "
-                  << e.what() << std::endl;
+        Logger::error("CgiHandler::handleEpollOut - replaceHandlerFd failed: " + std::string(e.what()));
         _isFinished = true;
         return;
     }
@@ -100,14 +99,14 @@ bool CgiHandler::isFinished() const {
 bool CgiHandler::start() {
     try {
         if (pipe(_fdIn) == -1 || pipe(_fdOut) == -1) {
-            std::cerr << "CGI: Failed to create pipes" << std::endl;
+            Logger::error("CGI: Failed to create pipes");
             return false;
         }
         Logger::debug("Cgi: Pipes created successfully.");
 
         pid_t pid = fork();
         if (pid < 0) {
-            std::cerr << "CGI: Fork failed" << std::endl;
+            Logger::error("CGI: Fork failed");
             close(_fdIn[0]); close(_fdIn[1]);
             close(_fdOut[0]); close(_fdOut[1]);
             return false;
@@ -132,7 +131,6 @@ bool CgiHandler::start() {
             std::string interpretterPath = getInterpretterPath(_scriptPath);
             char* const argv[] = {const_cast<char*>(interpretterPath.c_str()), const_cast<char*>(_scriptPath.c_str()), NULL};
             execve(interpretterPath.c_str(), argv, envp.data());
-            std::cerr << "CGI: execve failed: " << strerror(errno) << std::endl;
             _exit(1);
         } else {
             _childPid = pid;
@@ -172,7 +170,6 @@ bool CgiHandler::start() {
                 this->setSocketFd(_fdOut[0]);
                 this->setInterestedEvents(EPOLLIN | EPOLLET | EPOLLRDHUP);
                 EpollInstance::manipInterestList(EPOLL_CTL_ADD, this);
-                this->setLastActiveTime(time(NULL));
             }
         }
     } catch (const std::exception& e) {

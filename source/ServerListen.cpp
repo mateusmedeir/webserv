@@ -31,13 +31,7 @@ void ServerListen::handleEpollIn(void) {
         int clientFd = accept(this->getSocketFd(), (struct sockaddr *)&clientSocketAddr, &clientSocketLength);
 
         if (clientFd == -1) {
-            //EAGAIN or EWOULDBLOCK
-            //The socket is marked nonblocking and no connections are
-            //present to be accepted (nao ha mais conexoes para serem aceitas)
-            if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                // std::cout << "BREAK;" << std::endl;
-                break;
-            }
+            break;
         } else {
             try {
                 setNonBlocking(clientFd);
@@ -45,12 +39,12 @@ void ServerListen::handleEpollIn(void) {
                 // TCP_NODELAY: Reduz latência para requisições pequenas
                 int flag = 1;
                 if (setsockopt(clientFd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int)) < 0) {
-                    std::cerr << "[Warning] Failed to set TCP_NODELAY on client socket" << std::endl;
+                    Logger::error("Failed to set TCP_NODELAY on client socket");
                 }
                 EpollInstance::manipInterestList(EPOLL_CTL_ADD, new Client(clientFd, *this));
             }
             catch (const std::exception &e) {
-                std::cerr << e.what() << std::endl;
+                Logger::error("Exception caught in ServerListen::handleEpollIn: " + std::string(e.what()));
                 close(clientFd);
             }
         }
