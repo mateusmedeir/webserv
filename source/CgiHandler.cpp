@@ -22,6 +22,8 @@ CgiHandler::~CgiHandler() {
   if (_fdOut[1] != -1) close(_fdOut[1]);
 
   if (_childPid != -1) {
+    kill(_childPid, SIGKILL);
+
     int status;
     waitpid(_childPid, &status, WNOHANG);
   }
