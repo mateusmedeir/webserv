@@ -28,7 +28,7 @@ class HttpResponse {
 	void setHeader(const std::string &key, const std::string &value);
 	void setBody(const std::string &b, const std::string &contentType);
 	void setErrorPage(int code, const ServerBlock *serverBlock = NULL);
-	void setResponseByStatus(int statusCode, const ServerBlock *serverBlock = NULL, const std::string &statusMessage="OK", const std::string &bodyContent="", const std::string &contentType="text/html");
+	void setResponseByStatus(int statusCode, const ServerBlock *serverBlock = NULL, const std::string &bodyContent="", const std::string &contentType="text/html");
 	void processCookies(const HttpRequest &req, const LocationBlock &location);
 	void parseCgiOutput(const std::string& cgiRawOutput); // Adicionado
 

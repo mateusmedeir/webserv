@@ -13,7 +13,7 @@ void	HttpResponse::generateAutoIndexHTML(const HttpRequest &req, const ServerBlo
 	std::stringstream output;
 	std::string path = location.getPath(serverBlock.getRoot().second, req.getUri());
 	Logger::debug("PAth dentro do generateAutoIndex: " + path);
-	if (path.empty()) return setResponseByStatus(404);
+	if (path.empty()) return setResponseByStatus(404, &serverBlock);
 	DIR* dir = opendir(path.c_str());
 	if (dir == NULL) {
 		return;
@@ -37,11 +37,11 @@ void	HttpResponse::generateAutoIndexHTML(const HttpRequest &req, const ServerBlo
 	}
 	output << "</ul></body></html>";
 	closedir(dir);
-	setResponseByStatus(200, "OK", output.str());
+	setResponseByStatus(200, &serverBlock, output.str());
 }
 
 void HttpResponse::handleGet(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock &location){
-	if (!location.getReturn().empty()) return setResponseByStatus(302, &serverBlock, "Found", location.getReturn());
+	if (!location.getReturn().empty()) return setResponseByStatus(302, &serverBlock, location.getReturn());
 
 	std::string path = location.getPath(serverBlock.getRoot().second, req.getUri());
 	Logger::debug("Path dentro do delete: " + path);
@@ -74,16 +74,16 @@ void HttpResponse::handleGet(const HttpRequest &req, const ServerBlock &serverBl
 	std::ostringstream buffer;
 	buffer << file.rdbuf();
 
-	setResponseByStatus(200, &serverBlock, "OK", buffer.str(), getMimeType(path));
+	setResponseByStatus(200, &serverBlock, buffer.str(), getMimeType(path));
 };
 
 void HttpResponse::handleDelete(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock &location){
 	(void)serverBlock;
 	std::string locationUploadDir = location.getUploadPath();
-	if (locationUploadDir.empty()) return (setResponseByStatus(404, "Forbidden"));
+	if (locationUploadDir.empty()) return (setResponseByStatus(404, &serverBlock));
 
 	std::string uri = req.getUri();
-	if (uri[uri.size() - 1] == '/') return (setResponseByStatus(404, "Not Found"));
+	if (uri[uri.size() - 1] == '/') return (setResponseByStatus(404, &serverBlock));
 
 	size_t	filePos = req.getUri().rfind('/');
 	std::string fileName = req.getUri().substr(filePos);
@@ -99,9 +99,9 @@ void HttpResponse::handleDelete(const HttpRequest &req, const ServerBlock &serve
 	// std::string path = location.getPath(location.getUploadPath(), req.getUri());
 	Logger::debug("Path dentro do delete: " + path);
 	if (std::remove(path.c_str()) == 0) {
-		setResponseByStatus(200, &serverBlock, "OK", "<h1>File deleted successfully</h1>");
+		setResponseByStatus(200, &serverBlock);
 	} else {
-		setResponseByStatus(404, &serverBlock, "Not Found", "<h1>404 Not Found</h1>");
+		setResponseByStatus(404, &serverBlock);
 	}
 };
 
@@ -135,13 +135,13 @@ void HttpResponse::dispatchRequest(Client *client, const ServerBlock &serverBloc
 	else if(req.getMethod() == "DELETE")
 		return handleDelete(req, serverBlock, location);
 	else 
-		return setResponseByStatus(405, &serverBlock, "Method Not Allowed", "<h1>Method Not Allowed</h1>");
+		return setResponseByStatus(405, &serverBlock);
 }
 
 void HttpResponse::handlePost(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock &location){
 	std::string locationUploadDir = location.getUploadPath();
 	std::string fullPath = "";
-	if (locationUploadDir.empty()) return (setResponseByStatus(403, "Forbidden"));
+	if (locationUploadDir.empty()) return (setResponseByStatus(403, &serverBlock));
 	if (locationUploadDir[locationUploadDir.size() - 1] == '/')
 		fullPath = locationUploadDir + req.getUploadFileName();
 	else
@@ -286,11 +286,11 @@ std::string HttpResponse::getStatusMessageForCode(int code) const {
 		case 409: return "Conflict";
 		case 410: return "Gone";
 		case 411: return "Length Required";
-		case 413: return "Payload Too Large";
+		case 413: return "Content Too Large";
 		case 414: return "URI Too Long";
 		case 415: return "Unsupported Media Type";
 		case 418: return "I'm a teapot";
-		case 422: return "Unprocessable Entity";
+		case 422: return "Unprocessable Content";
 		case 429: return "Too Many Requests";
 		
 		//| 5xx Server Errors
@@ -350,7 +350,7 @@ void		HttpResponse::setErrorPage(int code, const ServerBlock *serverBlock){
 	setBody(buffer.str(), "text/html");
 }
 
-void HttpResponse::setResponseByStatus(int statusCode, const ServerBlock *serverBlock, const std::string &statusMessage, const std::string &bodyContent, const std::string &contentType) {
+void HttpResponse::setResponseByStatus(int statusCode, const ServerBlock *serverBlock, const std::string &bodyContent, const std::string &contentType) {
 	if (statusCode >= 400) {
 		setErrorPage(statusCode, serverBlock);
 	} else if (statusCode == 302) {
@@ -358,8 +358,15 @@ void HttpResponse::setResponseByStatus(int statusCode, const ServerBlock *server
 		setHeader("Location", bodyContent);
 		setBody("<h1>302 Found</h1>", "text/html");
 	} else {
+		std::string statusMessage = getStatusMessageForCode(statusCode);
 		setStatus(statusCode, statusMessage);
-		setBody(bodyContent, contentType);
+		std::string body;
+		if (bodyContent.empty()) {
+			body += "<h1>" + statusMessage + "</h1>";
+		} else {
+			body = bodyContent;
+		}
+		setBody(body, contentType);
 	}
 }
 

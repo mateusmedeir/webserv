@@ -221,9 +221,7 @@ bool Client::validateMethodAllowed(LocationBlock &location) {
     if (!location.checkHttpMethodInLocation(this->request.getMethod())) {
         Logger::debug("Metodo nao permitido na location...");
         ServerBlock serverBlock = this->_serverListen.getServerBlock();
-        this->response.setResponseByStatus(
-            405, &serverBlock, "Method Not Allowed", "<h1>Method Not Allowed</h1>"
-        );
+        this->response.setResponseByStatus(405, &serverBlock);
         return false;
     }
     return true;
@@ -243,7 +241,7 @@ bool Client::validatingUriWithLocation(ServerBlock &serverBlock, LocationBlock &
         return validateDelete(serverBlock, location);
     else {
         Logger::debug("Metodo HTTP nao suportado...");
-        this->response.setResponseByStatus(405, &serverBlock, "Method Not Allowed", "<h1>Method Not Allowed</h1>");
+        this->response.setResponseByStatus(405, &serverBlock);
         return false;
     }
 }
@@ -255,7 +253,7 @@ bool Client::validateGet(ServerBlock &serverBlock, LocationBlock &location) {
 
     if (access(path.c_str(), R_OK) != 0) {
         Logger::debug("Acesso ao recurso " + path + " negado.");
-        this->response.setResponseByStatus(403, &serverBlock, "Forbidden", "<h1>Forbidden</h1>");
+        this->response.setResponseByStatus(403, &serverBlock);
         return false;
     }
 
@@ -268,7 +266,7 @@ bool Client::validateGet(ServerBlock &serverBlock, LocationBlock &location) {
 
         if (!location.getAutoIndex()) {
             Logger::debug("Autoindex desabilitado e nenhum index encontrado.");
-            this->response.setResponseByStatus(403, &serverBlock, "Forbidden", "<h1>Forbidden</h1>");
+            this->response.setResponseByStatus(403, &serverBlock);
             return false;
         }
 
@@ -279,7 +277,7 @@ bool Client::validateGet(ServerBlock &serverBlock, LocationBlock &location) {
 
     if (isDirectory(path)) {
         Logger::debug("Acesso ao diretorio " + path + " negado.");
-        this->response.setResponseByStatus(403, &serverBlock, "Forbidden", "<h1>Forbidden</h1>");
+        this->response.setResponseByStatus(403, &serverBlock);
         return false;
     }
 
@@ -295,15 +293,15 @@ bool Client::validatePost(ServerBlock &serverBlock, LocationBlock &location) {
     Logger::debug("location uri: " + location.getUri());
 
     if (!this->request.getIsCgi() && (uri.empty() || uri != location.getUri())) {
-        this->response.setResponseByStatus(404, "Not Found", "<h1>Not Found</h1>");
+        this->response.setResponseByStatus(404, &serverBlock);
         return (false);
     } else if (this->request.getIsCgi()) {
         Logger::debug("Validating POST for CGI script at path: " + path);
         if (access(path.c_str(), F_OK) != 0) {
-            this->response.setResponseByStatus(404, "Not Found", "<h1>Not Found</h1>");
+            this->response.setResponseByStatus(404, &serverBlock);
             return (false);
         } else if (access(path.c_str(), R_OK) != 0) {
-            this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbidden</h1>");
+            this->response.setResponseByStatus(403, &serverBlock);
             return (false);
         } else {
             return (true);
@@ -312,30 +310,28 @@ bool Client::validatePost(ServerBlock &serverBlock, LocationBlock &location) {
 
     (void)serverBlock; // Unused parameter
 
-
-
     // if (uri.empty() ||
     //     uri[uri.size() - 1] == '/') {
-    //     this->response.setResponseByStatus(400, "Bad Request", "<h1>Bad Request</h1>");
+    //     this->response.setResponseByStatus(400, &serverBlock);
     //     return false;
     // }
 
     if (this->_serverListen.getServerBlock().getMaxBodySize().second <
         this->request.getBody().size()) {
-        this->response.setResponseByStatus(413, &serverBlock, "Payload Too Large", "<h1>Payload Too Large</h1>");
+        this->response.setResponseByStatus(413, &serverBlock);
         return false;
     }
 
     if (!location.getCanUpload() || location.getUploadPath().empty()) {
         Logger::debug("Upload nao permitido nesta location...");
-        this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbidden</h1>");
+        this->response.setResponseByStatus(403, &serverBlock);
         return false;
     }
 
     std::string uploadDir = location.getUploadPath();
     if (access(uploadDir.c_str(), R_OK | W_OK) != 0) {
         Logger::debug("Acesso ao diretorio de upload negado...");
-        this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbidden</h1>");
+        this->response.setResponseByStatus(403, &serverBlock);
         return false;
     }
 
@@ -344,10 +340,10 @@ bool Client::validatePost(ServerBlock &serverBlock, LocationBlock &location) {
 
 bool Client::validateDelete(ServerBlock &serverBlock, LocationBlock &location) {
 	std::string locationUploadDir = location.getUploadPath();
-	if (locationUploadDir.empty()) return (this->response.setResponseByStatus(404, "Not Found"), false);
+	if (locationUploadDir.empty()) return (this->response.setResponseByStatus(404, &serverBlock), false);
 
 	std::string uri = this->request.getUri();
-	if (uri[uri.size() - 1] == '/') return (this->response.setResponseByStatus(404, "Not Found"), false);
+	if (uri[uri.size() - 1] == '/') return (this->response.setResponseByStatus(404, &serverBlock), false);
 
 	size_t	filePos = uri.rfind('/');
 	std::string fileName = uri.substr(filePos);
@@ -366,7 +362,7 @@ bool Client::validateDelete(ServerBlock &serverBlock, LocationBlock &location) {
     Logger::debug("location uri: " + location.getUri());
 
     if (newUri.empty() || newUri != location.getUri()) {
-        this->response.setResponseByStatus(404, "Not Found", "<h1>Not Found</h1>");
+        this->response.setResponseByStatus(404, &serverBlock);
         return (false);
     }
 
@@ -374,7 +370,7 @@ bool Client::validateDelete(ServerBlock &serverBlock, LocationBlock &location) {
 
     // if (uri.empty() ||
     //     uri[uri.size() - 1] == '/') {
-    //     this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbidden</h1>");
+    //     this->response.setResponseByStatus(403, &serverBlock, "Forbidden", "<h1>Forbidden</h1>");
     //     return false;
     // }
 
@@ -402,7 +398,7 @@ bool Client::validateDelete(ServerBlock &serverBlock, LocationBlock &location) {
 
     Logger::debug("Full path for DELETE: " + fullPath);
     if (access(fullPath.c_str(), R_OK | W_OK) != 0) {
-        this->response.setResponseByStatus(403, &serverBlock, "Forbidden", "<h1>Forbidden</h1>");
+        this->response.setResponseByStatus(403, &serverBlock);
         return false;
     }
 
