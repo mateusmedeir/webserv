@@ -150,7 +150,7 @@ bool CgiHandler::start() {
 
             int epfd = EpollInstance::getEpollFd();
             if (epfd == -1) {
-                std::cerr << "CgiHandler::start - invalid epoll fd" << std::endl;
+                Logger::error("CgiHandler::start - invalid epoll fd");
                 return false;
             }
 

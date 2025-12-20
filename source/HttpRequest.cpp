@@ -1,6 +1,10 @@
 #include "../includes/WebservHeader.hpp"
 
-HttpRequest::HttpRequest(){}
+HttpRequest::HttpRequest(){
+	this->isMultipart = false;
+	this->isUpload = false;
+	this->isCgi = false;
+}
 
 // HttpRequest::HttpRequest(const std::string &rawRequest) {
 // 	parseRequestLine(rawRequest);
@@ -125,15 +129,13 @@ void HttpRequest::parseBody(const std::string &rawRequest, std::string onlyBody)
 	if (this->getHeaderValue("Transfer-Encoding") == "chunked")
 		this->body = decodeChunkedBody(this->body);
 	if (this->isUploadRequest() && this->getMethod() == "POST") {
-		// Precisamos pegar o file name
+
 		size_t filenameStartPos = this->body.find("filename=") + std::strlen("filename=");
 		size_t filenameEndPos = this->body.find("\r\n", filenameStartPos);
 		std::string aux = this->body.substr(filenameStartPos, filenameEndPos - filenameStartPos);
 		trimChars(aux, "\"");
 		this->uploadFileName = aux;
 	}
-	// std::cout << "---------------BODY UNCHUNKED-----------------" << std::endl;
-	// std::cout << this->getBody() << std::endl;
 }
 
 std::string HttpRequest::getMethod() const {

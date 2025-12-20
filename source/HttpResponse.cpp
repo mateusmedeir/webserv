@@ -5,6 +5,7 @@ HttpResponse::HttpResponse(){
 	this->_http_version = "HTTP/1.0";
 	this->_status_code = 200;
 	this->_status_message = "OK";
+	this->_execAutoIndex = false;
 };
 
 HttpResponse::~HttpResponse(){};
@@ -50,6 +51,7 @@ void HttpResponse::handleGet(const HttpRequest &req, const ServerBlock &serverBl
 	// validar se e autoindex.
 	if (this->getExecAutoIndex()) {
 		// Execute autoindex...
+		std::cout << "AUTOINDEX HABILITADO..." << std::endl;
 		Logger::debug("EXECUTANDO AUTOINDEX....");
 		this->generateAutoIndexHTML(req, serverBlock, location);
 		return ;

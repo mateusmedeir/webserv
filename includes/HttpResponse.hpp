@@ -13,7 +13,7 @@ class HttpResponse {
 		std::string 												_status_message;
 		std::map<std::string, std::string>	_headers;
 		std::string 												_body;
-		bool														_execAutoIndex;
+		bool																_execAutoIndex;
 	public:
 		HttpResponse();
 		~HttpResponse();

@@ -1,7 +1,7 @@
 #include "../includes/WebservHeader.hpp"
 #include "../includes/RunTime.hpp"
 
-Client::Client(int clientFd, ServerListen &serverListen) : EpollHandler(EPOLLIN | EPOLLOUT, clientFd, 10), _serverListen(serverListen) {
+Client::Client(int clientFd, ServerListen &serverListen) : EpollHandler(EPOLLIN | EPOLLOUT, clientFd, 30), _serverListen(serverListen) {
     this->_state = READING_HEADER;
     this->_rawRequest = "";
     this->request = HttpRequest();

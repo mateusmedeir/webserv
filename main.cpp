@@ -45,7 +45,7 @@ void serverMainLoop() {
     while (true) {
         int numberOfReadySockets = EpollInstance::manipEpollWait();
         if (numberOfReadySockets == -1) {
-            std::cerr << "Error: erro ao manipular o epoll_wait()." << std::endl;
+            Logger::error("Error: erro ao manipular o epoll_wait().");
             break;
         }
         else {
