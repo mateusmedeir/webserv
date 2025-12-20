@@ -2,12 +2,12 @@
 
 void signalHandler(int signum) {
     if (signum == SIGINT) {
-        std::cout << "\n[Signal] SIGINT received, shutting down gracefully..." << std::endl;
+        Logger::debug("[Signal] SIGINT received, shutting down gracefully...");
         RunTime::deleteInstance();
         Logger::deleteInstance();
     }
     else if (signum == SIGPIPE) {
-        std::cerr << "[Signal] SIGPIPE received and ignored (client disconnected during write)" << std::endl;
+        Logger::debug("[Signal] SIGPIPE received and ignored (client disconnected during write)");
     }
 }
 
@@ -15,7 +15,7 @@ int	verifyArgs(int ac, char **av)
 {
 	if (ac > 2)
 	{
-		std::cerr << "Usage: " << av[0] << " <config_file>\n\tOR\nUsage: " << av[0] << std::endl;
+		Logger::error("Usage: " + std::string(av[0]) + " <config_file>\n\tOR\nUsage: " + std::string(av[0]));
 		return (0);
 	}
 	return (1);
@@ -50,8 +50,8 @@ void serverMainLoop() {
         }
         else {
             epollReadyListLoop(numberOfReadySockets);
-            EpollInstance::deletePendingRemovals();
             epollValidationLoop();
+            EpollInstance::deletePendingRemovals();
         }
     }
 }
@@ -66,13 +66,13 @@ int main(int ac, char **av) {
     CompositeLogHandler* compositeHandler = new CompositeLogHandler();
     compositeHandler->addHandler(new StdLogHandler());
     compositeHandler->addHandler(new FileLogHandler("application.log"));
-    Logger::initLogger(DEBUG, compositeHandler);
+    Logger::initLogger(INFO, compositeHandler);
 
     try {
         RunTime::initializeRuntime(ac, av);
         serverMainLoop();
     } catch (const std::exception &e) {
-        std::cerr << e.what() << std::endl;
+        Logger::debug("Exception caught in main: " + std::string(e.what()));
         RunTime::deleteInstance();
         Logger::deleteInstance();
         return (-1);

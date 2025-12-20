@@ -6,7 +6,6 @@ EpollHandler::EpollHandler(uint32_t interestedEvents, int socketFd, int maxTimeo
 EpollHandler::~EpollHandler() {}
 
 int EpollHandler::handleEvent(struct epoll_event &event) {
-    this->_lastActiveTime = time(NULL);
     // Tratar eventos múltiplos (EPOLLIN | EPOLLOUT podem ocorrer simultaneamente)
     if (event.events & (EPOLLIN | EPOLLRDHUP)) {
         this->handleEpollIn();

@@ -1,7 +1,7 @@
 #include "../includes/WebservHeader.hpp"
 #include "../includes/RunTime.hpp"
 
-Client::Client(int clientFd, ServerListen &serverListen) : EpollHandler(EPOLLIN | EPOLLOUT, clientFd, 30), _serverListen(serverListen) {
+Client::Client(int clientFd, ServerListen &serverListen) : EpollHandler(EPOLLIN | EPOLLOUT, clientFd, 10), _serverListen(serverListen) {
     this->_state = READING_HEADER;
     this->_rawRequest = "";
     this->request = HttpRequest();
@@ -29,10 +29,11 @@ Client &Client::operator=(const Client &src) {
 
 Client::~Client(void) {
     if (this->getSocketFd() != -1) {
+        this->response.setErrorPage(504);
+        sendResponse(this->response.toString());
         close(this->getSocketFd());
     }
     if (this->cgiHandler) {
-        delete this->cgiHandler;
         this->cgiHandler = NULL;
     }
 }
@@ -283,16 +284,27 @@ bool Client::validateGet(ServerBlock &serverBlock, LocationBlock &location) {
 }
 
 bool Client::validatePost(ServerBlock &serverBlock, LocationBlock &location) {
-    // std::string uri = this->request.getUri();
-    // uri = extractUriWithoutQuery(uri);
+    std::string path = serverBlock.getRoot().second + this->request.getUri();
+    path = extractUriWithoutQuery(path);
     std::string uri = this->request.getUri();
 
     Logger::debug("client uri: " + uri);
     Logger::debug("location uri: " + location.getUri());
 
-    if (uri.empty() || uri != location.getUri()) {
+    if (!this->request.getIsCgi() && (uri.empty() || uri != location.getUri())) {
         this->response.setResponseByStatus(404, "Not Found", "<h1>Not Found</h1>");
         return (false);
+    } else if (this->request.getIsCgi()) {
+        Logger::debug("Validating POST for CGI script at path: " + path);
+        if (access(path.c_str(), F_OK) != 0) {
+            this->response.setResponseByStatus(404, "Not Found", "<h1>Not Found</h1>");
+            return (false);
+        } else if (access(path.c_str(), R_OK) != 0) {
+            this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbidden</h1>");
+            return (false);
+        } else {
+            return (true);
+        }
     }
 
     (void)serverBlock; // Unused parameter
@@ -311,13 +323,15 @@ bool Client::validatePost(ServerBlock &serverBlock, LocationBlock &location) {
         return false;
     }
 
-    if (!this->request.getIsCgi() && (!location.getCanUpload() || location.getUploadPath().empty())) {
+    if (!location.getCanUpload() || location.getUploadPath().empty()) {
+        Logger::debug("Upload nao permitido nesta location...");
         this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbidden</h1>");
         return false;
     }
 
     std::string uploadDir = location.getUploadPath();
     if (access(uploadDir.c_str(), R_OK | W_OK) != 0) {
+        Logger::debug("Acesso ao diretorio de upload negado...");
         this->response.setResponseByStatus(403, "Forbidden", "<h1>Forbidden</h1>");
         return false;
     }
