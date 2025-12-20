@@ -1,7 +1,7 @@
 #include "../includes/WebservHeader.hpp"
 #include "../includes/RunTime.hpp"
 
-Client::Client(int clientFd, ServerListen &serverListen) : EpollHandler(EPOLLIN | EPOLLOUT, clientFd, 30), _serverListen(serverListen) {
+Client::Client(int clientFd, ServerListen &serverListen) : EpollHandler(EPOLLIN | EPOLLOUT, clientFd, 10), _serverListen(serverListen) {
     this->_state = READING_HEADER;
     this->_rawRequest = "";
     this->request = HttpRequest();
@@ -9,6 +9,7 @@ Client::Client(int clientFd, ServerListen &serverListen) : EpollHandler(EPOLLIN 
     this->_pendingResponse = "";
     this->_responseOffset = 0;
     this->cgiHandler = NULL;
+    this->logged = false;
 }
 
 Client::Client(const Client &src) : EpollHandler(src.getInterestedEvents(), src.getSocketFd(), src.getMaxTimeoutSecs()), _serverListen(src._serverListen) {
@@ -64,7 +65,6 @@ void Client::handleEpollIn(void) {
             
             if (this->_state != WAITING_CGI) { 
                 std::string responseStr = this->response.toString();
-                Logger::info(toString());
                 if (!sendResponse(responseStr)) {
                     return;
                 }
@@ -110,7 +110,6 @@ void Client::handleEpollOut(void) {
 
     if (this->isRequestComplete() && this->_pendingResponse.empty()) {
         std::string responseStr = this->response.toString();
-        Logger::info(toString());
         if (!sendResponse(responseStr)) {
             // Client was closed/deleted.
             return;
@@ -122,6 +121,10 @@ void Client::handleEpollOut(void) {
 }
 
 bool Client::sendResponse(const std::string &responseStr) {
+    if (!this->logged) {
+        Logger::info(toString());
+        this->logged = true;
+    }
     if (this->_pendingResponse.empty()) {
         this->_pendingResponse = responseStr;
         this->_responseOffset = 0;

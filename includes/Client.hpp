@@ -16,6 +16,7 @@ class Client : public EpollHandler {
         HttpRequest     request;
         HttpResponse    response;
         CgiHandler    *cgiHandler;
+        bool            logged;
 
         Client(int clientFd, ServerListen &serverListen);
         Client(const Client &src);
