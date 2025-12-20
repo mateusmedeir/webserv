@@ -32,6 +32,16 @@ std::string extractQueryFromUri(const std::string &uri) {
     return "";
 }
 
+std::string extractUriPathInfo(const std::string &uri, const LocationBlock &location) {
+    std::string path = extractUriWithoutQuery(uri);
+    size_t locUriLen = location.getUri().length();
+
+    if (path.length() > locUriLen) {
+        return path.substr(locUriLen);
+    }
+    return "";
+}
+
 // void initAllLogHandlers(void) {
 //     CompositeLogHandler compositeHandler;
 

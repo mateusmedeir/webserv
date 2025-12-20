@@ -170,6 +170,7 @@ bool CgiHandler::start() {
                 this->setSocketFd(_fdOut[0]);
                 this->setInterestedEvents(EPOLLIN | EPOLLET | EPOLLRDHUP);
                 EpollInstance::manipInterestList(EPOLL_CTL_ADD, this);
+                this->setLastActiveTime(time(NULL));
             }
         }
     } catch (const std::exception& e) {
@@ -185,7 +186,7 @@ std::vector<std::string> CgiHandler::buildEnvironment() {
     env.push_back("REQUEST_METHOD=" + _request.getMethod());
     env.push_back("REQUEST_URI=" + _request.getUri());
     env.push_back("SCRIPT_NAME=" + extractUriWithoutQuery(_request.getUri()));
-    env.push_back("PATH_INFO=" /*+ extractPathInfo(_request.getUri()) */);
+    env.push_back("PATH_INFO=" + extractUriPathInfo(_request.getUri(), _location));
     env.push_back("PATH_TRANSLATED=" + _scriptPath);
     
     std::string queryString = extractQueryFromUri(_request.getUri());
