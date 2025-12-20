@@ -310,7 +310,7 @@ std::string HttpResponse::getStatusMessageForCode(int code) const {
 
 void		HttpResponse::setErrorPage(int code, const ServerBlock *serverBlock){
 	std::string path;
-	
+	if (!_body.empty()) return;
 	//| Verificar se existe página personalizada no ServerBlock
 	if (serverBlock) {
 		std::map<int, std::string> errorPages = serverBlock->getErrorPages();
@@ -363,13 +363,7 @@ void HttpResponse::setResponseByStatus(int statusCode, const ServerBlock *server
 	} else {
 		std::string statusMessage = getStatusMessageForCode(statusCode);
 		setStatus(statusCode, statusMessage);
-		std::string body;
-		if (bodyContent.empty()) {
-			body += "<h1>" + statusMessage + "</h1>";
-		} else {
-			body = bodyContent;
-		}
-		setBody(body, contentType);
+		setBody(bodyContent, contentType);
 	}
 }
 

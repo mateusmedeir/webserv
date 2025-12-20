@@ -37,14 +37,17 @@ void CgiHandler::handleEpollIn() {
 
         if (bytesRead > 0) {
             _cgiOutput.append(buffer, bytesRead);
-            continue;
         } else if (bytesRead == 0) {
             status = COMPLETED;
             return;
+        } else {
+            status = FAILED;
+            return;
         }
 
-        return;
+        if (bytesRead <= MAX_BUFFER_SIZE) return;
     }
+    return;
 }
 
 void CgiHandler::handleEpollOut() {
@@ -58,6 +61,9 @@ void CgiHandler::handleEpollOut() {
         if (n > 0) {
             _bytesWritten += n;
             continue;
+        } else if (n < 0) {
+            status = FAILED;
+            return;
         }
 
         return;

@@ -72,7 +72,7 @@ int main(int ac, char **av) {
         RunTime::initializeRuntime(ac, av);
         serverMainLoop();
     } catch (const std::exception &e) {
-        Logger::debug("Exception caught in main: " + std::string(e.what()));
+        Logger::error("Exception caught in main: " + std::string(e.what()));
         RunTime::deleteInstance();
         Logger::deleteInstance();
         return (-1);
