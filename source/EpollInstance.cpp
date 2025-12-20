@@ -75,7 +75,6 @@ void EpollInstance::manipInterestList(int operation, EpollHandler *handler) {
     if (epoll_ctl(_instance->_epollFd, operation, socketFd, &data) == -1) {
         std::cerr << "epoll_ctl failed: op=" << operation << " fd=" << socketFd
               << " errno=" << errno << " (" << strerror(errno) << ")\n";
-        throw(EpollInstance::CannotManipulateEpollInstance());
     }
 }
 
@@ -104,7 +103,6 @@ void EpollInstance::replaceHandlerFd(EpollHandler *handler, int newFd, uint32_t 
         if (epoll_ctl(epfd, EPOLL_CTL_MOD, oldFd, &ev) == -1) {
             std::cerr << "replaceHandlerFd: EPOLL_CTL_MOD failed: fd=" << oldFd
                       << " errno=" << errno << " (" << strerror(errno) << ")\n";
-            throw(EpollInstance::CannotManipulateEpollInstance());
         }
         handler->setInterestedEvents(newEvents);
         _instance->_handlers[oldFd] = handler;
@@ -116,7 +114,6 @@ void EpollInstance::replaceHandlerFd(EpollHandler *handler, int newFd, uint32_t 
             if (errno != ENOENT && errno != EBADF) {
                 std::cerr << "replaceHandlerFd: EPOLL_CTL_DEL failed for oldFd=" << oldFd
                           << " errno=" << errno << " (" << strerror(errno) << ")\n";
-                throw(EpollInstance::CannotManipulateEpollInstance());
             } else {
                 Logger::debug("replaceHandlerFd: EPOLL_CTL_DEL returned ENOENT/EBADF for oldFd=" + intToString(oldFd) + " (continuing)");
             }
@@ -135,7 +132,6 @@ void EpollInstance::replaceHandlerFd(EpollHandler *handler, int newFd, uint32_t 
         std::cerr << "replaceHandlerFd: EPOLL_CTL_ADD failed for newFd=" << newFd
                   << " errno=" << errno << " (" << strerror(errno) << ")\n";
         handler->setSocketFd(-1);
-        throw(EpollInstance::CannotManipulateEpollInstance());
     }
 
     handler->setSocketFd(newFd);
