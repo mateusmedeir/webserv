@@ -334,7 +334,13 @@ bool Client::validateDelete(ServerBlock &serverBlock, LocationBlock &location) {
 
 	size_t	filePos = uri.rfind('/');
 	std::string fileName = uri.substr(filePos);
-    std::string newUri = uri.substr(0, filePos);
+    std::string newUri;
+    if ((filePos + 1) <= uri.size()) {
+        newUri = uri.substr(0, (filePos + 1));
+    }
+    else {
+        newUri = uri.substr(0, filePos);
+    }
 
     // std::string uri = this->request.getUri();
     // uri = extractUriWithoutQuery(uri);
