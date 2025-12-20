@@ -45,6 +45,7 @@ void HttpResponse::handleGet(const HttpRequest &req, const ServerBlock &serverBl
 	if (!location.getReturn().empty()) return setResponseByStatus(302, &serverBlock, location.getReturn());
 
 	std::string path = location.getPath(serverBlock.getRoot().second, req.getUri());
+	path = extractUriWithoutQuery(path);
 	Logger::debug("Path dentro do delete: " + path);
 	if (path.empty()) return setResponseByStatus(404, &serverBlock);
 
@@ -84,11 +85,11 @@ void HttpResponse::handleDelete(const HttpRequest &req, const ServerBlock &serve
 	std::string locationUploadDir = location.getUploadPath();
 	if (locationUploadDir.empty()) return (setResponseByStatus(404, &serverBlock));
 
-	std::string uri = req.getUri();
+	std::string uri = extractUriWithoutQuery(req.getUri());
 	if (uri[uri.size() - 1] == '/') return (setResponseByStatus(404, &serverBlock));
 
-	size_t	filePos = req.getUri().rfind('/');
-	std::string fileName = req.getUri().substr(filePos);
+	size_t	filePos = uri.rfind('/');
+	std::string fileName = uri.substr(filePos);
 	std::string path = "";
 
 	if (locationUploadDir[locationUploadDir.size() - 1] == '/')
@@ -97,8 +98,8 @@ void HttpResponse::handleDelete(const HttpRequest &req, const ServerBlock &serve
 		path = locationUploadDir + "/" + fileName;
 
 	// std::cout << serverBlock.getRoot().second << std::endl;
-	// std::cout << req.getUri() << std::endl;
-	// std::string path = location.getPath(location.getUploadPath(), req.getUri());
+	// std::cout << uri << std::endl;
+	// std::string path = location.getPath(location.getUploadPath(), uri);
 	Logger::debug("Path dentro do delete: " + path);
 	if (std::remove(path.c_str()) == 0) {
 		setResponseByStatus(200, &serverBlock);

@@ -4,7 +4,7 @@ CgiHandler::CgiHandler(
   const HttpRequest &request,
   const ServerBlock &serverBlock,
   const LocationBlock &location
-) : EpollHandler(0, -1, 10), _scriptPath(""), _cgiOutput(""), _isFinished(false), _childPid(-1), _request(request), _serverBlock(serverBlock), _location(location) {
+) : EpollHandler(0, -1, 10), _scriptPath(""), _cgiOutput(""), _childPid(-1), _request(request), _serverBlock(serverBlock), _location(location), status(IN_PROGRESS) {
     this->_scriptPath = extractCgiScriptPath(request.getUri());
     this->_env = buildEnvironment();
     this->_requestBody = request.getBody();
@@ -39,7 +39,7 @@ void CgiHandler::handleEpollIn() {
             _cgiOutput.append(buffer, bytesRead);
             continue;
         } else if (bytesRead == 0) {
-            _isFinished = true;
+            status = COMPLETED;
             return;
         }
 
@@ -81,7 +81,7 @@ void CgiHandler::handleEpollOut() {
         );
     } catch (const std::exception &e) {
         Logger::error("CgiHandler::handleEpollOut - replaceHandlerFd failed: " + std::string(e.what()));
-        _isFinished = true;
+        status = COMPLETED;
         return;
     }
 
@@ -90,10 +90,6 @@ void CgiHandler::handleEpollOut() {
 
 const std::string& CgiHandler::getCgiOutput() const {
     return _cgiOutput;
-}
-
-bool CgiHandler::isFinished() const {
-    return _isFinished;
 }
 
 bool CgiHandler::start() {

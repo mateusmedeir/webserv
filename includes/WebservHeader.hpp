@@ -66,6 +66,12 @@ enum clientBufferState {
     COMPLETE = 12, //Ja lemos todo o conteudo da request
 };
 
+enum cgiBufferState {
+    IN_PROGRESS = 25,
+    FAILED = 26,
+    COMPLETED = 27
+};
+
 // void initAllLogHandlers(void);
 void setNonBlocking(int sockfd);
 std::string intToString(int n);

@@ -57,7 +57,7 @@ void Client::handleEpollIn(void) {
             } else {
                 this->request.setIsCgi(CgiHandler::isCgiScript(this->request.getUri(), *locationPtr));
                 if (!validatingUriWithLocation(serverBlock, const_cast<LocationBlock&>(*locationPtr))) {
-                    Logger::error("Erro nas validacoes dos metodos da request...");
+                    Logger::debug("Erro nas validacoes dos metodos da request...");
                     return ;
                 }
                 this->response.dispatchRequest(this, this->_serverListen.getServerBlock(), *locationPtr);
@@ -70,14 +70,14 @@ void Client::handleEpollIn(void) {
                 }
             }
         }
-    } else if (count == 0) {
+    } else if (count <= 0) {
         EpollInstance::manipInterestList(EPOLL_CTL_DEL, this);
     }
 }
 
 void Client::handleEpollOut(void) {
     if (this->_state == WAITING_CGI) {
-        if (this->cgiHandler && this->cgiHandler->isFinished()) {
+        if (this->cgiHandler && this->cgiHandler->status == COMPLETED) {
             Logger::debug("Client: CGI handler finished, processing output.");
             std::string cgiOutput = this->cgiHandler->getCgiOutput();
             this->response.parseCgiOutput(cgiOutput);
@@ -85,7 +85,13 @@ void Client::handleEpollOut(void) {
 
             EpollInstance::manipInterestList(EPOLL_CTL_DEL, this->cgiHandler);
             this->cgiHandler = NULL;
-
+        
+        } else if (this->cgiHandler && this->cgiHandler->status == FAILED) {
+            Logger::debug("Client: CGI handler failed");
+            const ServerBlock serverBlock = _serverListen.getServerBlock();
+            this->response.setResponseByStatus(500, &serverBlock);
+            EpollInstance::manipInterestList(EPOLL_CTL_DEL, this->cgiHandler);
+            this->cgiHandler = NULL;
         } else if (this->cgiHandler) {
             // CGI still running, do nothing and wait.
             return;
@@ -291,6 +297,7 @@ bool Client::validatePost(ServerBlock &serverBlock, LocationBlock &location) {
     std::string path = serverBlock.getRoot().second + this->request.getUri();
     path = extractUriWithoutQuery(path);
     std::string uri = this->request.getUri();
+    uri = extractUriWithoutQuery(uri);
 
     Logger::debug("client uri: " + uri);
     Logger::debug("location uri: " + location.getUri());
@@ -349,6 +356,7 @@ bool Client::validateDelete(ServerBlock &serverBlock, LocationBlock &location) {
 	if (uri[uri.size() - 1] == '/') return (this->response.setResponseByStatus(404, &serverBlock), false);
 
 	size_t	filePos = uri.rfind('/');
+    uri = extractUriWithoutQuery(uri);
 	std::string fileName = uri.substr(filePos);
     std::string newUri;
     if ((filePos + 1) <= uri.size()) {

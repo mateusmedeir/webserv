@@ -10,17 +10,17 @@ class CgiHandler: public EpollHandler {
 				std::string _scriptPath;
 				std::vector<std::string> _env;
 				std::string _cgiOutput;
-				bool _isFinished;
 				pid_t _childPid;
-
+				
 				const HttpRequest &_request;
 				const ServerBlock	&_serverBlock;
 				const LocationBlock	&_location;
-
+				
 				std::string _requestBody;
 				size_t _bytesWritten;
-
-    public:
+				
+	public:
+		int	status;
         CgiHandler(
 					const HttpRequest &request,
 					const ServerBlock &serverBlock,
@@ -35,7 +35,6 @@ class CgiHandler: public EpollHandler {
 				virtual void handleEpollOut();
 
 				const std::string& getCgiOutput() const;
-				bool isFinished() const;
 				pid_t getChildPid() const;
 
 				static bool isCgiScript(const std::string& uri, const LocationBlock& location);
