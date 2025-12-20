@@ -328,10 +328,20 @@ test_siege_availability() {
     siege -f "$TEMP_DIR/urls.txt" -c $CONCURRENT -t ${DURATION}s -b > "$TEMP_DIR/siege.log" 2>&1
     
     # Extrair disponibilidade
-    local availability=$(grep "Availability" "$TEMP_DIR/siege.log" | awk '{print $2}' | sed 's/%//')
+    #local availability=$(grep "Availability" "$TEMP_DIR/siege.log" | awk '{print $2}' | sed 's/%//')
     
+    #if [ -z "$availability" ]; then
+    #    print_fail "Não foi possível extrair disponibilidade do siege"
+    #    return
+    #fi
+	
+	# Extrair disponibilidade (robusto)
+    local availability=$(grep -i "availability" "$TEMP_DIR/siege.log" | grep -oE '[0-9]+\.[0-9]+')
+
     if [ -z "$availability" ]; then
         print_fail "Não foi possível extrair disponibilidade do siege"
+        echo "Saída do siege:"
+        tail -n 20 "$TEMP_DIR/siege.log"
         return
     fi
     
