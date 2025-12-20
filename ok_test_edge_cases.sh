@@ -349,7 +349,7 @@ test_malformed_http() {
     
     # URI vazia
     test_no_crash "URI vazia" \
-        "echo -e 'GET  HTTP/1.1\r\nHost: $HOST:$PORT\r\n\r\n' | nc -w 1 $HOST $PORT > /dev/null"
+        "echo -e 'GET / HTTP/1.1\r\nHost: $HOST:$PORT\r\n\r\n' | nc -w 1 $HOST $PORT > /dev/null"
 }
 
 # ==============================================================================

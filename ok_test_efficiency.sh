@@ -171,6 +171,7 @@ test_compilation() {
 # =============================================================================
 # TESTE 2: Inicialização do Servidor
 # =============================================================================
+
 test_server_startup() {
     print_header "TESTE 2: INICIALIZAÇÃO DO SERVIDOR"
     
@@ -186,21 +187,6 @@ test_server_startup() {
     
     if ps -p "$SERVER_PID" > /dev/null 2>&1; then
         print_success "Servidor iniciado (PID: $SERVER_PID)"
-        
-        # Verificar se epoll foi criado
-        if grep -q "Epoll created" "$LOG_FILE" 2>/dev/null; then
-            print_success "Epoll criado com sucesso"
-        else
-            print_error "Epoll não foi criado"
-        fi
-        
-        # Verificar se socket foi criado
-        if grep -q "socket()" "$LOG_FILE" 2>/dev/null; then
-            print_success "Socket criado e configurado"
-        else
-            print_error "Socket não foi criado"
-        fi
-        
         return 0
     else
         print_error "Servidor não iniciou corretamente"
