@@ -218,7 +218,7 @@ test_2_second_request_preserves_cookie() {
             return 1
         fi
     else
-        print_pass "Set-Cookie não enviado (cookie preservado corretamente)"
+        print_pass "Set-Cookie não enviado (cookie preservado corretamente): session_id=$SESSION_ID"
         return 0
     fi
 }

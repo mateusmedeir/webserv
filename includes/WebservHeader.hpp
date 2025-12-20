@@ -27,7 +27,8 @@
 # include <cctype>
 # include <set>
 # include <csignal>
-#include <sys/wait.h>
+# include <sys/wait.h>
+# include <dirent.h>
 
 
 enum    LogLevel {
@@ -70,3 +71,4 @@ void setNonBlocking(int sockfd);
 std::string intToString(int n);
 std::string extractUriWithoutQuery(const std::string &uri);
 std::string extractQueryFromUri(const std::string &uri);
+std::string extractUriPathInfo(const std::string &uri, const LocationBlock &location);

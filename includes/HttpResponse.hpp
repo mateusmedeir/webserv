@@ -18,6 +18,7 @@ class HttpResponse {
 		HttpResponse();
 		~HttpResponse();
 
+	void generateAutoIndexHTML(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock &location);
 	void handleGet(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock &location);
 	void handlePost(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock &location);
 	void handleDelete(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock &location);
