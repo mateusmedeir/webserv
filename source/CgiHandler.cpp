@@ -232,7 +232,7 @@ std::vector<std::string> CgiHandler::buildEnvironment() {
 std::string CgiHandler::extractCgiScriptPath(
   const std::string& uri
 ) {
-    std::string path = extractUriWithoutQuery(uri);
+    std::string path = extractAndDecodeUri(uri);
     
     std::string alias = this->_location.getAlias();
     if (!alias.empty()) {
@@ -274,7 +274,7 @@ std::string CgiHandler::normalizeHeaderName(const std::string& header) {
 }
 
 bool CgiHandler::isCgiScript(const std::string& uri, const LocationBlock& location) {
-    std::string path = extractUriWithoutQuery(uri);
+    std::string path = extractAndDecodeUri(uri);
     
     size_t dotPos = path.find_last_of('.');
     if (dotPos == std::string::npos)
@@ -305,8 +305,6 @@ std::string CgiHandler::getInterpretterPath(const std::string& scriptPath) {
         return "/usr/bin/perl";
     } else if (extension == ".sh") {
         return "/bin/bash";
-    } else if (extension == ".php") {
-        return "/usr/bin/php";
     } else {
         return scriptPath;
     }

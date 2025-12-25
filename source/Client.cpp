@@ -127,10 +127,14 @@ void Client::handleEpollOut(void) {
 }
 
 bool Client::sendResponse(const std::string &responseStr) {
+    if (this->response.sended || this->request.getMethod().empty())
+        return (true);
+
     if (!this->logged) {
-        Logger::info(toString());
+        Logger::info(this->toString());
         this->logged = true;
     }
+
     if (this->_pendingResponse.empty()) {
         this->_pendingResponse = responseStr;
         this->_responseOffset = 0;
@@ -144,10 +148,13 @@ bool Client::sendResponse(const std::string &responseStr) {
     
     if (sent < 0) {
         EpollInstance::manipInterestList(EPOLL_CTL_DEL, this);
+        Logger::debug("Client: Error sending response, closing client.");
+        this->response.sended = true;
         return true;
     } else if (sent == 0) {
         Logger::debug("Client: Connection closed by peer during send, closing client.");
         EpollInstance::manipInterestList(EPOLL_CTL_DEL, this);
+        this->response.sended = true;
         return false;
     } else {
         // send() enviou alguns bytes (pode ser parcial)
@@ -159,7 +166,7 @@ bool Client::sendResponse(const std::string &responseStr) {
             this->setInterestedEvents(events);
             EpollInstance::manipInterestList(EPOLL_CTL_MOD, this);
         }
-        
+
         return true;
     }
 }
@@ -257,8 +264,18 @@ bool Client::validatingUriWithLocation(ServerBlock &serverBlock, LocationBlock &
 
 bool Client::validateGet(ServerBlock &serverBlock, LocationBlock &location) {
     std::string path = serverBlock.getRoot().second + this->request.getUri();
-    path = extractUriWithoutQuery(path);
+    path = extractAndDecodeUri(path);
     Logger::debug("String contendo alias + uri para o GET: " + path);
+
+    if (!location.getReturn().empty()) {
+        return true;
+    }
+
+    if (access(path.c_str(), F_OK) != 0) {
+        Logger::debug("Recurso " + path + " nao encontrado.");
+        this->response.setResponseByStatus(404, &serverBlock);
+        return false;
+    }
 
     if (access(path.c_str(), R_OK) != 0) {
         Logger::debug("Acesso ao recurso " + path + " negado.");
@@ -295,9 +312,9 @@ bool Client::validateGet(ServerBlock &serverBlock, LocationBlock &location) {
 
 bool Client::validatePost(ServerBlock &serverBlock, LocationBlock &location) {
     std::string path = serverBlock.getRoot().second + this->request.getUri();
-    path = extractUriWithoutQuery(path);
+    path = extractAndDecodeUri(path);
     std::string uri = this->request.getUri();
-    uri = extractUriWithoutQuery(uri);
+    uri = extractAndDecodeUri(uri);
 
     Logger::debug("client uri: " + uri);
     Logger::debug("location uri: " + location.getUri());
@@ -356,7 +373,7 @@ bool Client::validateDelete(ServerBlock &serverBlock, LocationBlock &location) {
 	if (uri[uri.size() - 1] == '/') return (this->response.setResponseByStatus(404, &serverBlock), false);
 
 	size_t	filePos = uri.rfind('/');
-    uri = extractUriWithoutQuery(uri);
+    uri = extractAndDecodeUri(uri);
 	std::string fileName = uri.substr(filePos);
     std::string newUri;
     if ((filePos + 1) <= uri.size()) {
@@ -367,12 +384,18 @@ bool Client::validateDelete(ServerBlock &serverBlock, LocationBlock &location) {
     }
 
     // std::string uri = this->request.getUri();
-    // uri = extractUriWithoutQuery(uri);
+    // uri = extractAndDecodeUri(uri);
 
     Logger::debug("client uri: " + newUri);
     Logger::debug("location uri: " + location.getUri());
 
-    if (newUri.empty() || newUri != location.getUri()) {
+    std::string locationUri = location.getUri();
+    bool match = (newUri == locationUri);
+    if (!match && !locationUri.empty() && locationUri[locationUri.size() - 1] != '/') {
+        match = (newUri == (locationUri + "/"));
+    }
+
+    if (newUri.empty() || !match) {
         this->response.setResponseByStatus(404, &serverBlock);
         return (false);
     }

@@ -15,6 +15,8 @@ class HttpResponse {
 		std::string 												_body;
 		bool																_execAutoIndex;
 	public:
+		bool																sended;
+
 		HttpResponse();
 		~HttpResponse();
 

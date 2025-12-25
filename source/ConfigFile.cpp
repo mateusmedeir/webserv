@@ -9,7 +9,7 @@ ConfigFile::ConfigFile(int ac, char **av) {
 	if (ac == 2)
         this->parser(av[1]);
     else //| Caso não passem nenhum argumento, vamos usar nosso arquivo padrão
-        this->parser("configs/test_simple.conf");
+        this->parser("configs/default.conf");
 }
 
 void ConfigFile::readFile(const std::string &filename, std::string &content)

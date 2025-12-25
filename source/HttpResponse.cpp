@@ -6,6 +6,7 @@ HttpResponse::HttpResponse(){
 	this->_status_code = 200;
 	this->_status_message = "OK";
 	this->_execAutoIndex = false;
+	this->sended = false;
 };
 
 HttpResponse::~HttpResponse(){};
@@ -45,14 +46,13 @@ void HttpResponse::handleGet(const HttpRequest &req, const ServerBlock &serverBl
 	if (!location.getReturn().empty()) return setResponseByStatus(302, &serverBlock, location.getReturn());
 
 	std::string path = location.getPath(serverBlock.getRoot().second, req.getUri());
-	path = extractUriWithoutQuery(path);
+	path = extractAndDecodeUri(path);
 	Logger::debug("Path dentro do delete: " + path);
 	if (path.empty()) return setResponseByStatus(404, &serverBlock);
 
 	// validar se e autoindex.
 	if (this->getExecAutoIndex()) {
 		// Execute autoindex...
-		std::cout << "AUTOINDEX HABILITADO..." << std::endl;
 		Logger::debug("EXECUTANDO AUTOINDEX....");
 		this->generateAutoIndexHTML(req, serverBlock, location);
 		return ;
@@ -85,7 +85,7 @@ void HttpResponse::handleDelete(const HttpRequest &req, const ServerBlock &serve
 	std::string locationUploadDir = location.getUploadPath();
 	if (locationUploadDir.empty()) return (setResponseByStatus(404, &serverBlock));
 
-	std::string uri = extractUriWithoutQuery(req.getUri());
+	std::string uri = extractAndDecodeUri(req.getUri());
 	if (uri[uri.size() - 1] == '/') return (setResponseByStatus(404, &serverBlock));
 
 	size_t	filePos = uri.rfind('/');
@@ -115,6 +115,10 @@ void HttpResponse::dispatchRequest(Client *client, const ServerBlock &serverBloc
 	
 	processCookies(req, location);
 
+	if (!location.getReturn().empty()) {
+		setResponseByStatus(302, &serverBlock, location.getReturn());
+		return;
+	}
 	if (req.getIsCgi()) {
 		Logger::debug("Dispatching to CGI handler for URI: " + req.getUri());
 

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>POST - WebServ</title>
+    <link rel="stylesheet" href="../global.css" />
+  </head>
+
+  <body>
+    <main class="wrapper">
+      <header>
+        <div>
+          <h1>Teste de Requisição POST</h1>
+          <p class="lead">
+            Envie um arquivo e/ou conteúdo para testar o método POST.
+          </p>
+        </div>
+      </header>
+      <section class="grid">
+        <div class="form-container">
+          <form id="uploadForm" onsubmit="testPost(event)">
+            <label for="file">Selecione um arquivo:</label>
+            <input type="file" id="file" name="file" /><br /><br />
+            <input type="submit" value="Enviar Arquivo" />
+          </form>
+        </div>
+      </section>
+    </main>
+    <div id="toast" class="toast"></div>
+    <script src="../global.js"></script>
+    <script>
+      async function testPost(event) {
+        event.preventDefault()
+        const form = event.target
+        const fileInput = form.elements['file']
+        if (fileInput.files.length === 0) {
+          showToast('Please select a file to upload.', 'error')
+          return
+        }
+
+        const formData = new FormData(form)
+
+        showToast('Uploading file...', 'info')
+
+        try {
+          const response = await fetch('/upload', {
+            method: 'POST',
+            body: formData
+          })
+
+          const body = await response.text()
+          if (response.ok) {
+            showToast(
+              'Upload successful! Status: ' + response.status,
+              'success'
+            )
+            form.reset()
+          } else {
+            showToast(
+              'Upload failed! Status: ' +
+                response.status +
+                ' - ' +
+                body.substring(0, 50) +
+                '...',
+              'error'
+            )
+          }
+        } catch (error) {
+          showToast('Upload failed! Error: ' + error.message, 'error')
+        }
+      }
+    </script>
+  </body>
+</html>

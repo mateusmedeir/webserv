@@ -24,6 +24,33 @@ std::string extractUriWithoutQuery(const std::string &uri) {
     return uri;
 }
 
+std::string extractAndDecodeUri(const std::string &uri) {
+    std::string uriWithoutQuery = extractUriWithoutQuery(uri);
+    std::string result;
+
+    for (size_t i = 0; i < uriWithoutQuery.length(); ++i) {
+        if (uriWithoutQuery[i] == '%' && i + 2 < uriWithoutQuery.length()) {
+            char hex[3] = { uriWithoutQuery[i + 1], uriWithoutQuery[i + 2], '\0' };
+
+            if (isxdigit(hex[0]) && isxdigit(hex[1])) {
+                char decoded = static_cast<char>(strtol(hex, NULL, 16));
+                result += decoded;
+                i += 2;
+            } else {
+                result += uriWithoutQuery[i];
+            }
+        }
+        else if (uriWithoutQuery[i] == '+') {
+            result += ' ';
+        }
+        else {
+            result += uriWithoutQuery[i];
+        }
+    }
+
+    return result;
+}
+
 std::string extractQueryFromUri(const std::string &uri) {
     size_t pos = uri.find('?');
     if (pos != std::string::npos && pos + 1 < uri.size()) {

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>DELETE - WebServ</title>
+    <link rel="stylesheet" href="../global.css" />
+  </head>
+
+  <body>
+    <main class="wrapper">
+      <header>
+        <div>
+          <h1>Teste de Requisição DELETE</h1>
+          <p class="lead">
+            Insira o nome do arquivo que deseja deletar para testar o método
+            DELETE.
+          </p>
+        </div>
+      </header>
+      <section class="grid">
+        <div class="form-container">
+          <form id="deleteForm" onsubmit="testDelete(event)">
+            <label for="filename">Nome do arquivo a deletar:</label>
+            <input type="text" id="filename" name="filename" /><br /><br />
+            <input type="submit" value="Deletar Arquivo" />
+          </form>
+        </div>
+      </section>
+    </main>
+    <div id="toast" class="toast"></div>
+    <script src="../global.js"></script>
+    <script>
+      async function testDelete(event) {
+        event.preventDefault()
+        const form = event.target
+        const filenameInput = form.elements['filename']
+        if (filenameInput.value.trim() === '') {
+          showToast(
+            'Por favor, insira o nome do arquivo a ser deletado.',
+            'error'
+          )
+          return
+        }
+
+        if (!confirm('Tem certeza que deseja deletar este recurso?')) {
+          return
+        }
+
+        try {
+          const response = await fetch('/upload/' + filenameInput.value, {
+            method: 'DELETE'
+          })
+          if (response.ok) {
+            showToast(
+              'Upload successful! Status: ' + response.status,
+              'success'
+            )
+            form.reset()
+          } else {
+            showToast('Upload failed! Status: ' + response.status, 'error')
+          }
+        } catch {
+          showToast('Upload failed! Network error.', 'error')
+        }
+      }
+    </script>
+  </body>
+</html>

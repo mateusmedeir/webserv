@@ -211,9 +211,9 @@ void LocationBlock::addCgiExtensions()
     {
         std::vector<std::string> tokens = this->_config.getTokens();
         this->_config.verifyToken(END_OF_FILE, "Configuração inválida: cgi_extensions: final do arquivo encontrado");
-        if (tokens[0][0] != '.') //| Adiciona o ponto na frente da extensão para ficar .php ou .py
+        if (tokens[0][0] != '.') //| Adiciona o ponto na frente da extensão para ficar .pl, .sh .py
             tokens[0] = "." + tokens[0];
-        if (tokens[0] != ".php" && tokens[0] != ".py") //| Um dos bônus: multiplas extensões de cgi
+        if (tokens[0] != ".pl" && tokens[0] != ".py" && tokens[0] != ".sh")
             throw std::runtime_error("Configuração inválida: cgi_extensions: extensão inválida");
         cgi_extensions.push_back(tokens[0]);
         this->_config.removeTokens(1);
@@ -280,7 +280,7 @@ std::string LocationBlock::getPath(const std::string &root, const std::string &r
     std::string serverRoot = root;
     std::string locationAlias = this->getAlias();
     std::string locationUri = this->getUri();
-    std::string request = requestUri;
+    std::string request = extractAndDecodeUri(requestUri);
     std::string finalPath;
      
     if (locationAlias.empty()) {
