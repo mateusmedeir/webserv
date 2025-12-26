@@ -1,79 +1,68 @@
-NAME = webserv
+NAME		=	webserv
 
-COMPILER = c++
+SRCS		=	main.cpp                         \
+			source/ConfigFile.cpp            \
+			source/EpollHandler.cpp          \
+			source/EpollInstance.cpp         \
+			source/HttpRequest.cpp           \
+			source/HttpResponse.cpp          \
+			source/LocationBlock.cpp         \
+			source/RunTime.cpp               \
+			source/ServerBlock.cpp           \
+			source/ServerListen.cpp          \
+			source/Client.cpp                \
+			source/Utils.cpp                 \
+			source/CookieHandler.cpp         \
+			source/LogHandler.cpp            \
+			source/CompositeLogHandler.cpp   \
+			source/StdLogHandler.cpp         \
+			source/FileLogHandler.cpp        \
+			source/CgiHandler.cpp            \
+			#source/Logger.cpp
 
-FLAGS = -Wall -Werror -Wextra -std=c++98
+OBJDIR		=	objects
 
-SRC =	main.cpp \
-		source/ConfigFile.cpp \
-		source/EpollHandler.cpp \
-		source/EpollInstance.cpp \
-		source/HttpRequest.cpp \
-		source/HttpResponse.cpp \
-		source/LocationBlock.cpp \
-		source/RunTime.cpp \
-		source/ServerBlock.cpp \
-		source/ServerListen.cpp \
-		source/Client.cpp \
-		source/Utils.cpp \
-		source/CookieHandler.cpp \
-		source/LogHandler.cpp \
-		source/CompositeLogHandler.cpp \
-		source/StdLogHandler.cpp \
-		source/FileLogHandler.cpp \
-		source/CgiHandler.cpp
+OBJS		=	$(SRCS:%.cpp=$(OBJDIR)/%.o)
 
-OBJ = $(SRC:.cpp=.o)
+CXX			=	c++
 
-.cpp.o:
-	@$(COMPILER) $(FLAGS) -Iincludes -c $< -o $@
+CXXFLAGS	=	-Wall -Werror -Wextra -std=c++98
 
-$(NAME) : $(OBJ) progress
-	@$(COMPILER) $(FLAGS) $(OBJ) -o $(NAME)
+INCLUDES	=	-Iincludes
 
-all : $(NAME)
-	@sleep 0.2
-	@printf "\033[0;32m ALL READY TO GO!\033[0m\n"; \
+RM			=	rm -rf
 
-clean :
-	@rm -rf $(OBJ)
-	@sleep 0.1
-	@printf "\033[0;32m OBJECTS CLEANED!\033[0m\n"; \
+TOTAL_SRCS		=	$(words $(SRCS))
+COMPILED_SRCS	=	0
 
-fclean : clean
-	@rm -rf $(NAME)
-	@sleep 0.1
-	@printf "\033[0;32m ALL CLEANED!\033[0m\n"; \
+all: $(NAME)
 
-re : fclean all
+$(NAME): $(OBJS)
+	@$(CXX) $(CXXFLAGS) -o $(NAME) $(OBJS)
+	@echo "\033[K\033[1;32m✅ Webserv Is Ready! ✅\033[0m"
 
-progress :
-	@$(MAKE) --no-print-directory _progress
+$(OBJDIR)/%.o: %.cpp
+	@mkdir -p $(dir $@)
+	@$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+	$(eval COMPILED_SRCS=$(shell echo $$(($(COMPILED_SRCS)+1))))
+	$(eval COLOR_VALUE=$(shell echo $$((255*$(COMPILED_SRCS)/$(TOTAL_SRCS)))))
+	@echo -n "\033[38;2;0;$(COLOR_VALUE);0m  Compiling: $<\033[0m\033[K\r"
+	@sleep 0.02
 
-_progress :
-	@tput civis
-	@width=50; \
-	progress=0; \
-	while [ $$progress -le $$width ]; do \
-		printf "\r\033[0;32m Progress: [ "; \
-		for i in $$(seq 1 $$progress); do \
-			printf "="; \
-		done; \
-		for i in $$(seq $$progress $$width); do \
-			printf " "; \
-		done; \
-		percent=$$((progress * 2)); \
-		printf "]%d%%\033[0m" $$percent; \
-		progress=$$((progress + 5)); \
-		sleep 0.1; \
-	done; \
-	printf "\n\033[0;32m COMPILATION COMPLETE!\033[0m\n"; \
-	tput cnorm
+clean:
+	@$(RM) $(OBJDIR)
+	@echo "\033[38;2;255;165;0m🗑️  Objects Are Cleaned! 🗑️\033[0m"
 
-workflow : $(OBJ)
-	@$(COMPILER) $(FLAGS) $(OBJ) -o $(NAME)
+fclean: clean
+	@$(RM) $(NAME)
+	@echo "\033[31m🗑️  Webserv Is Cleaned! 🗑️\033[0m"
 
-supp: re
-		valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./$(NAME) config.conf
+re: fclean all
 
-.PHONY: all clean fclean re
+workflow: $(OBJS)
+	@$(CXX) $(CXXFLAGS) -o $(NAME) $(OBJS)
+
+#valgrind: fclean all
+#	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./$(NAME)
+
+.PHONY: all clean fclean re workflow #valgrind
