@@ -11,7 +11,7 @@ class LocationBlock {
         bool                        _canUpload;
         std::string                 _uri;
         std::string                 _alias;
-        std::string                 _return;
+        std::pair<int, std::string> _return;
         std::string                 _uploadPath;
         std::vector<std::string>    _index;
         std::vector<std::string>    _cgiExtensions;
@@ -45,7 +45,7 @@ class LocationBlock {
         bool getCanUpload() const;
         std::string getUri() const;
         std::string getAlias() const;
-        std::string getReturn() const;
+        std::pair<int, std::string> getReturn() const;
         std::string getUploadPath() const;
         std::vector<std::string> getIndex() const;
         std::vector<std::string> getCgiExtensions() const;

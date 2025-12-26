@@ -267,7 +267,7 @@ bool Client::validateGet(ServerBlock &serverBlock, LocationBlock &location) {
     path = extractAndDecodeUri(path);
     Logger::debug("String contendo alias + uri para o GET: " + path);
 
-    if (!location.getReturn().empty()) {
+    if (location.getReturn().first != 0) {
         return true;
     }
 

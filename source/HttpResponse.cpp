@@ -43,7 +43,7 @@ void	HttpResponse::generateAutoIndexHTML(const HttpRequest &req, const ServerBlo
 }
 
 void HttpResponse::handleGet(const HttpRequest &req, const ServerBlock &serverBlock, const LocationBlock &location){
-	if (!location.getReturn().empty()) return setResponseByStatus(302, &serverBlock, location.getReturn());
+	if (location.getReturn().first != 0) return setResponseByStatus(location.getReturn().first, &serverBlock, location.getReturn().second);
 
 	std::string path = location.getPath(serverBlock.getRoot().second, req.getUri());
 	path = extractAndDecodeUri(path);
@@ -115,8 +115,8 @@ void HttpResponse::dispatchRequest(Client *client, const ServerBlock &serverBloc
 	
 	processCookies(req, location);
 
-	if (!location.getReturn().empty()) {
-		setResponseByStatus(302, &serverBlock, location.getReturn());
+	if (location.getReturn().first != 0) {
+		setResponseByStatus(location.getReturn().first, &serverBlock, location.getReturn().second);
 		return;
 	}
 	if (req.getIsCgi()) {

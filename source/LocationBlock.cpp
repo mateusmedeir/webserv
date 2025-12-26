@@ -1,6 +1,6 @@
 #include "../includes/WebservHeader.hpp"
 
-LocationBlock::LocationBlock(ConfigFile &config) : _config(config), _autoIndex(false), _canUpload(false), _uploadPath("./"), _cookiesEnabled(false) {
+LocationBlock::LocationBlock(ConfigFile &config) : _config(config), _autoIndex(false), _canUpload(false), _return(std::make_pair(0, "")), _uploadPath("./"), _cookiesEnabled(false) {
     this->_uri = this->_config.getTokens()[0];
     
     this->_config.removeTokens(2); //| Remove o token de URI e '{'
@@ -60,7 +60,7 @@ bool LocationBlock::getAutoIndex() const { return this->_autoIndex; }
 bool LocationBlock::getCanUpload() const { return this->_canUpload; }
 std::string LocationBlock::getUri() const { return this->_uri; }
 std::string LocationBlock::getAlias() const { return this->_alias; }
-std::string LocationBlock::getReturn() const { return this->_return; }
+std::pair<int, std::string> LocationBlock::getReturn() const { return this->_return; }
 std::string LocationBlock::getUploadPath() const { return this->_uploadPath; }
 std::vector<std::string> LocationBlock::getIndex() const { return this->_index; }
 std::vector<std::string> LocationBlock::getCgiExtensions() const { return this->_cgiExtensions; }
@@ -83,7 +83,7 @@ void LocationBlock::printLocationBlock()
 
     std::cout << "Alias: " << this->_alias << std::endl;
 
-    std::cout << "Return: " << this->_return << std::endl;
+    std::cout << "Return: " << this->_return.first << " " << this->_return.second << std::endl;
 
     std::cout << "Upload path: " << this->_uploadPath << std::endl;
 
@@ -153,15 +153,41 @@ void LocationBlock::addAlias()
 
 void LocationBlock::addReturn()
 {
+    //| Verificar se já existe um return definido
+    if (this->_return.first != 0)
+        throw std::runtime_error("Configuração inválida: return: apenas um return é permitido por location block");
+
     this->_config.removeTokens(1); //| Remove o token 'return'
     this->_config.verifyToken(SEMICOLON, "Configuração inválida: return: não foi encontrado nenhum return");
 
     this->_config.verifyToken(END_OF_FILE, "Configuração inválida: return: final do arquivo encontrado");
 
+    //| Primeiro token deve ser o status code
     std::vector<std::string> tokens = this->_config.getTokens();
-    this->_return = tokens[0];
+    std::string statusStr = tokens[0];
+    
+    //| Validar se é um número
+    for (size_t i = 0; i < statusStr.size(); i++) {
+        if (!std::isdigit(statusStr[i]))
+            throw std::runtime_error("Configuração inválida: return: status code deve ser um número");
+    }
+    
+    int status = std::atoi(statusStr.c_str());
+    
+    //| Validar range do status code (301, 302, 303, 307, 308 são os códigos de redirect válidos)
+    if (status != 301 && status != 302 && status != 303 && status != 307 && status != 308)
+        throw std::runtime_error("Configuração inválida: return: status code deve ser 301, 302, 303, 307 ou 308");
+    
+    this->_config.removeTokens(1); //| Removendo o status code
 
-    this->_config.removeTokens(1); //| Removendo o argumento de return
+    //| Segundo token deve ser a URL
+    this->_config.verifyToken(SEMICOLON, "Configuração inválida: return: URL não encontrada após status code");
+    this->_config.verifyToken(END_OF_FILE, "Configuração inválida: return: final do arquivo encontrado");
+
+    tokens = this->_config.getTokens();
+    this->_return = std::make_pair(status, tokens[0]);
+
+    this->_config.removeTokens(1); //| Removendo a URL
     this->_config.verifyToken(DIFF_SEMICOLON, "Configuração inválida: return: esperava um ponto e vírgula no final de return");
     this->_config.removeTokens(1); //| Removendo o ponto e vírgula
 }
