@@ -309,7 +309,7 @@ std::string LocationBlock::getPath(const std::string &root, const std::string &r
     std::string request = extractAndDecodeUri(requestUri);
     std::string finalPath;
      
-    if (request.find(locationUri) == 0)
+    if (!locationUri.empty() && locationUri != "/" && request.find(locationUri) == 0)
         request = request.substr(locationUri.size());
 
     if (locationAlias.empty()) {
