@@ -40,6 +40,9 @@ class ServerBlock
         void addErrorPages();
         void addLocation();
 
+        bool hasListenDuplicate(const t_listen &listen) const;
+        bool hasListenDuplicateWith(const ServerBlock &other) const;
+
         //| Getters
         std::vector<std::string> getServerNames() const;
         std::vector<t_listen> getListen() const;

@@ -34,5 +34,7 @@ class ConfigFile {
 		std::vector<std::string> getTokens(void);
 		const std::vector<ServerBlock> &getServerBlocks(void) const;
 
+		void validateDuplicateListensAcrossServers() const;
+
 		void initServerSockets(int socketDomain, int socketType);
 };

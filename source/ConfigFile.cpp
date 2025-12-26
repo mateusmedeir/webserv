@@ -149,6 +149,9 @@ void ConfigFile::parser(const std::string &filename)
 		else
 			throw std::runtime_error("Configuração inválida: servidor não encontrado");
 	}
+
+	//| Verificar duplicatas de listen entre diferentes server blocks
+	this->validateDuplicateListensAcrossServers();
 }
 
 void ConfigFile::removeTokens(size_t amount)
@@ -191,4 +194,16 @@ std::vector<std::string> ConfigFile::getTokens(void)
 const std::vector<ServerBlock> &ConfigFile::getServerBlocks(void) const
 {
 	return this->_serverBlocks;
+}
+
+void ConfigFile::validateDuplicateListensAcrossServers() const
+{
+	for (size_t i = 0; i < this->_serverBlocks.size(); i++)
+	{
+		for (size_t j = i + 1; j < this->_serverBlocks.size(); j++)
+		{
+			if (this->_serverBlocks[i].hasListenDuplicateWith(this->_serverBlocks[j]))
+				throw std::runtime_error("Configuração inválida: listen duplicado entre diferentes server blocks");
+		}
+	}
 }

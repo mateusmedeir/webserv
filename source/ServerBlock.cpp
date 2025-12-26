@@ -64,6 +64,26 @@ std::pair<bool, std::string> ServerBlock::getRoot() const { return this->_root; 
 std::map<int, std::string> ServerBlock::getErrorPages() const { return this->_errorPages; }
 std::map<std::string, LocationBlock> ServerBlock::getLocations() const { return this->_locations; }
 
+bool ServerBlock::hasListenDuplicate(const t_listen &listen) const
+{
+    for (size_t i = 0; i < this->_listen.size(); i++)
+    {
+        if (this->_listen[i].host == listen.host && this->_listen[i].port == listen.port)
+            return true;
+    }
+    return false;
+}
+
+bool ServerBlock::hasListenDuplicateWith(const ServerBlock &other) const
+{
+    for (size_t i = 0; i < this->_listen.size(); i++)
+    {
+        if (other.hasListenDuplicate(this->_listen[i]))
+            return true;
+    }
+    return false;
+}
+
 void ServerBlock::printServerBlock()
 {
     std::cout << "Server names: " << std::endl;
@@ -231,10 +251,9 @@ void ServerBlock::addListens()
     listen.host = host;
     listen.port = port;
 
-    //| Remover duplicatas de listen (?)
-    for (size_t i = 0; i < this->_listen.size(); i++)
-        if (this->_listen[i].host == listen.host && this->_listen[i].port == listen.port)
-            throw std::runtime_error("Configuração inválida: listen: listen duplicado"); //| Ou somente remover duplicatas?
+    //| Verificar duplicatas de listen dentro do mesmo server block
+    if (this->hasListenDuplicate(listen))
+        throw std::runtime_error("Configuração inválida: listen: listen duplicado no mesmo server block");
 
     this->_listen.push_back(listen);
 
