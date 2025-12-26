@@ -66,7 +66,7 @@ int main(int ac, char **av) {
     CompositeLogHandler* compositeHandler = new CompositeLogHandler();
     compositeHandler->addHandler(new StdLogHandler());
     compositeHandler->addHandler(new FileLogHandler("application.log"));
-    Logger::initLogger(DEBUG, compositeHandler);
+    Logger::initLogger(INFO, compositeHandler);
 
     try {
         RunTime::initializeRuntime(ac, av);
