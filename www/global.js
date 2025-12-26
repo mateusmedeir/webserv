@@ -25,16 +25,6 @@ function showToast(message, type = 'info', duration = 3000) {
   }, duration)
 }
 
-function setCookie(name, value, days) {
-    let expires = "";
-    if (days) {
-        const date = new Date();
-        date.setTime(date.getTime() + (days*24*60*60*1000));
-        expires = "; expires=" + date.toUTCString();
-    }
-    document.cookie = name + "=" + (value || "")  + expires + "; path=/";
-}
-
 function getCookie(name) {
     const nameEQ = name + "=";
     const ca = document.cookie.split(';');
@@ -46,8 +36,30 @@ function getCookie(name) {
     return null;
 }
 
+function setCookie(name, value, days) {
+    let expires = "";
+    if (days) {
+        const date = new Date();
+        date.setTime(date.getTime() + (days*24*60*60*1000));
+        expires = "; expires=" + date.toUTCString();
+    }
+    document.cookie = name + "=" + (value || "")  + expires + "; path=/";
+}
+
+function deleteCookie(name) {
+    document.cookie = name + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+}
+
+// Verifica se o servidor habilitou cookies (enviou session_id)
+function areCookiesEnabled() {
+    return getCookie('session_id') !== null;
+}
+
 function getTheme() {
-    return getCookie('theme') || 'dark';
+    if (areCookiesEnabled()) {
+        return getCookie('theme') || 'dark';
+    }
+    return 'dark'; // Default quando cookies desabilitados
 }
 
 function toggleTheme() {
@@ -62,11 +74,18 @@ function setTheme(theme) {
     } else {
         document.body.classList.remove('light-theme');
     }
-    setCookie('theme', theme, 365);
+    
+    // Só salva o tema se o servidor habilitou cookies
+    if (areCookiesEnabled()) {
+        setCookie('theme', theme, 365);
+    } else {
+        // Remove o cookie de tema se existir (servidor desabilitou cookies)
+        deleteCookie('theme');
+    }
 }
 
 function initTheme() {
-    const savedTheme = getCookie('theme') || 'dark';
+    const savedTheme = getTheme();
     setTheme(savedTheme);
 
     const lightButton = document.getElementById('theme-light');

@@ -309,16 +309,18 @@ std::string LocationBlock::getPath(const std::string &root, const std::string &r
     std::string request = extractAndDecodeUri(requestUri);
     std::string finalPath;
      
+    // Remove o prefixo da location da requisição (conforme subject)
+    // Ex: location /kapouet com root /tmp/www
+    // URI /kapouet/pouic/toto/pouet -> /tmp/www/pouic/toto/pouet
+    if (request.find(locationUri) == 0)
+        request = request.substr(locationUri.size());
+
     if (locationAlias.empty()) {
         finalPath = serverRoot + request;
         Logger::debug("Nao temos alias. FinalPath = " + finalPath);
     }
     else {
-        // Tem alias
         // O alias tem preferencia em cima do root
-        // remove o prefixo da location
-        if (request.find(locationUri) == 0)
-            request = request.substr(locationUri.size());
         finalPath = locationAlias + '/' + request;
         Logger::debug("Temos alias. FinalPath = " + finalPath);
     }
